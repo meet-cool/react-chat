@@ -24,6 +24,7 @@ export interface UserInfo {
   avatar: string;
   bio: string;
   status: number;
+  role: string;
   create_time: number;
 }
 
@@ -183,7 +184,7 @@ export interface ConversationCreateResult {
 }
 
 // 侧边栏分类
-export type SidebarCategory = 'chat' | 'contacts' | 'extensions';
+export type SidebarCategory = 'recent' | 'rooms' | 'contacts' | 'confession' | 'bottle' | 'extensions';
 
 // ============ 管理后台 ============
 export type AdminUserRole = 'member' | 'admin' | 'super_admin';
@@ -259,4 +260,56 @@ export interface AdminPaginated<T> {
     total: number;
     last_page: number;
   };
+}
+
+// ============ 表白墙 ============
+export interface Confession {
+  id: number;
+  user_id: number;
+  content: string;
+  target_name: string;
+  anonymous: boolean;
+  username: string;
+  avatar: string;
+  like_count: number;
+  comment_count: number;
+  liked: boolean;
+  bookmarked: boolean;
+  create_time: number;
+  create_time_fmt: string;
+}
+
+export interface ConfessionComment {
+  id: number;
+  confession_id: number;
+  user_id: number;
+  content: string;
+  username: string;
+  avatar: string;
+  create_time: number;
+  create_time_fmt: string;
+}
+
+// ============ 漂流瓶 ============
+export interface Bottle {
+  id: number;
+  user_id: number;
+  content: string;
+  target: string;
+  status: number;
+  picked: boolean;
+  replies: number;
+  create_time: number;
+  create_time_fmt: string;
+}
+
+export interface BottleReply {
+  id: number;
+  bottle_id: number;
+  user_id: number;
+  content: string;
+  username: string;
+  avatar: string;
+  create_time: number;
+  create_time_fmt: string;
 }

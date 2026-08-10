@@ -19,6 +19,11 @@ import type {
   AdminPaginated,
   MessageReaction,
   ReportResult,
+  Confession,
+  ConfessionComment,
+  PaginatedData,
+  Bottle,
+  BottleReply,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -235,6 +240,65 @@ export const conversationApi = {
 
   report: (convId: number, msgId: number, reason: string) =>
     post<ReportResult>(`/chat/conversations/${convId}/messages/${msgId}/report`, { reason }),
+};
+
+// ============ 表白墙 API ============
+
+export const confessionApi = {
+  list: (page = 1, options?: { search?: string; sort?: string }) => {
+    const params = new URLSearchParams({ page: String(page), per_page: '20' });
+    if (options?.search) params.set('search', options.search);
+    if (options?.sort) params.set('sort', options.sort);
+    return get<PaginatedData<Confession>>(`/chat/confessions?${params.toString()}`);
+  },
+
+  create: (data: { content: string; target_name: string; anonymous: boolean }) =>
+    post<{ id: number }>('/chat/confessions', data),
+
+  like: (id: number) =>
+    post<{ liked: boolean; like_count: number }>(`/chat/confessions/${id}/like`),
+
+  bookmark: (id: number) =>
+    post<{ bookmarked: boolean }>(`/chat/confessions/${id}/bookmark`),
+
+  bookmarks: (page = 1) =>
+    get<PaginatedData<Confession>>(`/chat/confessions/bookmarks?page=${page}&per_page=20`),
+
+  ranking: (type: string = 'likes', limit: number = 10) =>
+    get<Confession[]>(`/chat/confessions/ranking?type=${type}&limit=${limit}`),
+
+  detail: (id: number) =>
+    get<Confession & { comments: ConfessionComment[] }>(`/chat/confessions/${id}`),
+
+  comments: (id: number, page = 1) =>
+    get<PaginatedData<ConfessionComment>>(`/chat/confessions/${id}/comments?page=${page}&per_page=20`),
+
+  addComment: (id: number, content: string) =>
+    post<{ create_time: number }>(`/chat/confessions/${id}/comments`, { content }),
+
+  delete: (id: number) =>
+    del<null>(`/chat/confessions/${id}`),
+};
+
+// ============ 漂流瓶 API ============
+
+export const bottleApi = {
+  save: (data: { content: string; target: string }) =>
+    post<{ id: number }>('/chat/bottles', data),
+
+  mine: (page = 1) =>
+    get<PaginatedData<Bottle>>(`/chat/bottles/mine?page=${page}&per_page=20`),
+
+  pick: () =>
+    get<Bottle & { replies: BottleReply[]; author_username: string; author_avatar: string; create_time_fmt: string }>(
+      '/chat/bottles/pick'
+    ),
+
+  reply: (id: number, content: string) =>
+    post<{ create_time: number }>(`/chat/bottles/${id}/reply`, { content }),
+
+  delete: (id: number) =>
+    del<null>(`/chat/bottles/${id}`),
 };
 
 // ============ 管理后台 API ============

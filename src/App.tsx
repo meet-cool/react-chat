@@ -13,6 +13,12 @@ import { AdminRoomsPage } from './pages/admin/AdminRoomsPage';
 import { AdminMessagesPage } from './pages/admin/AdminMessagesPage';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { PortalPage } from './pages/PortalPage';
+import { ConfessionWall } from './pages/ConfessionWall';
+import { ConfessionPost } from './pages/ConfessionPost';
+import { ConfessionRanking } from './pages/ConfessionRanking';
+import { ConfessionBookmarks } from './pages/ConfessionBookmarks';
+import { ConfessionDetail } from './pages/ConfessionDetail';
+import { BottlePage } from './pages/BottlePage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -74,6 +80,34 @@ export default function App() {
             element={
               user ? <ChatPage user={user} onLogout={() => setUser(null)} /> : <Navigate to="/" replace />
             }
+          />
+
+          {/* 表白墙 - 允许访客浏览 */}
+          <Route
+            path="/confessions"
+            element={<ConfessionWall />}
+          />
+          <Route
+            path="/confessions/new"
+            element={user ? <ConfessionPost /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/confessions/ranking"
+            element={<ConfessionRanking />}
+          />
+          <Route
+            path="/confessions/bookmarks"
+            element={user ? <ConfessionBookmarks /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/confessions/:id"
+            element={<ConfessionDetail />}
+          />
+
+          {/* 漂流瓶 - 允许访客浏览 */}
+          <Route
+            path="/bottles"
+            element={<BottlePage />}
           />
 
           {/* 管理后台登录（无需鉴权） */}
