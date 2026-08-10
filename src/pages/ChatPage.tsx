@@ -97,6 +97,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const joiningRef = useRef<Set<number>>(new Set());
   // 记录上次手动操作时间，用于区分手动切换和定时刷新
   const lastManualActionRef = useRef<number>(Date.now());
+  // 成员列表是否已加载过（首次加载才显示骨架屏）
+  const membersLoadedRef = useRef(false);
   // MessageInput 插入文本方法引用（@提及用）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
   // 防重复处理鉴权错误
