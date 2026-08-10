@@ -91,12 +91,15 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const lastMessageIdRef = useRef<number>(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // 防重复加入标志
   const joiningRef = useRef<Set<number>>(new Set());
   // 记录上次手动操作时间，用于区分手动切换和定时刷新
   const lastManualActionRef = useRef<number>(Date.now());
   // MessageInput 插入文本方法引用（@提及用）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
+  // 防重复处理鉴权错误
+  const authErrorHandledRef = useRef(false);
 
   // 401 处理函数
   const handleAuthError = useCallback(() => {
