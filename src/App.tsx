@@ -117,6 +117,12 @@ export default function App() {
             element={user ? <PointsPage /> : <Navigate to="/login" replace />}
           />
 
+          {/* 个人主页 - 需登录 */}
+          <Route
+            path="/profile"
+            element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
+          />
+
           {/* 管理后台登录（无需鉴权） */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
 

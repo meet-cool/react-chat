@@ -106,7 +106,7 @@ function del<T>(path: string): Promise<T> {
 // ============ 鉴权 API ============
 
 export const authApi = {
-  register: (data: { username: string; email: string; password: string }) =>
+  register: (data: { username: string; email: string; password: string; qq?: string }) =>
     post<AuthResult>('/chat/register', data),
 
   login: (data: { account: string; password: string }) =>

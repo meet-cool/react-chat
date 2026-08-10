@@ -18,6 +18,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     username: '',
     email: '',
     password: '',
+    qq: '',
   });
   const { addToast } = useApp();
   const navigate = useNavigate();
@@ -169,6 +170,18 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="请输入邮箱"
                     autoComplete="email"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                    QQ号 <span style={{ color: 'var(--color-text-muted)' }}>(选填，用于获取头像)</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.qq}
+                    onChange={(e) => setForm({ ...form, qq: e.target.value.replace(/\D/g, '').slice(0, 11) })}
+                    placeholder="输入QQ号（选填）"
                   />
                 </div>
               </>

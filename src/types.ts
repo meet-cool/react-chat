@@ -32,6 +32,7 @@ export interface UserInfo {
   exp_to_next: number;
   sign_in_streak: number;
   last_sign_in_date: string;
+  qq: string;
 }
 
 // 登录/注册响应

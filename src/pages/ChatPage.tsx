@@ -626,15 +626,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               <span className="hidden sm:inline">管理</span>
             </button>
           ) : null}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="btn btn-sm"
-            title="设置"
-            aria-label="设置"
-          >
-            <Settings size={14} />
-            <span className="hidden sm:inline">设置</span>
-          </button>
           <div
             className="flex items-center gap-2 px-2 py-1"
             style={{ border: '1px solid var(--color-border-light)' }}
@@ -710,6 +701,30 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               );
             })}
             <div className="flex-1" />
+            {/* 个人主页 */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-10 h-10 flex flex-col items-center justify-center transition-colors"
+              style={{ color: 'var(--color-text-light)', border: '1px solid transparent' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              title="个人主页"
+            >
+              <User size={18} />
+              <span className="text-[10px] mt-0.5">主页</span>
+            </button>
+            {/* 设置按钮 */}
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-10 h-10 flex flex-col items-center justify-center transition-colors"
+              style={{ color: 'var(--color-text-light)', border: '1px solid transparent' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              title="设置"
+            >
+              <Settings size={18} />
+              <span className="text-[10px] mt-0.5">设置</span>
+            </button>
             {/* 折叠按钮（仅桌面端） */}
             <button
               onClick={() => setLeftCollapsed((v) => !v)}
