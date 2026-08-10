@@ -293,7 +293,7 @@ export const bottleApi = {
     get<PaginatedData<Bottle>>(`/chat/bottles/mine?page=${page}&per_page=20`),
 
   pick: () =>
-    get<Bottle & { replies: BottleReply[]; author_username: string; author_avatar: string; create_time_fmt: string }>(
+    post<Bottle & { replies: BottleReply[]; author_username: string; author_avatar: string; create_time_fmt: string }>(
       '/chat/bottles/pick'
     ),
 
