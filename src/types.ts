@@ -275,6 +275,7 @@ export interface Confession {
   comment_count: number;
   liked: boolean;
   bookmarked: boolean;
+  slug: string;
   create_time: number;
   create_time_fmt: string;
 }

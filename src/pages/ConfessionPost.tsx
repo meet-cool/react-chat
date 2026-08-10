@@ -41,7 +41,14 @@ export function ConfessionPost() {
         anonymous,
       });
       addToast('表白成功！', 'success');
-      navigate('/confessions');
+      // 获取最新表白以跳转详情页
+      const list = await confessionApi.list(1);
+      const latest = list.items.find((c) => c.id === res.id);
+      if (latest) {
+        navigate(`/confessions/${latest.slug}`);
+      } else {
+        navigate('/confessions');
+      }
     } catch (err) {
       addToast(err instanceof Error ? err.message : '提交失败', 'error');
     } finally {

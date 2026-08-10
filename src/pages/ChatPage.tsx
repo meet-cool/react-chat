@@ -18,6 +18,8 @@ import {
   PanelLeftOpen,
   PanelRightOpen,
   ShieldCheck,
+  Heart,
+  SendHorizonal,
 } from 'lucide-react';
 import type { ChatMessage, Room, RoomMember, UserInfo, Conversation } from '../types';
 import { clearToken, messageApi, roomApi, conversationApi } from '../lib/api';
@@ -34,6 +36,7 @@ import { PrivateChatView } from '../components/PrivateChatView';
 import { RoomSettingsModal } from '../components/RoomSettingsModal';
 import { ForwardDialog } from '../components/ForwardDialog';
 import { ReportDialog } from '../components/ReportDialog';
+import { RecentChatsView } from '../components/RecentChatsView';
 
 interface ChatPageProps {
   user: UserInfo;
@@ -45,16 +48,17 @@ const HEARTBEAT_INTERVAL = 60000; // 心跳间隔 60 秒
 const REFRESH_INTERVAL = 30000; // 房间列表刷新间隔 30 秒
 const PAGE_SIZE = 50;
 
-type SidebarCategory = 'chat' | 'contacts' | 'extensions';
+type SidebarCategory = 'recent' | 'rooms' | 'contacts' | 'confession' | 'bottle' | 'extensions';
 
 export function ChatPage({ user, onLogout }: ChatPageProps) {
   const { addToast } = useApp();
   const navigate = useNavigate();
 
-  const [category, setCategory] = useState<SidebarCategory>('chat');
+  const [category, setCategory] = useState<SidebarCategory>('recent');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
+  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -65,7 +69,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showRoomSettings, setShowRoomSettings] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo>(user);
-  const [mobileSidebar, setMobileSidebar] = useState<'rooms' | 'members' | null>(null);
+  const [mobileSidebar, setMobileSidebar] = useState<'rooms' | 'members' | 'contacts' | null>(null);
 
   // 私聊：外部触发目标用户
   const [privateTarget, setPrivateTarget] = useState<number | null>(null);
@@ -87,8 +91,19 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const lastMessageIdRef = useRef<number>(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 防重复加入标志
+  const joiningRef = useRef<Set<number>>(new Set());
+  // 记录上次手动操作时间，用于区分手动切换和定时刷新
+  const lastManualActionRef = useRef<number>(Date.now());
   // MessageInput 插入文本方法引用（@提及用）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
+
+  // 401 处理函数
+  const handleAuthError = useCallback(() => {
+    clearToken();
+    addToast('登录已过期，请重新登录', 'warning');
+    setTimeout(() => navigate('/login', { replace: true }), 500);
+  }, [addToast, navigate]);
 
   // 加载房间列表
   const loadRooms = useCallback(async () => {
@@ -101,12 +116,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         const joined = list.find((r) => r.joined);
         return joined || list[0] || null;
       });
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : '加载聊天室失败', 'error');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '加载聊天室失败';
+      if (message.includes('未登录') || message.includes('登录已过期')) {
+        handleAuthError();
+        return;
+      }
+      addToast(message, 'error');
     } finally {
       setRoomsLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, handleAuthError]);
 
   // 加载历史消息（首次进入房间）
   const loadMessages = useCallback(
@@ -121,13 +141,18 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           lastMessageIdRef.current = 0;
         }
         setHasMore(list.length >= PAGE_SIZE);
-      } catch (err) {
-        addToast(err instanceof Error ? err.message : '加载消息失败', 'error');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : '加载消息失败';
+        if (message.includes('未登录') || message.includes('登录已过期')) {
+          handleAuthError();
+          return;
+        }
+        addToast(message, 'error');
       } finally {
         setMessagesLoading(false);
       }
     },
-    [addToast],
+    [addToast, handleAuthError],
   );
 
   // 增量拉取新消息（轮询）
@@ -151,10 +176,15 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           return fresh.length > 0 ? [...prev, ...fresh] : prev;
         });
       }
-    } catch {
+    } catch (err: unknown) {
+      // 401 时静默处理，由 handleAuthError 统一跳转
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('未登录') || message.includes('登录已过期')) {
+        handleAuthError();
+      }
       // 静默失败，不打扰用户
     }
-  }, [activeRoom]);
+  }, [activeRoom, handleAuthError]);
 
   // 加载更多历史消息
   const loadMore = useCallback(async () => {
@@ -184,12 +214,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     }
   }, [activeRoom, messages, addToast]);
 
-  // 加载成员列表
+  // 加载成员列表（带去重，防止定时刷新造成闪烁）
   const loadMembers = useCallback(async (roomId: number) => {
-    setMembersLoading(true);
+    // 只在数据可能变化时才显示骨架屏：手动切换房间时显示，定时刷新时不显示
+    const wasManual = Date.now() - lastManualActionRef.current > 5000;
+    setMembersLoading(wasManual);
     try {
       const list = await roomApi.members(roomId);
-      setMembers(list);
+      setMembers((prev) => {
+        const prevById = new Map(prev.map((m) => [m.id, m]));
+        const hasChanged =
+          list.length !== prev.length ||
+          list.some((m) => prevById.get(m.id)?.online !== m.online);
+        if (!hasChanged) return prev;
+        return list;
+      });
     } catch {
       // 静默
     } finally {
@@ -197,42 +236,70 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     }
   }, []);
 
-  // 选择房间
+  // 选择房间（不依赖 activeRoom 避免陈旧闭包）
   const handleSelectRoom = useCallback(
     async (room: Room) => {
-      if (activeRoom?.id === room.id) return;
-      setActiveRoom(room);
+      lastManualActionRef.current = Date.now();
+      setActiveRoom((prev) => {
+        if (prev && prev.id === room.id) return prev;
+        return room;
+      });
       setMessages([]);
       lastMessageIdRef.current = 0;
       setMobileSidebar(null);
       await loadMessages(room.id);
       await loadMembers(room.id);
     },
-    [activeRoom, loadMessages, loadMembers],
+    [loadMessages, loadMembers],
   );
 
-  // 加入房间
+  // 加入房间（统一入口：join 后自动切换）
   const handleJoinRoom = useCallback(
     async (room: Room) => {
+      // 防重复加入
+      if (joiningRef.current.has(room.id)) return;
+      joiningRef.current.add(room.id);
+      lastManualActionRef.current = Date.now();
       try {
-        await roomApi.join(room.id);
-        addToast(`已加入「${room.name}」`, 'success');
-        // 刷新房间列表和详情
+        // 先刷新房间列表，拿到最新的 joined 状态
         await loadRooms();
-        const updated = await roomApi.detail(room.id);
-        // 只在不是当前房间时才切换，避免重复加入已加入的房间
-        if (activeRoom?.id !== room.id) {
-          setActiveRoom(updated);
+        // 从最新状态中查找房间
+        const freshRoom = rooms.find((r) => r.id === room.id);
+        if (!freshRoom) return;
+
+        if (freshRoom.joined) {
+          // 已加入：直接切换
+          setActiveRoom(freshRoom);
           setMessages([]);
           lastMessageIdRef.current = 0;
-          await loadMessages(room.id);
+          await loadMessages(freshRoom.id);
+          await loadMembers(freshRoom.id);
+        } else {
+          // 未加入：先加入
+          await roomApi.join(room.id);
+          addToast(`已加入「${room.name}」`, 'success');
+          await loadRooms();
+          const joinedRoom = rooms.find((r) => r.id === room.id);
+          if (joinedRoom) {
+            setActiveRoom(joinedRoom);
+            setMessages([]);
+            lastMessageIdRef.current = 0;
+            await loadMessages(joinedRoom.id);
+            await loadMembers(joinedRoom.id);
+          }
         }
-        await loadMembers(room.id);
-      } catch (err) {
-        addToast(err instanceof Error ? err.message : '加入失败', 'error');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : '加入失败';
+        if (message.includes('未登录') || message.includes('登录已过期')) {
+          handleAuthError();
+          return;
+        }
+        addToast(message, 'error');
+      } finally {
+        joiningRef.current.delete(room.id);
       }
     },
-    [addToast, loadRooms, loadMessages, loadMembers, activeRoom],
+    [addToast, loadRooms, loadMessages, loadMembers, handleAuthError, rooms],
   );
 
   // 退出房间
@@ -408,7 +475,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleStartPrivateChat = useCallback((userId: number) => {
     setPrivateTarget(userId);
     setShowPrivate(true);
-    setCategory('chat');
+    setCategory('recent');
     setActiveRoom(null);
   }, []);
 
@@ -416,7 +483,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleOpenConversation = useCallback((userId: number) => {
     setPrivateTarget(userId);
     setShowPrivate(true);
-    setCategory('chat');
+    setCategory('recent');
     setActiveRoom(null);
   }, []);
 
@@ -444,6 +511,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     loadRooms();
   }, [loadRooms]);
 
+  // 初始化加载私聊会话列表
+  useEffect(() => {
+    conversationApi.list().then(setConversations).catch(() => {});
+  }, []);
+
   // 切换房间时重新启动轮询
   useEffect(() => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current);
@@ -468,10 +540,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     };
   }, []);
 
-  // 定期刷新房间列表与成员在线状态
+  // 定期刷新房间列表、私聊会话列表与成员在线状态
   useEffect(() => {
     const refresh = setInterval(() => {
       loadRooms();
+      conversationApi.list().then(setConversations).catch(() => {});
       if (activeRoom) loadMembers(activeRoom.id);
     }, 15000);
     return () => clearInterval(refresh);
@@ -482,10 +555,27 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     label: string;
     icon: typeof MessageSquare;
   }[] = [
-    { k: 'chat', label: '聊天', icon: MessageSquare },
+    { k: 'recent', label: '最近', icon: MessageSquare },
+    { k: 'rooms', label: '聊天室', icon: Hash },
     { k: 'contacts', label: '通讯录', icon: BookUser },
-    { k: 'extensions', label: '拓展', icon: Sparkles },
+    { k: 'confession', label: '表白墙', icon: Heart },
+    { k: 'bottle', label: '漂流瓶', icon: SendHorizonal },
+    { k: 'extensions', label: '插件', icon: Sparkles },
   ];
+
+  const handleSidebarClick = useCallback(
+    (k: SidebarCategory) => {
+      if (k === 'confession') {
+        navigate('/confessions');
+      } else if (k === 'bottle') {
+        navigate('/bottles');
+      } else {
+        setCategory(k);
+        if (k === 'rooms' || k === 'contacts') setMobileSidebar(k);
+      }
+    },
+    [navigate]
+  );
 
   return (
     <div
@@ -577,7 +667,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 <button
                   key={c.k}
                   onClick={() => {
-                    setCategory(c.k);
+                    handleSidebarClick(c.k);
                     // 点击分类时自动展开左侧栏
                     if (leftCollapsed) setLeftCollapsed(false);
                   }}
@@ -628,19 +718,34 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-            {category === 'chat' ? (
+            {category === 'recent' ? (
+              <RecentChatsView
+                rooms={rooms}
+                conversations={conversations}
+                activeRoomId={activeRoom?.id ?? null}
+                activeConvId={activeConv?.id ?? null}
+                onSelectRoom={(room) => {
+                  setShowPrivate(false);
+                  setPrivateTarget(null);
+                  setActiveConv(null);
+                  handleJoinRoom(room);
+                }}
+                onSelectConv={(conv) => {
+                  setShowPrivate(false);
+                  setPrivateTarget(null);
+                  setActiveRoom(null);
+                  setActiveConv(conv);
+                }}
+                loading={roomsLoading}
+              />
+            ) : category === 'rooms' ? (
               <RoomList
                 rooms={rooms}
                 activeRoomId={activeRoom?.id ?? null}
                 onSelect={(room) => {
-                  // 选择聊天室时关闭私聊模式
                   setShowPrivate(false);
                   setPrivateTarget(null);
-                  if (room.joined) {
-                    handleSelectRoom(room);
-                  } else {
-                    handleJoinRoom(room);
-                  }
+                  handleJoinRoom(room);
                 }}
                 onCreate={() => setShowCreateModal(true)}
                 loading={roomsLoading}
@@ -648,6 +753,28 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               />
             ) : category === 'contacts' ? (
               <ContactsView onOpenConversation={handleOpenConversation} />
+            ) : category === 'confession' ? (
+              <div className="p-4">
+                <button
+                  onClick={() => navigate('/confessions')}
+                  className="w-full flex items-center justify-center gap-2 py-3"
+                  style={{ background: 'var(--color-primary)', color: '#fff', borderRadius: '3px' }}
+                >
+                  <Heart size={16} />
+                  <span className="text-sm font-medium">进入表白墙</span>
+                </button>
+              </div>
+            ) : category === 'bottle' ? (
+              <div className="p-4">
+                <button
+                  onClick={() => navigate('/bottles')}
+                  className="w-full flex items-center justify-center gap-2 py-3"
+                  style={{ background: 'var(--color-primary)', color: '#fff', borderRadius: '3px' }}
+                >
+                  <SendHorizonal size={16} />
+                  <span className="text-sm font-medium">去扔漂流瓶</span>
+                </button>
+              </div>
             ) : (
               <ExtensionsView />
             )}
@@ -661,6 +788,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               targetUserId={privateTarget}
               onClearTarget={handleClearPrivateTarget}
               onBack={handleClosePrivate}
+              onMessageSent={() => {
+                conversationApi.list().then(setConversations).catch(() => {});
+              }}
+              currentUserId={currentUser.id}
+            />
+          ) : activeConv ? (
+            <PrivateChatView
+              activeConv={activeConv}
+              onBack={() => {
+                setActiveConv(null);
+                setCategory('recent');
+              }}
+              onMessageSent={() => {
+                conversationApi.list().then(setConversations).catch(() => {});
+              }}
               currentUserId={currentUser.id}
             />
           ) : activeRoom ? (
@@ -691,7 +833,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                       {activeRoom.name}
                     </h2>
                     {activeRoom.description && (
-                      <p className="text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--color-text-light)' }}>
                         {activeRoom.description}
                       </p>
                     )}

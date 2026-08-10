@@ -267,8 +267,8 @@ export const confessionApi = {
   ranking: (type: string = 'likes', limit: number = 10) =>
     get<Confession[]>(`/chat/confessions/ranking?type=${type}&limit=${limit}`),
 
-  detail: (id: number) =>
-    get<Confession & { comments: ConfessionComment[] }>(`/chat/confessions/${id}`),
+  detail: (slug: string) =>
+    get<Confession & { comments: ConfessionComment[] }>(`/chat/confessions/${encodeURIComponent(slug)}`),
 
   comments: (id: number, page = 1) =>
     get<PaginatedData<ConfessionComment>>(`/chat/confessions/${id}/comments?page=${page}&per_page=20`),

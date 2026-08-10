@@ -461,7 +461,10 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 onComment={handleComment}
                 isLogged={isLogged}
                 viewMode={viewMode}
-                onClick={(id) => navigate(`/confessions/${id}`)}
+                onClick={(id) => {
+                  const target = confessions.find((x) => x.id === id);
+                  if (target) navigate(`/confessions/${target.slug}`);
+                }}
               />
             </div>
           ))

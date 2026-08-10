@@ -21,7 +21,7 @@ interface DetailConfession extends Confession {
 
 export function ConfessionDetail() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { addToast } = useApp();
   const [confession, setConfession] = useState<DetailConfession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,10 +32,10 @@ export function ConfessionDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const loadDetail = useCallback(async () => {
-    if (!id) return;
+    if (!slug) return;
     setLoading(true);
     try {
-      const res = await confessionApi.detail(Number(id));
+      const res = await confessionApi.detail(slug);
       setConfession(res);
     } catch {
       addToast('表白不存在或已被删除', 'error');
@@ -43,7 +43,7 @@ export function ConfessionDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, addToast]);
+  }, [slug, navigate, addToast]);
 
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');
