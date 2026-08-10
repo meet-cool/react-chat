@@ -67,7 +67,7 @@ export function ConfessionDetail() {
       return;
     }
     if (!confession) return;
-    confessionApi.like(confession.id).then((res) => {
+    confessionApi.like(confession.slug).then((res) => {
       setConfession((prev) =>
         prev ? { ...prev, liked: res.liked, like_count: res.like_count } : null
       );
@@ -81,7 +81,7 @@ export function ConfessionDetail() {
       return;
     }
     if (!confession) return;
-    confessionApi.bookmark(confession.id).then((res) => {
+    confessionApi.bookmark(confession.slug).then((res) => {
       setConfession((prev) =>
         prev ? { ...prev, bookmarked: res.bookmarked } : null
       );
@@ -92,7 +92,7 @@ export function ConfessionDetail() {
     if (!isLogged || !commentText.trim() || !confession) return;
     setCommenting(true);
     try {
-      await confessionApi.addComment(confession.id, commentText);
+      await confessionApi.addComment(confession.slug, commentText);
       setCommentText('');
       loadDetail();
     } catch (err) {
@@ -106,7 +106,7 @@ export function ConfessionDetail() {
     if (!confession) return;
     setShowDeleteConfirm(false);
     try {
-      await confessionApi.delete(confession.id);
+      await confessionApi.delete(confession.slug);
       addToast('已删除', 'success');
       navigate('/confessions');
     } catch (err) {
@@ -125,7 +125,7 @@ export function ConfessionDetail() {
 
   const handleReport = async (reason: string) => {
     if (!confession) return;
-    await confessionApi.report(confession.id, reason);
+    await confessionApi.report(confession.slug, reason);
     addToast('举报已提交，我们会尽快处理', 'success');
     setShowReport(false);
   };

@@ -255,11 +255,11 @@ export const confessionApi = {
   create: (data: { content: string; target_name: string; anonymous: boolean }) =>
     post<{ id: number }>('/chat/confessions', data),
 
-  like: (id: number) =>
-    post<{ liked: boolean; like_count: number }>(`/chat/confessions/${id}/like`),
+  like: (slug: string) =>
+    post<{ liked: boolean; like_count: number }>(`/chat/confessions/${encodeURIComponent(slug)}/like`),
 
-  bookmark: (id: number) =>
-    post<{ bookmarked: boolean }>(`/chat/confessions/${id}/bookmark`),
+  bookmark: (slug: string) =>
+    post<{ bookmarked: boolean }>(`/chat/confessions/${encodeURIComponent(slug)}/bookmark`),
 
   bookmarks: (page = 1) =>
     get<PaginatedData<Confession>>(`/chat/confessions/bookmarks?page=${page}&per_page=20`),
@@ -270,17 +270,17 @@ export const confessionApi = {
   detail: (slug: string) =>
     get<Confession & { comments: ConfessionComment[] }>(`/chat/confessions/${encodeURIComponent(slug)}`),
 
-  comments: (id: number, page = 1) =>
-    get<PaginatedData<ConfessionComment>>(`/chat/confessions/${id}/comments?page=${page}&per_page=20`),
+  comments: (slug: string, page = 1) =>
+    get<PaginatedData<ConfessionComment>>(`/chat/confessions/${encodeURIComponent(slug)}/comments?page=${page}&per_page=20`),
 
-  addComment: (id: number, content: string) =>
-    post<{ create_time: number }>(`/chat/confessions/${id}/comments`, { content }),
+  addComment: (slug: string, content: string) =>
+    post<{ create_time: number }>(`/chat/confessions/${encodeURIComponent(slug)}/comments`, { content }),
 
-  delete: (id: number) =>
-    del<null>(`/chat/confessions/${id}`),
+  delete: (slug: string) =>
+    del<null>(`/chat/confessions/${encodeURIComponent(slug)}`),
 
-  report: (id: number, reason: string) =>
-    post<{ id: number }>(`/chat/confessions/${id}/report`, { reason }),
+  report: (slug: string, reason: string) =>
+    post<{ id: number }>(`/chat/confessions/${encodeURIComponent(slug)}/report`, { reason }),
 };
 
 // ============ 漂流瓶 API ============

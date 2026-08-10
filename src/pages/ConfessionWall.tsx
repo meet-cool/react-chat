@@ -38,7 +38,7 @@ function ConfessionCard({
 }: {
   c: Confession;
   onLike: (id: number) => void;
-  onBookmark: (id: number) => void;
+  onBookmark: (slug: string) => void;
   onComment: (id: number) => void;
   isLogged: boolean;
   viewMode: ViewMode;
@@ -54,7 +54,7 @@ function ConfessionCard({
     if (!commentText.trim() || !isLogged) return;
     setLoading(true);
     try {
-      await confessionApi.addComment(c.id, commentText);
+      await confessionApi.addComment(c.slug, commentText);
       setCommentText('');
       onComment(c.id);
     } catch {} finally {
@@ -71,7 +71,7 @@ function ConfessionCard({
   };
 
   const handleReport = async (reason: string) => {
-    await confessionApi.report(c.id, reason);
+    await confessionApi.report(c.slug, reason);
     addToast('举报已提交，我们会尽快处理', 'success');
     setShowReport(false);
   };
@@ -159,7 +159,7 @@ function ConfessionCard({
           </button>
           {isLogged && (
             <button
-              onClick={() => onBookmark(c.id)}
+              onClick={() => onBookmark(c.slug)}
               className="btn btn-sm flex-1"
               style={c.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
             >
@@ -292,15 +292,15 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     );
   }, [isLogged, addToast, navigate]);
 
-  const handleBookmark = useCallback((id: number) => {
+  const handleBookmark = useCallback((slug: string) => {
     if (!isLogged) {
       addToast('请先登录', 'warning');
       navigate('/login');
       return;
     }
-    confessionApi.bookmark(id).then((res) => {
+    confessionApi.bookmark(slug).then((res) => {
       setConfessions((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, bookmarked: res.bookmarked } : c))
+        prev.map((c) => (c.slug === slug ? { ...c, bookmarked: res.bookmarked } : c))
       );
     });
   }, [isLogged, addToast, navigate]);

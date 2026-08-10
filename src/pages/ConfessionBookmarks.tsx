@@ -31,9 +31,9 @@ export function ConfessionBookmarks() {
     loadBookmarks();
   }, [loadBookmarks]);
 
-  const handleRemove = useCallback((id: number) => {
-    confessionApi.bookmark(id).then(() => {
-      setBookmarks((prev) => prev.filter((c) => c.id !== id));
+  const handleRemove = useCallback((slug: string) => {
+    confessionApi.bookmark(slug).then(() => {
+      setBookmarks((prev) => prev.filter((c) => c.slug !== slug));
     });
   }, []);
 
@@ -106,7 +106,7 @@ export function ConfessionBookmarks() {
                     <MessageCircle size={12} /> {c.comment_count}
                   </span>
                   <button
-                    onClick={() => handleRemove(c.id)}
+                    onClick={() => handleRemove(c.slug)}
                     className="ml-auto text-xs"
                     style={{ color: 'var(--color-text-muted)' }}
                   >

@@ -39,15 +39,15 @@ export function ConfessionRanking() {
     loadRanking('likes');
   }, [loadRanking]);
 
-  const handleBookmark = useCallback((id: number) => {
+  const handleBookmark = useCallback((slug: string) => {
     if (!isLogged) {
       addToast('请先登录', 'warning');
       navigate('/login');
       return;
     }
-    confessionApi.bookmark(id).then(() => {
+    confessionApi.bookmark(slug).then(() => {
       setRankings((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, bookmarked: !c.bookmarked } : c))
+        prev.map((c) => (c.slug === slug ? { ...c, bookmarked: !c.bookmarked } : c))
       );
     });
   }, [isLogged, addToast, navigate]);
@@ -201,7 +201,7 @@ export function ConfessionRanking() {
                     className="flex-shrink-0 p-1"
                     style={{ color: c.bookmarked ? 'var(--color-warning)' : 'var(--color-text-muted)' }}
                     title="收藏"
-                    onClick={() => handleBookmark(c.id)}
+                    onClick={() => handleBookmark(c.slug)}
                   >
                     <Star size={14} fill={c.bookmarked ? 'currentColor' : 'none'} />
                   </button>
