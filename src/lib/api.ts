@@ -212,6 +212,18 @@ export const contactApi = {
     get<ContactUser[]>(`/chat/users/search?keyword=${encodeURIComponent(keyword)}`),
 };
 
+// ============ 用户备注 API ============
+export const aliasApi = {
+  set: (targetUserId: number, alias: string) =>
+    post<{ alias: string }>('/chat/user/alias', { target_user_id: targetUserId, alias }),
+
+  list: () =>
+    get<{ target_user_id: number; alias: string }[]>('/chat/user/aliases'),
+
+  delete: (targetUserId: number) =>
+    del<null>(`/chat/user/alias/${targetUserId}`),
+};
+
 // ============ 私聊 API ============
 
 export const conversationApi = {

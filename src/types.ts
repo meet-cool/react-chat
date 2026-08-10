@@ -144,10 +144,10 @@ export interface ContactUser {
   mutual?: boolean;
   last_message?: string;
   last_message_time?: number;
-  unread?: number;
+  alias?: string;
 }
 
-// 私聊会话
+// 私信会话
 export interface Conversation {
   id: number;
   other_id: number;

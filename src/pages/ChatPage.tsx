@@ -750,7 +750,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 }}
                 loading={roomsLoading}
               />
-            ) : category === 'rooms' ? (
+            ) : showPrivate ? null : category === 'rooms' ? (
               <RoomList
                 rooms={rooms}
                 activeRoomId={activeRoom?.id ?? null}
@@ -787,7 +787,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   <span className="text-sm font-medium">去扔漂流瓶</span>
                 </button>
               </div>
-            ) : category === 'points' ? (
+            ) : showPrivate ? null : category === 'points' ? (
               <div className="p-4">
                 <button
                   onClick={() => navigate('/points')}

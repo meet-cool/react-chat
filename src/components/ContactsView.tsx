@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, UserPlus, UserMinus, MessageSquare, RefreshCw, X } from 'lucide-react';
+import { Search, UserPlus, UserMinus, MessageSquare, RefreshCw, X, Pencil } from 'lucide-react';
 import type { ContactUser } from '../types';
-import { contactApi, followApi } from '../lib/api';
+import { contactApi, followApi, aliasApi } from '../lib/api';
 import { Avatar } from './Avatar';
 import { useApp } from '../lib/AppContext';
 
@@ -19,6 +19,11 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<ContactUser[] | null>(null);
   const [searching, setSearching] = useState(false);
+  // 备注 map: targetUserId -> alias
+  const [aliasMap, setAliasMap] = useState<Record<number, string>>({});
+  // 正在编辑备注的用户
+  const [editingAliasId, setEditingAliasId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
 
   const loadList = useCallback(
     async (t: ContactTab) => {
@@ -37,6 +42,11 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
 
   useEffect(() => {
     loadList(tab);
+    aliasApi.list().then((rows) => {
+      const map: Record<number, string> = {};
+      for (const r of rows) map[r.target_user_id] = r.alias;
+      setAliasMap(map);
+    }).catch(() => {});
   }, [tab, loadList]);
 
   const handleSearch = async () => {
@@ -91,69 +101,151 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
     onOpenConversation?.(u.id);
   };
 
+  // 保存备注
+  const handleSaveAlias = async (u: ContactUser) => {
+    const alias = editingText.trim();
+    try {
+      await aliasApi.set(u.id, alias);
+      setAliasMap((prev) => ({ ...prev, [u.id]: alias }));
+      setEditingAliasId(null);
+      setEditingText('');
+      setList((prev) => prev.map((item) => (item.id === u.id ? { ...item, alias } : item)));
+      if (searchResults) {
+        setSearchResults((prev) =>
+          prev?.map((item) => (item.id === u.id ? { ...item, alias } : item)) ?? null
+        );
+      }
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '保存备注失败', 'error');
+    }
+  };
+
+  // 清除备注
+  const handleClearAlias = async (u: ContactUser) => {
+    try {
+      await aliasApi.delete(u.id);
+      setAliasMap((prev) => {
+        const next = { ...prev };
+        delete next[u.id];
+        return next;
+      });
+      setList((prev) => prev.map((item) => (item.id === u.id ? { ...item, alias: '' } : item)));
+      if (searchResults) {
+        setSearchResults((prev) =>
+          prev?.map((item) => (item.id === u.id ? { ...item, alias: '' } : item)) ?? null
+        );
+      }
+    } catch (err) {
+      addToast('清除备注失败', 'error');
+    }
+  };
+
+  const displayName = (u: ContactUser) => aliasMap[u.id] || u.username;
+
   // 渲染列表项
-  const renderItem = (u: ContactUser) => (
-    <div
-      key={u.id}
-      className="flex items-center gap-3 px-3 py-2.5 transition-colors"
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-    >
-      <Avatar username={u.username} avatar={u.avatar} size={36} online={u.online} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>
-            {u.username}
-          </span>
-          {u.mutual && (
-            <span
-              className="text-[10px] px-1.5 py-0.5 flex-shrink-0 whitespace-nowrap"
-              style={{
-                background: 'var(--color-success-bg)',
-                color: 'var(--color-success)',
-                border: '1px solid var(--color-success-light)',
-                lineHeight: '1.4',
-              }}
-            >
-              互关
-            </span>
-          )}
+  const renderItem = (u: ContactUser) => {
+    const isEditing = editingAliasId === u.id;
+    const display = displayName(u);
+    return (
+      <div
+        key={u.id}
+        className="flex items-center gap-3 px-3 py-2.5 transition-colors"
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+        onMouseLeave={(e) => {
+          if (!isEditing) e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <Avatar username={u.username} avatar={u.avatar} size={36} online={u.online} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isEditing ? (
+              <input
+                autoFocus
+                className="text-sm font-medium outline-none flex-1 min-w-0"
+                style={{ color: 'var(--color-text)', background: 'var(--color-bg)', borderRadius: 3, padding: '1px 4px' }}
+                value={editingText}
+                onChange={(e) => setEditingText(e.target.value)}
+                onBlur={() => handleSaveAlias(u)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveAlias(u);
+                  if (e.key === 'Escape') { setEditingAliasId(null); setEditingText(''); }
+                }}
+              />
+            ) : (
+              <span
+                className="text-sm font-medium truncate cursor-pointer hover:opacity-70"
+                style={{ color: 'var(--color-text)' }}
+                onClick={() => { setEditingAliasId(u.id); setEditingText(display); }}
+                title="点击编辑备注"
+              >
+                {display}
+              </span>
+            )}
+            {u.mutual && (
+              <span
+                className="text-[10px] px-1.5 py-0.5 flex-shrink-0 whitespace-nowrap"
+                style={{
+                  background: 'var(--color-success-bg)',
+                  color: 'var(--color-success)',
+                  border: '1px solid var(--color-success-light)',
+                  lineHeight: '1.4',
+                }}
+              >
+                互关
+              </span>
+            )}
+          </div>
+          <p className="text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
+            {u.bio || u.last_active_fmt || '暂无简介'}
+          </p>
         </div>
-        <p className="text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
-          {u.bio || u.last_active_fmt || '暂无简介'}
-        </p>
-      </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {u.mutual && (
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {u.mutual && (
+            <button
+              onClick={() => handleMessage(u)}
+              className="btn btn-sm p-0 justify-center flex-shrink-0"
+              style={{ width: 34, height: 30, minWidth: 34 }}
+              title="发起私聊"
+            >
+              <MessageSquare size={13} />
+            </button>
+          )}
           <button
-            onClick={() => handleMessage(u)}
+            onClick={() => {
+              if (isEditing) {
+                handleSaveAlias(u);
+              } else {
+                setEditingAliasId(u.id);
+                setEditingText(display);
+              }
+            }}
             className="btn btn-sm p-0 justify-center flex-shrink-0"
-            style={{ width: 34, height: 30, minWidth: 34 }}
-            title="发起私聊"
+            style={{ width: 34, height: 30, minWidth: 34, color: 'var(--color-text-muted)' }}
+            title={isEditing ? '保存备注' : '编辑备注'}
           >
-            <MessageSquare size={13} />
+            <Pencil size={13} />
           </button>
-        )}
-        <button
-          onClick={() => handleToggleFollow(u)}
-          className="btn btn-sm p-0 justify-center flex-shrink-0"
-          style={{
-            width: 34, height: 30, minWidth: 34,
-            ...(u.i_follow
-              ? { color: 'var(--color-text-light)' }
-              : {
-                  background: 'var(--color-primary)',
-                  color: '#FFFFFF',
-                  borderColor: 'var(--color-primary)',
-                }),
-          }}
-          title={u.i_follow ? '取消关注' : '关注'}
-        >
-          {u.i_follow ? <UserMinus size={13} /> : <UserPlus size={13} />}
-        </button>
+          <button
+            onClick={() => handleToggleFollow(u)}
+            className="btn btn-sm p-0 justify-center flex-shrink-0"
+            style={{
+              width: 34, height: 30, minWidth: 34,
+              ...(u.i_follow
+                ? { color: 'var(--color-text-light)' }
+                : {
+                    background: 'var(--color-primary)',
+                    color: '#FFFFFF',
+                    borderColor: 'var(--color-primary)',
+                  }),
+            }}
+            title={u.i_follow ? '取消关注' : '关注'}
+          >
+            {u.i_follow ? <UserMinus size={13} /> : <UserPlus size={13} />}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const displayList = searchResults ?? list;
 
