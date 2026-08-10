@@ -542,12 +542,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
   // 定期刷新房间列表、私聊会话列表与成员在线状态
   useEffect(() => {
-    const refresh = setInterval(() => {
+    refreshTimerRef.current = setInterval(() => {
       loadRooms();
       conversationApi.list().then(setConversations).catch(() => {});
       if (activeRoom) loadMembers(activeRoom.id);
     }, 15000);
-    return () => clearInterval(refresh);
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
   }, [activeRoom, loadRooms, loadMembers]);
 
   const sidebarCategories: {
