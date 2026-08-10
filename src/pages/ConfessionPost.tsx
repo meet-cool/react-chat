@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, SendHorizonal, ArrowLeft, UserPlus } from 'lucide-react';
+import { Heart, SendHorizonal, ArrowLeft, UserPlus } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession } from '../types';
-import { Avatar } from '../components/Avatar';
 
 export function ConfessionPost() {
   const navigate = useNavigate();
@@ -18,17 +17,9 @@ export function ConfessionPost() {
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');
     setIsLogged(!!token);
-    if (!token) {
-      addToast('请先登录后再表白', 'warning');
-      navigate('/login');
-    }
-  }, [addToast, navigate]);
+  }, []);
 
   const handleSubmit = async () => {
-    if (!isLogged) {
-      navigate('/login');
-      return;
-    }
     if (!content.trim() || content.trim().length < 2) {
       addToast('内容至少 2 个字', 'warning');
       return;
@@ -40,13 +31,17 @@ export function ConfessionPost() {
         target_name: target,
         anonymous,
       });
-      addToast('表白成功！', 'success');
-      // 获取最新表白以跳转详情页
-      const list = await confessionApi.list(1);
-      const latest = list.items.find((c) => c.id === res.id);
-      if (latest) {
-        navigate(`/confessions/${latest.slug}`);
+      if (isLogged) {
+        addToast('表白成功！', 'success');
+        const list = await confessionApi.list(1);
+        const latest = list.items.find((c) => c.id === res.id);
+        if (latest) {
+          navigate(`/confessions/${latest.slug}`);
+        } else {
+          navigate('/confessions');
+        }
       } else {
+        addToast('表白已提交，审核通过后将展示', 'info');
         navigate('/confessions');
       }
     } catch (err) {
@@ -69,7 +64,27 @@ export function ConfessionPost() {
         <h1 className="text-base font-bold" style={{ color: 'var(--color-text)' }}>
           写表白
         </h1>
+        {!isLogged && (
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}
+          >
+            未登录 · 审核制
+          </span>
+        )}
       </div>
+
+      {!isLogged && (
+        <div
+          className="px-4 py-2 text-xs"
+          style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}
+        >
+          未登录用户每日限 10 条，提交后需审核通过才展示。
+          <button onClick={() => navigate('/login')} className="ml-2 underline font-medium">
+            登录享更多权益
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 p-4 flex flex-col gap-4">
         {/* 内容 */}

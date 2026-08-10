@@ -11,6 +11,7 @@ import {
   ArrowRight,
   TrendingUp,
   Globe,
+  Heart,
 } from 'lucide-react';
 import { getToken } from '../lib/api';
 import type { UserInfo } from '../types';
@@ -367,6 +368,11 @@ export function PortalPage() {
               icon={TrendingUp}
               title="数据同步"
               desc="消息实时同步，断线重连自动恢复，不错过任何重要信息。"
+            />
+            <FeatureCard
+              icon={Heart}
+              title="表白墙"
+              desc="匿名或实名表白，公开浏览，支持点赞评论，让心意被看见。"
             />
           </div>
         </div>

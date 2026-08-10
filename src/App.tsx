@@ -89,7 +89,7 @@ export default function App() {
           />
           <Route
             path="/confessions/new"
-            element={user ? <ConfessionPost /> : <Navigate to="/login" replace />}
+            element={<ConfessionPost />}
           />
           <Route
             path="/confessions/ranking"
