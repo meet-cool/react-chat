@@ -278,6 +278,9 @@ export const confessionApi = {
 
   delete: (id: number) =>
     del<null>(`/chat/confessions/${id}`),
+
+  report: (id: number, reason: string) =>
+    post<{ id: number }>(`/chat/confessions/${id}/report`, { reason }),
 };
 
 // ============ 漂流瓶 API ============

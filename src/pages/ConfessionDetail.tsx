@@ -9,11 +9,13 @@ import {
   SendHorizonal,
   Trash2,
   UserPlus,
+  MoreVertical,
 } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession, ConfessionComment } from '../types';
 import { Avatar } from '../components/Avatar';
+import { ReportDialog } from '../components/ReportDialog';
 
 interface DetailConfession extends Confession {
   comments: ConfessionComment[];
@@ -30,6 +32,7 @@ export function ConfessionDetail() {
   const [commentText, setCommentText] = useState('');
   const [commenting, setCommenting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const loadDetail = useCallback(async () => {
     if (!slug) return;
@@ -113,12 +116,19 @@ export function ConfessionDetail() {
 
   const handleShare = useCallback(() => {
     if (!confession) return;
-    const url = `${window.location.origin}/confessions/${confession.id}`;
+    const url = `${window.location.origin}/confessions/${confession.slug}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
       addToast('链接已复制', 'success');
     }
   }, [confession, addToast]);
+
+  const handleReport = async (reason: string) => {
+    if (!confession) return;
+    await confessionApi.report(confession.id, reason);
+    addToast('举报已提交，我们会尽快处理', 'success');
+    setShowReport(false);
+  };
 
   const isOwner = currentUser?.id === confession?.user_id;
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
@@ -213,30 +223,43 @@ export function ConfessionDetail() {
             className="flex items-center gap-2 pt-3"
             style={{ borderTop: '1px solid var(--color-divider)' }}
           >
-            <button
-              onClick={handleLike}
-              className={`btn btn-sm flex-1 ${confession.liked ? 'btn-error' : ''}`}
-              style={
-                confession.liked
-                  ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
-                  : { color: 'var(--color-text-muted)' }
-              }
-            >
-              <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
-              喜欢 {confession.like_count}
-            </button>
-            <button
-              onClick={handleBookmark}
-              className="btn btn-sm flex-1"
-              style={confession.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
-            >
-              <Star size={14} fill={confession.bookmarked ? 'currentColor' : 'none'} />
-              收藏
-            </button>
-            <button onClick={handleShare} className="btn btn-sm" style={{ color: 'var(--color-text-muted)' }}>
-              <Share2 size={14} />
-              分享
-            </button>
+            {/* 左侧：互动按钮 */}
+            <div className="flex items-center gap-1 flex-1">
+              <button
+                onClick={handleLike}
+                className={`btn btn-sm flex-1 ${confession.liked ? 'btn-error' : ''}`}
+                style={
+                  confession.liked
+                    ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
+                    : { color: 'var(--color-text-muted)' }
+                }
+              >
+                <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
+                喜欢 {confession.like_count}
+              </button>
+              <button
+                onClick={handleBookmark}
+                className="btn btn-sm flex-1"
+                style={confession.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
+              >
+                <Star size={14} fill={confession.bookmarked ? 'currentColor' : 'none'} />
+                收藏
+              </button>
+            </div>
+            {/* 右侧：分享 + 三点举报 */}
+            <div className="flex items-center gap-1">
+              <button onClick={handleShare} className="btn btn-sm" style={{ color: 'var(--color-text-muted)' }}>
+                <Share2 size={14} /> 分享
+              </button>
+              <button
+                onClick={() => setShowReport(true)}
+                className="btn btn-sm"
+                style={{ color: 'var(--color-text-muted)' }}
+                title="举报"
+              >
+                <MoreVertical size={14} />
+              </button>
+            </div>
             {canDelete && (
               <>
                 {!showDeleteConfirm ? (
@@ -364,6 +387,13 @@ export function ConfessionDetail() {
           )}
         </div>
       </div>
+
+      {/* 举报弹窗 */}
+      <ReportDialog
+        open={showReport}
+        onClose={() => setShowReport(false)}
+        onConfirm={handleReport}
+      />
     </div>
   );
 }

@@ -11,11 +11,13 @@ import {
   List,
   Trophy,
   Bookmark,
+  MoreVertical,
 } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession } from '../types';
 import { Avatar } from '../components/Avatar';
+import { ReportDialog } from '../components/ReportDialog';
 
 type ViewMode = 'card' | 'grid';
 type SortType = 'latest' | 'likes' | 'comments';
@@ -32,6 +34,7 @@ function ConfessionCard({
   isLogged,
   viewMode,
   onClick,
+  addToast,
 }: {
   c: Confession;
   onLike: (id: number) => void;
@@ -40,10 +43,12 @@ function ConfessionCard({
   isLogged: boolean;
   viewMode: ViewMode;
   onClick: (id: number) => void;
+  addToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const handleComment = async () => {
     if (!commentText.trim() || !isLogged) return;
@@ -58,11 +63,17 @@ function ConfessionCard({
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/confessions/${c.id}`;
+    const url = `${window.location.origin}/confessions/${c.slug}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
       window.dispatchEvent(new CustomEvent('arcle-toast', { detail: { message: '链接已复制', type: 'success' } }));
     }
+  };
+
+  const handleReport = async (reason: string) => {
+    await confessionApi.report(c.id, reason);
+    addToast('举报已提交，我们会尽快处理', 'success');
+    setShowReport(false);
   };
 
   return (
@@ -76,7 +87,7 @@ function ConfessionCard({
       onClick={() => onClick(c.id)}
     >
       {/* 头部 */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
           {c.anonymous ? (
             <div
@@ -122,45 +133,67 @@ function ConfessionCard({
       <div
         className="flex items-center gap-1 px-4 pb-3"
         style={{ borderTop: '1px solid var(--color-divider)', marginTop: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={() => onLike(c.id)}
-          className={`btn btn-sm flex-1 ${c.liked ? 'btn-error' : ''}`}
-          style={
-            c.liked
-              ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
-              : { color: 'var(--color-text-muted)' }
-          }
-        >
-          <Heart size={14} fill={c.liked ? 'currentColor' : 'none'} />
-          {c.like_count}
-        </button>
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="btn btn-sm flex-1"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <MessageCircle size={14} />
-          {c.comment_count}
-        </button>
-        {isLogged && (
+        {/* 左侧：互动按钮 */}
+        <div className="flex items-center gap-1 flex-1">
           <button
-            onClick={() => onBookmark(c.id)}
-            className="btn btn-sm flex-1"
-            style={c.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
+            onClick={() => onLike(c.id)}
+            className={`btn btn-sm flex-1 ${c.liked ? 'btn-error' : ''}`}
+            style={
+              c.liked
+                ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
+                : { color: 'var(--color-text-muted)' }
+            }
           >
-            <Star size={14} fill={c.bookmarked ? 'currentColor' : 'none'} />
+            <Heart size={14} fill={c.liked ? 'currentColor' : 'none'} />
+            {c.like_count}
           </button>
-        )}
-        <button
-          onClick={handleShare}
-          className="btn btn-sm"
-          style={{ color: 'var(--color-text-muted)' }}
-          title="分享"
-        >
-          <Share2 size={14} />
-        </button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="btn btn-sm flex-1"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <MessageCircle size={14} />
+            {c.comment_count}
+          </button>
+          {isLogged && (
+            <button
+              onClick={() => onBookmark(c.id)}
+              className="btn btn-sm flex-1"
+              style={c.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
+            >
+              <Star size={14} fill={c.bookmarked ? 'currentColor' : 'none'} />
+            </button>
+          )}
+        </div>
+        {/* 右侧：分享 + 更多 */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleShare}
+            className="btn btn-sm"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="分享"
+          >
+            <Share2 size={14} />
+          </button>
+          <button
+            onClick={() => setShowReport(true)}
+            className="btn btn-sm"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="举报"
+          >
+            <MoreVertical size={14} />
+          </button>
+        </div>
       </div>
+
+      {/* 举报弹窗 */}
+      <ReportDialog
+        open={showReport}
+        onClose={() => setShowReport(false)}
+        onConfirm={handleReport}
+      />
 
       {/* 评论区 */}
       {showComments && (
@@ -465,6 +498,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                   const target = confessions.find((x) => x.id === id);
                   if (target) navigate(`/confessions/${target.slug}`);
                 }}
+                addToast={addToast}
               />
             </div>
           ))
