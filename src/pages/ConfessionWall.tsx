@@ -12,6 +12,7 @@ import {
   Trophy,
   Bookmark,
   MoreVertical,
+  ArrowLeft,
 } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
@@ -326,11 +327,18 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-              <Heart size={18} style={{ color: 'var(--color-error)' }} />
-              表白墙
-            </h1>
+          <div className="flex items-center gap-3">
+            {!isMainPage && (
+              <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36 }}>
+                <ArrowLeft size={14} />
+              </button>
+            )}
+            <div>
+              <h1 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+                <Heart size={18} style={{ color: 'var(--color-error)' }} />
+                表白墙
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
