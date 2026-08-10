@@ -38,7 +38,7 @@ function ConfessionCard({
   addToast,
 }: {
   c: Confession;
-  onLike: (id: number) => void;
+  onLike: (slug: string) => void;
   onBookmark: (slug: string) => void;
   onComment: (id: number) => void;
   isLogged: boolean;
@@ -139,7 +139,7 @@ function ConfessionCard({
         {/* 左侧：互动按钮 */}
         <div className="flex items-center gap-1 flex-1">
           <button
-            onClick={() => onLike(c.id)}
+            onClick={() => onLike(c.slug)}
             className={`btn btn-sm flex-1 ${c.liked ? 'btn-error' : ''}`}
             style={
               c.liked
@@ -280,17 +280,17 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     loadConfessions(1);
   }, []);
 
-  const handleLike = useCallback((id: number) => {
+  const handleLike = useCallback((slug: string) => {
     if (!isLogged) {
       addToast('请先登录', 'warning');
       navigate('/login');
       return;
     }
-    setConfessions((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, liked: !c.liked, like_count: c.liked ? c.like_count - 1 : c.like_count + 1 } : c
-      )
-    );
+    confessionApi.like(slug).then((res) => {
+      setConfessions((prev) =>
+        prev.map((c) => (c.slug === slug ? { ...c, liked: res.liked, like_count: res.like_count } : c))
+      );
+    });
   }, [isLogged, addToast, navigate]);
 
   const handleBookmark = useCallback((slug: string) => {
