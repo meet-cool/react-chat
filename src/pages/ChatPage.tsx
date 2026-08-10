@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Heart,
   SendHorizonal,
+  Star,
 } from 'lucide-react';
 import type { ChatMessage, Room, RoomMember, UserInfo, Conversation } from '../types';
 import { clearToken, messageApi, roomApi, conversationApi } from '../lib/api';
@@ -48,7 +49,7 @@ const HEARTBEAT_INTERVAL = 60000; // 心跳间隔 60 秒
 const REFRESH_INTERVAL = 30000; // 房间列表刷新间隔 30 秒
 const PAGE_SIZE = 50;
 
-type SidebarCategory = 'recent' | 'rooms' | 'contacts' | 'confession' | 'bottle' | 'extensions';
+type SidebarCategory = 'recent' | 'rooms' | 'contacts' | 'confession' | 'bottle' | 'points' | 'extensions';
 
 export function ChatPage({ user, onLogout }: ChatPageProps) {
   const { addToast } = useApp();
@@ -565,6 +566,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     { k: 'contacts', label: '通讯录', icon: BookUser },
     { k: 'confession', label: '表白墙', icon: Heart },
     { k: 'bottle', label: '漂流瓶', icon: SendHorizonal },
+    { k: 'points', label: '积分中心', icon: Star },
     { k: 'extensions', label: '插件', icon: Sparkles },
   ];
 
@@ -574,6 +576,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         navigate('/confessions');
       } else if (k === 'bottle') {
         navigate('/bottles');
+      } else if (k === 'points') {
+        navigate('/points');
       } else {
         setCategory(k);
         if (k === 'rooms' || k === 'contacts') setMobileSidebar(k);
@@ -778,6 +782,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 >
                   <SendHorizonal size={16} />
                   <span className="text-sm font-medium">去扔漂流瓶</span>
+                </button>
+              </div>
+            ) : category === 'points' ? (
+              <div className="p-4">
+                <button
+                  onClick={() => navigate('/points')}
+                  className="w-full flex items-center justify-center gap-2 py-3"
+                  style={{ background: 'var(--color-warning)', color: '#fff', borderRadius: '3px' }}
+                >
+                  <Star size={16} />
+                  <span className="text-sm font-medium">积分中心</span>
                 </button>
               </div>
             ) : (

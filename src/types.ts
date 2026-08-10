@@ -26,6 +26,12 @@ export interface UserInfo {
   status: number;
   role: string;
   create_time: number;
+  points: number;
+  exp: number;
+  level: number;
+  exp_to_next: number;
+  sign_in_streak: number;
+  last_sign_in_date: string;
 }
 
 // 登录/注册响应

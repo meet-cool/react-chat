@@ -19,6 +19,7 @@ import { ConfessionRanking } from './pages/ConfessionRanking';
 import { ConfessionBookmarks } from './pages/ConfessionBookmarks';
 import { ConfessionDetail } from './pages/ConfessionDetail';
 import { BottlePage } from './pages/BottlePage';
+import { PointsPage } from './pages/PointsPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -108,6 +109,12 @@ export default function App() {
           <Route
             path="/bottles"
             element={<BottlePage />}
+          />
+
+          {/* 积分中心 - 需登录 */}
+          <Route
+            path="/points"
+            element={user ? <PointsPage /> : <Navigate to="/login" replace />}
           />
 
           {/* 管理后台登录（无需鉴权） */}

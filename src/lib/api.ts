@@ -283,6 +283,45 @@ export const confessionApi = {
     post<{ id: number }>(`/chat/confessions/${encodeURIComponent(slug)}/report`, { reason }),
 };
 
+// ============ 积分 / 签到 API ============
+export const pointsApi = {
+  getPoints: () =>
+    get<{
+      points: number;
+      exp: number;
+      level: number;
+      exp_to_next: number;
+      sign_in_streak: number;
+      last_sign_in_date: string;
+      signed_today: boolean;
+      today_max_points: number;
+    }>('/chat/user/points'),
+
+  signin: () =>
+    post<{
+      points_earned: number;
+      exp_earned: number;
+      streak: number;
+      new_level: number;
+      signed_today: boolean;
+    }>('/chat/user/signin'),
+
+  pointsHistory: (page = 1) =>
+    get<PaginatedData<{
+      id: number;
+      change_points: number;
+      change_exp: number;
+      type: string;
+      ref_id: number;
+      remark: string;
+      create_time: number;
+      create_time_fmt: string;
+    }>>(`/chat/user/points/history?page=${page}&per_page=20`),
+
+  signinHistory: () =>
+    get<{ sign_date: string; points_earned: number }[]>('/chat/user/signin/history'),
+};
+
 // ============ 漂流瓶 API ============
 
 export const bottleApi = {
