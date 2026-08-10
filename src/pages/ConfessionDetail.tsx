@@ -136,7 +136,7 @@ export function ConfessionDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full" style={{ background: 'var(--color-bg-page)' }}>
+      <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--color-bg-page)' }}>
         <div className="flex flex-col items-center gap-3">
           <div
             className="w-8 h-8 border-2 animate-spin"
@@ -151,7 +151,7 @@ export function ConfessionDetail() {
   if (!confession) return null;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
+    <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg-page)' }}>
       {/* 头部 */}
       <div
         className="px-4 py-3 border-b flex items-center gap-3"
