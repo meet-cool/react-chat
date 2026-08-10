@@ -100,7 +100,7 @@ export default function App() {
             element={user ? <ConfessionBookmarks /> : <Navigate to="/login" replace />}
           />
           <Route
-            path="/confessions/:id"
+            path="/confessions/:slug"
             element={<ConfessionDetail />}
           />
 
