@@ -220,11 +220,12 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
   // 加载成员列表（带去重，防止定时刷新造成闪烁）
   const loadMembers = useCallback(async (roomId: number) => {
-    // 只在数据可能变化时才显示骨架屏：手动切换房间时显示，定时刷新时不显示
-    const wasManual = Date.now() - lastManualActionRef.current > 5000;
-    setMembersLoading(wasManual);
+    // 仅在首次加载或手动切换房间时显示骨架屏，定时刷新静默更新
+    const isRecentManual = Date.now() - lastManualActionRef.current <= 5000;
+    setMembersLoading((prev) => prev || !membersLoadedRef.current || isRecentManual);
     try {
       const list = await roomApi.members(roomId);
+      membersLoadedRef.current = true;
       setMembers((prev) => {
         const prevById = new Map(prev.map((m) => [m.id, m]));
         const hasChanged =
