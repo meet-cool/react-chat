@@ -249,6 +249,17 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [sort, setSort] = useState<SortType>('latest');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [isLogged, setIsLogged] = useState(false);
+  const [bgImage, setBgImage] = useState('');
+
+  useEffect(() => {
+    const updateBg = () => {
+      const w = window.innerWidth;
+      setBgImage(w < 768 ? 'mbbqbg.jpg' : 'bbqbg.jpg');
+    };
+    updateBg();
+    window.addEventListener('resize', updateBg);
+    return () => window.removeEventListener('resize', updateBg);
+  }, []);
 
   const loadConfessions = useCallback(
     async (p = 1, searchVal?: string, sortVal?: SortType) => {
@@ -316,7 +327,17 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const hasNextPage = page * 20 < total;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
+    <div
+      className="flex flex-col h-full"
+      style={
+        bgImage
+          ? {
+              background: `url(/${bgImage}) center center / cover no-repeat`,
+              backgroundAttachment: 'fixed',
+            }
+          : { background: 'var(--color-bg-page)' }
+      }
+    >
       {/* 头部 */}
       <div
         className="px-4 py-3 border-b"
