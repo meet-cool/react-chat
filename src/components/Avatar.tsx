@@ -27,17 +27,17 @@ export function Avatar({ username, avatar, size = 40, online }: AvatarProps) {
     width: size,
     height: size,
     minWidth: size,
-    background: avatar ? `url("${avatar}")` : color,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
+    minHeight: size,
+    background: avatar ? `url("${avatar}") center center / cover no-repeat` : color,
     color: '#FFFFFF',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 600,
-    fontSize: size * 0.4,
-    borderRadius: '3px',
+    fontSize: Math.round(size * 0.4),
+    borderRadius: 3,
     position: 'relative',
+    overflow: 'hidden',
   };
 
   return (

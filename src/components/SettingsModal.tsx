@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { userApi } from '../lib/api';
 import { Avatar } from './Avatar';
@@ -35,15 +35,24 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     const m = /nk=(\d+)/.exec(user.avatar || '');
     return m ? m[1] : '';
   });
+  const [gender, setGender] = useState(user.gender || '');
+  const [city, setCity] = useState(user.city || '');
+  const [motto, setMotto] = useState(user.motto || '');
+  const [birthday, setBirthday] = useState(user.birthday || '');
+  const [age, setAge] = useState(user.age || 0);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // 当 user prop 变化时（如保存后父组件更新），同步本地状态
   useEffect(() => {
     setBio(user.bio || '');
     setAvatar(user.avatar || '');
     const m = /nk=(\d+)/.exec(user.avatar || '');
     setQq(m ? m[1] : '');
-  }, [user.avatar, user.bio]);
+    setGender(user.gender || '');
+    setCity(user.city || '');
+    setMotto(user.motto || '');
+    setBirthday(user.birthday || '');
+    setAge(user.age || 0);
+  }, [user.avatar, user.bio, user.gender, user.city, user.motto, user.birthday, user.age]);
 
   // 密码表单
   const [oldPwd, setOldPwd] = useState('');
@@ -57,7 +66,16 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     e.preventDefault();
     setSavingProfile(true);
     try {
-      const updated = await userApi.updateProfile({ bio: bio.trim(), avatar: avatar.trim() });
+      const updated = await userApi.updateProfile({
+        bio: bio.trim(),
+        avatar: avatar.trim(),
+        qq: qq || undefined,
+        gender,
+        city: city.trim(),
+        motto: motto.trim(),
+        birthday: birthday || undefined,
+        age,
+      });
       onUserUpdate(updated);
       addToast('资料已更新', 'success');
     } catch (err) {
@@ -97,6 +115,16 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     { key: 'theme', label: '主题外观', icon: Palette },
   ];
 
+  // 输入框样式
+  const inputCls = 'w-full px-3 py-2 text-sm rounded outline-none transition-colors';
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--color-bg-page)',
+    border: '1px solid var(--color-border)',
+    color: 'var(--color-text)',
+  };
+  const labelStyle: React.CSSProperties = { color: 'var(--color-text-secondary)' };
+  const fieldStyle: React.CSSProperties = { marginBottom: 12 };
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -104,13 +132,17 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl flex flex-col shadow-[var(--shadow-lg)] max-h-[90vh]"
-        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+        className="w-full max-w-xl flex flex-col shadow-[var(--shadow-lg)]"
+        style={{
+          background: 'var(--color-card)',
+          border: '1px solid var(--color-border)',
+          maxHeight: '85vh',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
         <div
-          className="flex items-center justify-between px-6 py-4 border-b"
+          className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
           style={{ borderColor: 'var(--color-divider)' }}
         >
           <div className="flex items-center gap-2">
@@ -124,10 +156,10 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* 左侧标签栏 */}
           <div
-            className="w-40 flex-shrink-0 border-r p-2"
+            className="w-36 flex-shrink-0 border-r p-2 flex flex-col gap-1"
             style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
           >
             {tabs.map((t) => {
@@ -137,7 +169,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors mb-1"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors rounded"
                   style={
                     isActive
                       ? { background: 'var(--color-card)', color: 'var(--color-primary)', borderLeft: '3px solid var(--color-primary)' }
@@ -151,12 +183,13 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
             })}
           </div>
 
-          {/* 右侧内容区 */}
-          <div className="flex-1 overflow-y-auto p-6">
+          {/* 右侧内容区 — 固定高度滚动 */}
+          <div className="flex-1 overflow-y-auto p-6 min-w-0">
             {/* 个人资料 */}
             {tab === 'profile' && (
-              <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
-                <div className="flex items-center gap-4 pb-4 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-0">
+                {/* 头像区 */}
+                <div className="flex items-center gap-4 pb-4 mb-4 border-b" style={{ borderColor: 'var(--color-divider)' }}>
                   <Avatar username={user.username} avatar={avatar} size={64} />
                   <div>
                     <p className="font-semibold text-base" style={{ color: 'var(--color-text)' }}>
@@ -168,11 +201,9 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                   </div>
                 </div>
 
-                <div>
-                  <label
-                    className="block text-sm mb-1.5"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
+                {/* QQ 头像 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>
                     <span className="inline-flex items-center gap-1">
                       <ImageIcon size={14} /> 使用 QQ 头像
                     </span>
@@ -184,7 +215,8 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                       value={qq}
                       onChange={(e) => setQq(e.target.value.replace(/\D/g, '').slice(0, 11))}
                       placeholder="输入 QQ 号"
-                      style={{ flex: 1 }}
+                      className={inputCls}
+                      style={inputStyle}
                     />
                     <button
                       type="button"
@@ -202,55 +234,142 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                     <div className="flex items-center gap-2 mt-2">
                       <img
                         src={buildQqAvatar(qq)}
-                        alt="QQ 头像预览"
+                        alt="预览"
                         draggable={false}
                         style={{
-                          width: 40,
-                          height: 40,
+                          width: 36,
+                          height: 36,
                           borderRadius: 3,
                           border: '1px solid var(--color-border)',
                           objectFit: 'cover',
                         }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
-                        }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
                       />
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        预览效果
-                      </span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>预览效果</span>
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    头像链接
-                  </label>
+                {/* 头像链接 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>头像链接</label>
                   <input
                     type="text"
                     value={avatar}
                     onChange={(e) => setAvatar(e.target.value)}
                     placeholder="留空则使用首字母头像"
+                    className={inputCls}
+                    style={inputStyle}
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    个人简介
+                {/* 性别 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>性别</label>
+                  <div className="flex gap-2">
+                    {[
+                      { val: 'male', label: '男', icon: '♂' },
+                      { val: 'female', label: '女', icon: '♀' },
+                      { val: 'other', label: '保密', icon: '◇' },
+                    ].map((g) => (
+                      <button
+                        key={g.val}
+                        type="button"
+                        className="btn btn-sm flex-1 justify-center"
+                        style={
+                          gender === g.val
+                            ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                            : {}
+                        }
+                        onClick={() => setGender(gender === g.val ? '' : g.val)}
+                      >
+                        {g.icon} {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 城市 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>
+                    <MapPin size={13} className="inline mr-1" /> 城市
                   </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="例如：深圳市"
+                    className={inputCls}
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* 生日 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>
+                    <Calendar size={13} className="inline mr-1" /> 生日
+                  </label>
+                  <input
+                    type="date"
+                    value={birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                    className={inputCls}
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* 年龄 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>年龄</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={150}
+                    value={age}
+                    onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+                    className={inputCls}
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* 座右铭 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>
+                    <Heart size={13} className="inline mr-1" /> 座右铭
+                  </label>
+                  <textarea
+                    value={motto}
+                    onChange={(e) => setMotto(e.target.value)}
+                    placeholder="写一句你喜欢的话"
+                    rows={2}
+                    maxLength={200}
+                    className={inputCls}
+                    style={{ ...inputStyle, resize: 'vertical' }}
+                  />
+                  <p className="text-xs mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
+                    {motto.length}/200
+                  </p>
+                </div>
+
+                {/* 个人简介 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>个人简介</label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="介绍一下自己"
                     rows={3}
                     maxLength={255}
+                    className={inputCls}
+                    style={{ ...inputStyle, resize: 'vertical' }}
                   />
                   <p className="text-xs mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
                     {bio.length}/255
                   </p>
                 </div>
 
-                <div className="flex justify-end">
+                {/* 保存按钮 */}
+                <div className="flex justify-end pt-2">
                   <button type="submit" disabled={savingProfile} className="btn btn-primary">
                     {savingProfile ? '保存中…' : '保存资料'}
                   </button>
@@ -262,39 +381,39 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
             {tab === 'password' && (
               <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    当前密码
-                  </label>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>当前密码</label>
                   <input
                     type="password"
                     value={oldPwd}
                     onChange={(e) => setOldPwd(e.target.value)}
                     placeholder="请输入当前密码"
                     autoComplete="current-password"
+                    className={inputCls}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    新密码
-                  </label>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>新密码</label>
                   <input
                     type="password"
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     placeholder="6-32位"
                     autoComplete="new-password"
+                    className={inputCls}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    确认新密码
-                  </label>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>确认新密码</label>
                   <input
                     type="password"
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="再次输入新密码"
                     autoComplete="new-password"
+                    className={inputCls}
+                    style={inputStyle}
                   />
                 </div>
                 <div className="flex justify-end">
@@ -308,7 +427,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
             {/* 主题外观 */}
             {tab === 'theme' && (
               <div className="flex flex-col gap-3">
-                <p className="text-sm mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                <p className="text-sm mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                   选择主题外观，设置会自动保存
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -329,12 +448,8 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                         }
                       >
                         <div>
-                          <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>
-                            {opt.label}
-                          </p>
-                          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                            {opt.desc}
-                          </p>
+                          <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{opt.label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{opt.desc}</p>
                         </div>
                         {isActive && <Check size={18} style={{ color: 'var(--color-primary)' }} />}
                       </button>

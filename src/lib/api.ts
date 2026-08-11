@@ -118,8 +118,16 @@ export const authApi = {
 // ============ 用户 API ============
 
 export const userApi = {
-  updateProfile: (data: { bio: string; avatar: string }) =>
-    put<UserInfo>('/chat/user/profile', data),
+  updateProfile: (data: {
+    bio: string;
+    avatar: string;
+    qq?: string;
+    gender?: string;
+    city?: string;
+    motto?: string;
+    birthday?: string;
+    age?: number;
+  }) => put<UserInfo>('/chat/user/profile', data),
 
   updatePassword: (data: { old_password: string; new_password: string }) =>
     put<null>('/chat/user/password', data),

@@ -34,6 +34,11 @@ export interface UserInfo {
   last_sign_in_date: string;
   qq: string;
   online?: boolean;
+  birthday: string;
+  gender: string;
+  city: string;
+  motto: string;
+  age: number;
 }
 
 // 登录/注册响应
