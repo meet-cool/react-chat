@@ -31,6 +31,10 @@ export function ProfilePage() {
     }
   }, []);
 
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
