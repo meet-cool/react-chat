@@ -22,6 +22,7 @@ import {
   SendHorizonal,
   Star,
   User,
+  ArrowRight,
 } from 'lucide-react';
 import type { ChatMessage, Room, RoomMember, UserInfo, Conversation } from '../types';
 import { clearToken, messageApi, roomApi, conversationApi } from '../lib/api';
@@ -616,20 +617,27 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     >
       {/* 顶部导航栏 */}
       <header
-        className="flex items-center justify-between px-4 py-2 border-b"
+        className="flex items-center justify-between px-4 py-2 border-b relative overflow-hidden"
         style={{
-          background: 'var(--nav-bg)',
+          background: 'linear-gradient(135deg, var(--color-primary-light) 0%, transparent 60%)',
           borderColor: 'var(--color-divider)',
           backdropFilter: 'blur(8px)',
         }}
       >
-        <div className="flex items-center gap-2">
-          <MessagesSquare size={20} style={{ color: 'var(--color-primary)' }} />
-          <span className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
+        {/* 装饰 SVG 波浪 */}
+        <svg className="absolute bottom-0 left-0 w-full h-1.5 opacity-30" viewBox="0 0 1200 8" preserveAspectRatio="none">
+          <path d="M0 4 Q 150 0, 300 4 T 600 4 T 900 4 T 1200 4 V8 H0 Z" fill="var(--color-primary)" />
+          <path d="M0 5 Q 200 8, 400 5 T 800 5 T 1200 5 V8 H0 Z" fill="var(--color-primary)" opacity="0.5" />
+        </svg>
+        <div className="flex items-center gap-2 relative z-10">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--color-primary)', boxShadow: '0 0 12px var(--color-primary)' }}>
+            <MessagesSquare size={14} color="#fff" strokeWidth={2.5} />
+          </div>
+          <span className="font-bold text-base tracking-wide" style={{ color: 'var(--color-text)' }}>
             ARCLE Chat
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 relative z-10">
           {(currentUser as unknown as { role?: string })?.role === 'admin' ||
           (currentUser as unknown as { role?: string })?.role === 'super_admin' ? (
             <button
@@ -640,15 +648,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 color: 'var(--color-primary)',
                 borderColor: 'var(--color-primary)',
                 background: 'var(--color-primary-light)',
+                borderRadius: 20,
+                padding: '4px 12px',
               }}
             >
-              <ShieldCheck size={14} />
-              <span className="hidden sm:inline">管理</span>
+              <ShieldCheck size={13} />
+              <span className="hidden sm:inline ml-1">管理</span>
             </button>
           ) : null}
           <div
-            className="flex items-center gap-2 px-2 py-1"
-            style={{ border: '1px solid var(--color-border-light)' }}
+            className="flex items-center gap-2 px-2.5 py-1 rounded-full"
+            style={{ border: '1px solid var(--color-border-light)', background: 'var(--color-card-alt)' }}
           >
             <Avatar username={currentUser.username} avatar={currentUser.avatar} size={28} online />
             <span
@@ -658,9 +668,20 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               {currentUser.username}
             </span>
           </div>
-          <button onClick={handleLogout} className="btn btn-sm" title="退出登录">
-            <LogOut size={14} />
-            <span className="hidden sm:inline">退出</span>
+          <button
+            onClick={handleLogout}
+            className="btn btn-sm"
+            title="退出登录"
+            style={{
+              borderRadius: 20,
+              padding: '4px 12px',
+              borderColor: 'var(--color-error)',
+              color: 'var(--color-error)',
+              background: 'rgba(248,113,113,0.08)',
+            }}
+          >
+            <LogOut size={13} />
+            <span className="hidden sm:inline ml-1">退出</span>
           </button>
         </div>
       </header>
@@ -680,9 +701,22 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         >
           {/* 分类竖条 */}
           <div
-            className="w-14 flex flex-col items-center py-3 gap-1 border-r flex-shrink-0"
+            className="w-14 flex flex-col items-center py-3 gap-1 border-r flex-shrink-0 relative"
             style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
           >
+            {/* 左侧活跃指示条 */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r transition-all duration-200"
+              style={{
+                background: 'var(--color-primary)',
+                opacity: 0.7,
+                boxShadow: `0 0 8px var(--color-primary)`,
+                ...(category === 'recent' || category === 'rooms' || category === 'contacts' || category === 'confession' || category === 'bottle' || category === 'points' || category === 'extensions'
+                  ? { height: '36%' }
+                  : { height: 0 }),
+                top: category === 'recent' ? '10%' : category === 'rooms' ? '22%' : category === 'contacts' ? '34%' : category === 'confession' ? '46%' : category === 'bottle' ? '58%' : category === 'points' ? '70%' : '82%',
+              }}
+            />
             {sidebarCategories.map((c) => {
               const Icon = c.icon;
               const isActive = category === c.k;
@@ -691,20 +725,20 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   key={c.k}
                   onClick={() => {
                     handleSidebarClick(c.k);
-                    // 点击分类时自动展开左侧栏
                     if (leftCollapsed) setLeftCollapsed(false);
                   }}
-                  className="w-10 h-10 flex flex-col items-center justify-center transition-colors"
+                  className="w-10 h-10 flex items-center justify-center transition-all duration-150 rounded-lg relative"
                   style={
                     isActive
                       ? {
-                          background: 'var(--color-primary-light)',
-                          color: 'var(--color-primary)',
-                          border: '1px solid var(--color-primary)',
+                          background: 'var(--color-primary)',
+                          color: '#fff',
+                          boxShadow: `0 2px 12px var(--color-primary)`,
+                          transform: 'scale(1.05)',
                         }
                       : {
                           color: 'var(--color-text-light)',
-                          border: '1px solid transparent',
+                          background: 'transparent',
                         }
                   }
                   onMouseEnter={(e) => {
@@ -716,7 +750,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   title={c.label}
                 >
                   <Icon size={18} />
-                  <span className="text-[10px] mt-0.5">{c.label}</span>
                 </button>
               );
             })}
@@ -724,32 +757,30 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             {/* 个人主页 */}
             <button
               onClick={() => navigate('/profile')}
-              className="w-10 h-10 flex flex-col items-center justify-center transition-colors"
-              style={{ color: 'var(--color-text-light)', border: '1px solid transparent' }}
+              className="w-10 h-10 flex items-center justify-center transition-all duration-150 rounded-lg"
+              style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title="个人主页"
             >
               <User size={18} />
-              <span className="text-[10px] mt-0.5">主页</span>
             </button>
             {/* 设置按钮 */}
             <button
               onClick={() => setShowSettings(true)}
-              className="w-10 h-10 flex flex-col items-center justify-center transition-colors"
-              style={{ color: 'var(--color-text-light)', border: '1px solid transparent' }}
+              className="w-10 h-10 flex items-center justify-center transition-all duration-150 rounded-lg"
+              style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title="设置"
             >
               <Settings size={18} />
-              <span className="text-[10px] mt-0.5">设置</span>
             </button>
             {/* 折叠按钮（仅桌面端） */}
             <button
               onClick={() => setLeftCollapsed((v) => !v)}
-              className="w-10 h-10 hidden md:flex flex-col items-center justify-center transition-colors"
-              style={{ color: 'var(--color-text-light)', border: '1px solid transparent' }}
+              className="w-10 h-10 hidden md:flex items-center justify-center transition-all duration-150 rounded-lg"
+              style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title={leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}
@@ -802,36 +833,63 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               <ContactsView onOpenConversation={handleOpenConversation} />
             ) : category === 'confession' ? (
               <div className="p-4">
-                <button
-                  onClick={() => navigate('/confessions')}
-                  className="w-full flex items-center justify-center gap-2 py-3"
-                  style={{ background: 'var(--color-primary)', color: '#fff', borderRadius: '3px' }}
-                >
-                  <Heart size={16} />
-                  <span className="text-sm font-medium">进入表白墙</span>
-                </button>
+                {/* SVG 装饰背景 */}
+                <div className="relative overflow-hidden rounded-xl" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(244,114,182,0.6) 100%)' }}>
+                  <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
+                    <circle cx="170" cy="20" r="40" fill="white" />
+                    <circle cx="30" cy="100" r="25" fill="white" />
+                    <circle cx="160" cy="90" r="15" fill="white" />
+                    <path d="M0 60 Q 50 30, 100 60 T 200 60" stroke="white" strokeWidth="1.5" fill="none" opacity="0.4" />
+                    <path d="M0 80 Q 60 50, 120 80 T 200 70" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
+                  </svg>
+                  <button
+                    onClick={() => navigate('/confessions')}
+                    className="relative z-10 w-full flex items-center justify-center gap-2 py-4 font-medium text-white"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Heart size={18} fill="currentColor" />
+                    <span className="text-sm">进入表白墙</span>
+                    <ArrowRight size={14} opacity={0.7} />
+                  </button>
+                </div>
               </div>
             ) : category === 'bottle' ? (
               <div className="p-4">
-                <button
-                  onClick={() => navigate('/bottles')}
-                  className="w-full flex items-center justify-center gap-2 py-3"
-                  style={{ background: 'var(--color-primary)', color: '#fff', borderRadius: '3px' }}
-                >
-                  <SendHorizonal size={16} />
-                  <span className="text-sm font-medium">去扔漂流瓶</span>
-                </button>
+                <div className="relative overflow-hidden rounded-xl" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(79,195,247,0.5) 100%)' }}>
+                  <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
+                    <ellipse cx="100" cy="60" rx="50" ry="35" fill="none" stroke="white" strokeWidth="1.5" />
+                    <ellipse cx="100" cy="60" rx="30" ry="20" fill="none" stroke="white" strokeWidth="1" opacity="0.6" />
+                    <circle cx="170" cy="25" r="12" fill="white" />
+                    <circle cx="25" cy="95" r="8" fill="white" />
+                  </svg>
+                  <button
+                    onClick={() => navigate('/bottles')}
+                    className="relative z-10 w-full flex items-center justify-center gap-2 py-4 font-medium text-white"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <SendHorizonal size={18} fill="currentColor" />
+                    <span className="text-sm">去扔漂流瓶</span>
+                    <ArrowRight size={14} opacity={0.7} />
+                  </button>
+                </div>
               </div>
             ) : showPrivate ? null : category === 'points' ? (
               <div className="p-4">
-                <button
-                  onClick={() => navigate('/points')}
-                  className="w-full flex items-center justify-center gap-2 py-3"
-                  style={{ background: 'var(--color-warning)', color: '#fff', borderRadius: '3px' }}
-                >
-                  <Star size={16} />
-                  <span className="text-sm font-medium">积分中心</span>
-                </button>
+                <div className="relative overflow-hidden rounded-xl" style={{ background: 'linear-gradient(135deg, var(--color-warning) 0%, rgba(251,191,36,0.5) 100%)' }}>
+                  <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
+                    <polygon points="100,15 115,50 155,50 122,72 135,110 100,85 65,110 78,72 45,50 85,50" fill="white" />
+                    <polygon points="40,30 48,48 68,48 52,60 58,78 40,66 22,78 28,60 12,48 32,48" fill="white" opacity="0.6" />
+                  </svg>
+                  <button
+                    onClick={() => navigate('/points')}
+                    className="relative z-10 w-full flex items-center justify-center gap-2 py-4 font-medium text-white"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Star size={18} fill="currentColor" />
+                    <span className="text-sm">积分中心</span>
+                    <ArrowRight size={14} opacity={0.7} />
+                  </button>
+                </div>
               </div>
             ) : (
               <ExtensionsView />
@@ -971,17 +1029,51 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             </>
           ) : (
             <div
-              className="flex-1 flex flex-col items-center justify-center"
+              className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
               style={{ color: 'var(--color-text-muted)' }}
             >
-              <Hash size={48} className="mb-4" />
-              <p className="text-sm">请从左侧选择一个聊天室开始聊天</p>
-              <button
-                className="md:hidden btn btn-primary mt-4"
-                onClick={() => setMobileSidebar('rooms')}
-              >
-                <Menu size={16} /> 查看聊天室列表
-              </button>
+              {/* SVG 装饰背景 */}
+              <svg className="absolute inset-0 w-full h-full opacity-8 pointer-events-none" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+                <circle cx="100" cy="100" r="60" fill="var(--color-primary)" opacity="0.08" />
+                <circle cx="700" cy="150" r="40" fill="var(--color-primary)" opacity="0.06" />
+                <circle cx="650" cy="500" r="80" fill="var(--color-primary)" opacity="0.05" />
+                <circle cx="120" cy="480" r="50" fill="var(--color-primary)" opacity="0.07" />
+                <circle cx="400" cy="300" r="120" fill="var(--color-primary)" opacity="0.04" className="pulse-ring" />
+                <path d="M0 300 Q 200 200, 400 300 T 800 300" stroke="var(--color-primary)" strokeWidth="1" fill="none" opacity="0.1" />
+                <path d="M0 350 Q 200 280, 400 350 T 800 350" stroke="var(--color-primary)" strokeWidth="0.8" fill="none" opacity="0.07" />
+                <path d="M0 400 Q 200 350, 400 400 T 800 400" stroke="var(--color-primary)" strokeWidth="0.6" fill="none" opacity="0.05" />
+                {/* 装饰点阵 */}
+                {[150,300,450,600].map(x => [120,240,360,480].map(y => (
+                  <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" fill="var(--color-primary)" opacity="0.15" />
+                )))}
+              </svg>
+              {/* 浮动粒子 */}
+              <svg className="absolute top-[15%] left-[20%] float-a" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="1.5" opacity="0.3" />
+              </svg>
+              <svg className="absolute top-[25%] right-[25%] float-b" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="7" stroke="var(--color-primary)" strokeWidth="1" opacity="0.25" />
+              </svg>
+              <svg className="absolute bottom-[30%] left-[15%] float-c" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="5" stroke="var(--color-primary)" strokeWidth="1" opacity="0.2" />
+              </svg>
+              <svg className="absolute bottom-[20%] right-[20%] float-a" style={{ animationDelay: '1.5s' }} width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="var(--color-primary)" strokeWidth="1" opacity="0.2" />
+              </svg>
+              {/* 中心图标 */}
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-primary-light)', boxShadow: `0 0 40px var(--color-primary-light)` }}>
+                  <MessagesSquare size={32} style={{ color: 'var(--color-primary)' }} />
+                </div>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>选择聊天室开始对话</p>
+                <button
+                  className="md:hidden btn btn-sm mt-2"
+                  style={{ borderRadius: 20, padding: '6px 16px' }}
+                  onClick={() => setMobileSidebar('rooms')}
+                >
+                  <Menu size={14} /> 查看聊天室
+                </button>
+              </div>
             </div>
           )}
         </main>
