@@ -29,13 +29,16 @@ const PAGE_SIZE = 50;
 
 interface PrivateChatViewProps {
   // 指定要打开的对方用户 ID（外部触发）
-  targetUserId: number | null;
+  targetUserId?: number | null;
+  // 直接指定已存在的会话（用于从最近聊天列表进入）
+  activeConv?: Conversation | null;
   onClearTarget?: () => void;
   onBack?: () => void;
+  onMessageSent?: () => void;
   currentUserId: number;
 }
 
-export function PrivateChatView({ targetUserId, onClearTarget, onBack, currentUserId }: PrivateChatViewProps) {
+export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onClearTarget, onBack, onMessageSent, currentUserId }: PrivateChatViewProps) {
   const { addToast } = useApp();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
@@ -123,6 +126,13 @@ export function PrivateChatView({ targetUserId, onClearTarget, onBack, currentUs
 
   // 当外部指定目标用户时，创建/打开会话
   useEffect(() => {
+    // 如果传入了 activeConv，直接使用
+    if (propActiveConv) {
+      setActiveConv(propActiveConv);
+      setShowListMobile(false);
+      loadMessages(propActiveConv.id);
+      return;
+    }
     if (!targetUserId) return;
     let cancelled = false;
     (async () => {
@@ -241,6 +251,7 @@ export function PrivateChatView({ targetUserId, onClearTarget, onBack, currentUs
       addToast(err instanceof Error ? err.message : '发送失败', 'error');
     } finally {
       setSending(false);
+      if (onMessageSent) onMessageSent();
     }
   };
 

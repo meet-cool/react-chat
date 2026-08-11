@@ -22,7 +22,7 @@ export function ExtensionsView(_: ExtensionsViewProps) {
     <div className="flex flex-col h-full" style={{ background: 'var(--color-card)' }}>
       <div className="p-4 border-b" style={{ borderColor: 'var(--color-divider)' }}>
         <h2 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-          <Sparkles size={16} /> 拓展
+          <Sparkles size={16} /> 插件
         </h2>
         <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
           更多功能即将上线
