@@ -762,7 +762,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-            {category === 'recent' ? (
+            {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
                 conversations={conversations}
