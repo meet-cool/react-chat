@@ -199,7 +199,7 @@ function ConfessionCard({
           <button
             onClick={() => setShowComments(!showComments)}
             className="btn btn-sm"
-            style={{ minWidth: 32, maxHeight: 26, padding: '0 6px', color: T.textMuted }}
+            style={{ minWidth: 32, maxHeight: 26, padding: '0 6px', color: T.textMuted, background: 'transparent', border: 'none' }}
           >
             <MessageCircle size={13} />
             <span className="ml-0.5 text-xs">{c.comment_count}</span>
@@ -213,6 +213,8 @@ function ConfessionCard({
                 maxHeight: 26,
                 padding: '0 6px',
                 color: c.bookmarked ? 'var(--color-warning)' : T.textMuted,
+                background: 'transparent',
+                border: 'none',
               }}
               title="收藏"
             >
@@ -407,7 +409,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             {!isMainPage && (
-              <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36 }}>
+              <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36, background: 'transparent', border: 'none' }}>
                 <ArrowLeft size={14} />
               </button>
             )}
