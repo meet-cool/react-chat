@@ -75,7 +75,7 @@ export function ConfessionBookmarks() {
       className="flex flex-col h-full"
       style={{
         background: T.cardBg,
-        backgroundImage: `url('/assets/${bgImage}')`,
+        backgroundImage: `url(/${bgImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
