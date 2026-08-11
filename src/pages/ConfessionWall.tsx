@@ -279,7 +279,7 @@ function ConfessionCard({
                 onClick={handleComment}
                 disabled={loading || !commentText.trim()}
                 className="btn btn-sm"
-                style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
+                style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: T.textMuted }}
               >
                 <SendHorizonal size={14} />
               </button>
@@ -436,7 +436,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => navigate('/confessions/ranking')}
               className="btn btn-sm"
-              style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
+              style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: T.textMuted }}
             >
               <Trophy size={14} />
               排行榜
