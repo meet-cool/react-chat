@@ -72,13 +72,12 @@ export function ConfessionBookmarks() {
 
   return (
     <div
-      className="flex flex-col h-full"
+      className="flex flex-col h-screen"
       style={{
         background: T.cardBg,
         backgroundImage: `url(/${bgImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
       }}
     >
       {/* 头部 */}

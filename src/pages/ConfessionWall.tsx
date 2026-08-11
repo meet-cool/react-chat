@@ -395,15 +395,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
 
   return (
     <div
-      className="flex flex-col h-full"
-      style={
-        bgImage
-          ? {
-              background: `url(/${bgImage}) center center / cover no-repeat`,
-              backgroundAttachment: 'fixed',
-            }
-          : { background: T.cardBg }
-      }
+      className="flex flex-col h-screen"
+      style={{
+        background: T.cardBg,
+        backgroundImage: bgImage ? `url(/${bgImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
       {/* 头部 */}
       <div

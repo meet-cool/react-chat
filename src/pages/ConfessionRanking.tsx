@@ -85,8 +85,13 @@ export function ConfessionRanking() {
 
   return (
     <div
-      className="flex flex-col h-full"
-      style={{ background: T.cardBg, backgroundImage: `url(/${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      className="flex flex-col h-screen"
+      style={{
+        background: T.cardBg,
+        backgroundImage: `url(/${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
       {/* 头部 */}
       <div
