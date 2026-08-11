@@ -663,7 +663,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       </header>
 
       {/* 主体三栏布局 */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧：分类导航条 + 内容区 */}
         <aside
           className={`border-r md:relative md:translate-x-0 md:z-auto flex transition-[width] duration-200 ease-out ${
@@ -967,19 +967,22 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           )}
         </main>
 
-        {/* 右侧：成员列表（桌面端静态，移动端浮层） */}
+        {/* 右侧：成员列表 */}
+        {/* 桌面端：flex 布局内正常显示；移动端：绝对定位浮层 */}
         <aside
-          className={`border-l transition-[width,opacity,transform] duration-200 ease-out ${
-            rightCollapsed ? 'w-0 overflow-hidden opacity-0 pointer-events-none' : 'w-60 md:w-60'
-          } ${
-            mobileSidebar === 'members'
-              ? 'fixed inset-y-0 right-0 top-0 z-50 w-60 translate-x-0'
-              : 'fixed inset-y-0 right-0 top-0 z-50 w-60 -translate-x-full md:translate-x-0 md:static md:z-auto md:opacity-100'
-          }`}
-          style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
+          className={`
+            md:flex border-l bg-[var(--color-card)] transition-all duration-200 ease-out
+            /* 桌面端：正常 flex 流内，静态定位 */
+            md:static md:z-auto md:opacity-100 md:w-60 md:flex-shrink-0
+            ${rightCollapsed ? 'md:w-0 md:pointer-events-none md:opacity-0' : ''}
+            /* 移动端：绝对覆盖全容器 */
+            absolute inset-0 z-50 w-60 h-full
+            ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}
+          `}
+          style={{ borderColor: 'var(--color-divider)' }}
         >
           {activeRoom && !showPrivate ? (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full w-60 relative">
               <button
                 className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1"
                 onClick={() => setMobileSidebar(null)}
