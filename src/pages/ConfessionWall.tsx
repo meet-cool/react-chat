@@ -221,7 +221,7 @@ function ConfessionCard({
                 placeholder="写下你的评论..."
                 className="flex-1 text-sm"
                 style={{
-                  background: 'rgba(0,0,0,0.2)',
+                  background: T.inputBg,
                   border: `1px solid ${T.cardBorder}`,
                   color: T.text,
                   borderRadius: '3px',
@@ -484,7 +484,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 minHeight: 28,
                 ...(viewMode === 'grid'
                   ? { background: T.primary, color: '#fff' }
-                  : { background: 'rgba(0,0,0,0.2)', color: T.textMuted }
+                  : { background: T.inputBg, color: T.textMuted }
                 ),
               }}
               title="网格视图"
@@ -498,7 +498,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             onChange={(e) => setTheme(e.target.value as ThemeKey)}
             className="text-sm"
             style={{
-              background: 'rgba(0,0,0,0.2)',
+              background: T.inputBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',

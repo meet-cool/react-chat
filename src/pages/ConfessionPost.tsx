@@ -156,7 +156,7 @@ export function ConfessionPost() {
             rows={6}
             className="text-sm resize-none"
             style={{
-              background: 'rgba(0,0,0,0.2)',
+              background: T.inputBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',

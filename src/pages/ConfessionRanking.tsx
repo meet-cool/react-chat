@@ -203,7 +203,7 @@ export function ConfessionRanking() {
                     style={
                       index < 3
                         ? { background: 'var(--color-warning)', color: '#fff', borderRadius: '3px' }
-                        : { background: 'rgba(0,0,0,0.2)', color: T.textMuted, borderRadius: '3px' }
+                        : { background: T.inputBg, color: T.textMuted, borderRadius: '3px' }
                     }
                   >
                     {medal || index + 1}
