@@ -910,6 +910,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     {rightCollapsed ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
                     <span className="hidden lg:inline">成员</span>
                   </button>
+                  {/* 移动端：成员列表触发按钮 */}
+                  <button
+                    className="btn btn-sm md:hidden p-1"
+                    onClick={() => setMobileSidebar(mobileSidebar === 'members' ? null : 'members')}
+                    title="成员列表"
+                  >
+                    <Users size={14} />
+                  </button>
                   <button onClick={handleLeaveRoom} className="btn btn-sm btn-outline">
                     <LogOut size={14} />
                     <span className="hidden sm:inline">退出</span>
