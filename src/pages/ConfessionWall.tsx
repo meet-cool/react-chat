@@ -22,6 +22,53 @@ import { ReportDialog } from '../components/ReportDialog';
 
 type ViewMode = 'card' | 'grid';
 type SortType = 'latest' | 'likes' | 'comments';
+type ThemeKey = 'ocean' | 'pink' | 'default';
+
+const THEMES: Record<ThemeKey, {
+  primary: string;
+  primaryLight: string;
+  cardBg: string;
+  cardBorder: string;
+  text: string;
+  textMuted: string;
+  textSecondary: string;
+  divider: string;
+  labelBg: string;
+}> = {
+  ocean: {
+    primary: '#4fc3f7',
+    primaryLight: 'rgba(79,195,247,0.15)',
+    cardBg: 'rgba(5,25,50,0.72)',
+    cardBorder: 'rgba(79,195,247,0.25)',
+    text: 'rgba(230,245,255,0.95)',
+    textMuted: 'rgba(180,220,245,0.6)',
+    textSecondary: 'rgba(200,230,250,0.75)',
+    divider: 'rgba(79,195,247,0.15)',
+    labelBg: 'rgba(79,195,247,0.18)',
+  },
+  pink: {
+    primary: '#f472b6',
+    primaryLight: 'rgba(244,114,182,0.15)',
+    cardBg: 'rgba(55,8,35,0.70)',
+    cardBorder: 'rgba(244,114,182,0.28)',
+    text: 'rgba(255,228,240,0.95)',
+    textMuted: 'rgba(240,180,210,0.6)',
+    textSecondary: 'rgba(255,210,230,0.8)',
+    divider: 'rgba(244,114,182,0.15)',
+    labelBg: 'rgba(244,114,182,0.18)',
+  },
+  default: {
+    primary: 'var(--color-primary)',
+    primaryLight: 'var(--color-primary-light)',
+    cardBg: 'var(--color-card)',
+    cardBorder: 'var(--color-border)',
+    text: 'var(--color-text)',
+    textMuted: 'var(--color-text-muted)',
+    textSecondary: 'var(--color-text-secondary)',
+    divider: 'var(--color-divider)',
+    labelBg: 'var(--color-primary-light)',
+  },
+};
 
 interface ConfessionWallProps {
   isMainPage?: boolean;
@@ -36,6 +83,7 @@ function ConfessionCard({
   viewMode,
   onClick,
   addToast,
+  theme,
 }: {
   c: Confession;
   onLike: (slug: string) => void;
@@ -45,11 +93,13 @@ function ConfessionCard({
   viewMode: ViewMode;
   onClick: (id: number) => void;
   addToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
+  theme: ThemeKey;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const T = THEMES[theme];
 
   const handleComment = async () => {
     if (!commentText.trim() || !isLogged) return;
@@ -73,8 +123,8 @@ function ConfessionCard({
     <div
       className="transition-colors cursor-pointer"
       style={{
-        background: 'var(--color-card)',
-        border: '1px solid var(--color-border)',
+        background: T.cardBg,
+        border: `1px solid ${T.cardBorder}`,
         ...(viewMode === 'grid' ? { display: 'flex', flexDirection: 'column' } : {}),
       }}
       onClick={() => onClick(c.id)}
@@ -110,14 +160,14 @@ function ConfessionCard({
             </span>
           )}
         </div>
-        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="text-xs" style={{ color: T.textMuted }}>
           {c.create_time_fmt}
         </span>
       </div>
 
       {/* 内容 */}
       <div className="px-4 pb-2">
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-sm leading-relaxed" style={{ color: T.textSecondary }}>
           {c.content}
         </p>
       </div>
@@ -125,7 +175,7 @@ function ConfessionCard({
       {/* 操作栏 */}
       <div
         className="flex items-center gap-1 px-3 py-2"
-        style={{ borderTop: '1px solid var(--color-divider)', marginTop: 'auto' }}
+        style={{ borderTop: `1px solid ${T.divider}`, marginTop: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 左侧：互动按钮 */}
@@ -139,7 +189,7 @@ function ConfessionCard({
               padding: '0 6px',
               ...(c.liked
                 ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
-                : { color: 'var(--color-text-muted)' }
+                : { color: T.textMuted }
               ),
             }}
           >
@@ -149,7 +199,7 @@ function ConfessionCard({
           <button
             onClick={() => setShowComments(!showComments)}
             className="btn btn-sm"
-            style={{ minWidth: 32, maxHeight: 26, padding: '0 6px', color: 'var(--color-text-muted)' }}
+            style={{ minWidth: 32, maxHeight: 26, padding: '0 6px', color: T.textMuted }}
           >
             <MessageCircle size={13} />
             <span className="ml-0.5 text-xs">{c.comment_count}</span>
@@ -162,7 +212,7 @@ function ConfessionCard({
                 minWidth: 32,
                 maxHeight: 26,
                 padding: '0 6px',
-                color: c.bookmarked ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                color: c.bookmarked ? 'var(--color-warning)' : T.textMuted,
               }}
               title="收藏"
             >
@@ -175,7 +225,7 @@ function ConfessionCard({
         <button
           onClick={() => setShowReport(true)}
           className="btn btn-sm ml-auto"
-          style={{ minWidth: 28, padding: '2px 4px', color: 'var(--color-text-muted)' }}
+          style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted }}
           title="举报"
         >
           <MoreVertical size={13} />
@@ -193,10 +243,10 @@ function ConfessionCard({
       {showComments && (
         <div
           className="px-4 pb-3"
-          style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 12 }}
+          style={{ borderTop: `1px solid ${T.divider}`, paddingTop: 12 }}
         >
           {!isLogged ? (
-            <p className="text-xs text-center py-2" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs text-center py-2" style={{ color: T.textMuted }}>
               登录后即可评论
             </p>
           ) : (
@@ -214,9 +264,9 @@ function ConfessionCard({
                 placeholder="写下你的评论..."
                 className="flex-1 text-sm"
                 style={{
-                  background: 'var(--color-bg-page)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text)',
+                  background: 'rgba(0,0,0,0.2)',
+                  border: `1px solid ${T.cardBorder}`,
+                  color: T.text,
                   borderRadius: '3px',
                   padding: '6px 10px',
                   outline: 'none',
@@ -250,6 +300,16 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [isLogged, setIsLogged] = useState(false);
   const [bgImage, setBgImage] = useState('');
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem('confession_theme');
+    return (saved === 'ocean' || saved === 'pink' || saved === 'default') ? saved : 'pink';
+  });
+
+  const T = THEMES[theme];
+
+  useEffect(() => {
+    localStorage.setItem('confession_theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const updateBg = () => {
@@ -335,13 +395,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               background: `url(/${bgImage}) center center / cover no-repeat`,
               backgroundAttachment: 'fixed',
             }
-          : { background: 'var(--color-bg-page)' }
+          : { background: T.cardBg }
       }
     >
       {/* 头部 */}
       <div
         className="px-4 py-3 border-b"
-        style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+        style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -393,7 +453,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--color-text-muted)' }}
+                style={{ color: T.textMuted }}
               />
               <input
                 type="text"
@@ -403,8 +463,8 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 placeholder="搜索表白内容..."
                 className="w-full text-sm pl-8 pr-3"
                 style={{
-                  background: 'var(--color-bg-page)',
-                  border: '1px solid var(--color-border)',
+                  background: 'rgba(0,0,0,0.2)',
+                  border: `1px solid ${T.cardBorder}`,
                   color: 'var(--color-text)',
                   borderRadius: '3px',
                   padding: '6px 10px 6px 28px',
@@ -426,9 +486,9 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             onChange={(e) => setSort(e.target.value as SortType)}
             className="text-sm"
             style={{
-              background: 'var(--color-bg-page)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text)',
+              background: 'rgba(0,0,0,0.2)',
+              border: `1px solid ${T.cardBorder}`,
+              color: T.text,
               borderRadius: '3px',
               padding: '6px 8px',
               outline: 'none',
@@ -440,7 +500,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
           </select>
           <div
             className="flex border"
-            style={{ borderColor: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}
+            style={{ borderColor: T.cardBorder, borderRadius: '3px', overflow: 'hidden' }}
           >
             <button
               onClick={() => setViewMode('card')}
@@ -450,7 +510,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 minHeight: 28,
                 ...(viewMode === 'card'
                   ? { background: 'var(--color-primary)', color: '#fff' }
-                  : { background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }
+                  : { background: 'rgba(0,0,0,0.2)', color: T.textMuted }
                 ),
               }}
               title="列表视图"
@@ -465,7 +525,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 minHeight: 28,
                 ...(viewMode === 'grid'
                   ? { background: 'var(--color-primary)', color: '#fff' }
-                  : { background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }
+                  : { background: 'rgba(0,0,0,0.2)', color: T.textMuted }
                 ),
               }}
               title="网格视图"
@@ -473,6 +533,24 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <LayoutGrid size={14} />
             </button>
           </div>
+          {/* 主题选择 */}
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as ThemeKey)}
+            className="text-sm"
+            style={{
+              background: 'rgba(0,0,0,0.2)',
+              border: `1px solid ${T.cardBorder}`,
+              color: T.text,
+              borderRadius: '3px',
+              padding: '6px 8px',
+              outline: 'none',
+            }}
+          >
+            <option value="ocean">🌊 蔚蓝无边星海</option>
+            <option value="pink">🌸 粉色浪漫花海</option>
+            <option value="default">🎨 默认主题</option>
+          </select>
         </div>
       </div>
 
@@ -491,13 +569,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         }
       >
         {loading && confessions.length === 0 ? (
-          <div className="flex items-center justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="flex items-center justify-center py-20" style={{ color: T.textMuted }}>
             加载中...
           </div>
         ) : confessions.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-20 gap-3"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: T.textMuted }}
           >
             <Heart size={40} opacity={0.4} />
             <p className="text-sm">还没有表白</p>
@@ -516,7 +594,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               style={
             viewMode === 'grid'
               ? { minHeight: 200, display: 'flex', flexDirection: 'column' }
-              : { borderBottom: '1px solid var(--color-divider)', paddingBottom: '12px' }
+              : { borderBottom: `1px solid ${T.divider}`, paddingBottom: '12px' }
           }
             >
               <ConfessionCard
@@ -531,6 +609,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                   if (target) navigate(`/confessions/${target.slug}`);
                 }}
                 addToast={addToast}
+                theme={theme}
               />
             </div>
           ))
@@ -542,7 +621,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               onClick={() => loadConfessions(page + 1)}
               disabled={loading}
               className="btn btn-sm"
-              style={{ color: 'var(--color-text-muted)' }}
+              style={{ color: T.textMuted }}
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
