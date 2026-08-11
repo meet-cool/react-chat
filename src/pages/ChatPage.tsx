@@ -713,9 +713,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 opacity: 0.8,
                 boxShadow: '0 0 6px var(--color-primary)',
                 top: (() => {
-                  const map: Record<string, number> = { recent: 40, rooms: 96, contacts: 152, confession: 208, bottle: 264, points: 320, extensions: 376 };
-                  return map[category] ?? 40;
-                })(),
+                    const map: Record<string, number> = { recent: 12, rooms: 68, contacts: 124, confession: 180, bottle: 236, points: 292, extensions: 348 };
+                    return map[category] ?? 12;
+                  })(),
               }}
             />
             {sidebarCategories.map((c) => {
