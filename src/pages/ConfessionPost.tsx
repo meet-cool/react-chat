@@ -116,7 +116,7 @@ export function ConfessionPost() {
             onChange={(e) => setTheme(e.target.value as ThemeKey)}
             className="text-sm"
             style={{
-              background: 'rgba(0,0,0,0.2)',
+              background: T.inputBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',

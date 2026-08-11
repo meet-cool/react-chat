@@ -417,7 +417,7 @@ export function ConfessionDetail() {
                 placeholder="写下你的评论..."
                 className="flex-1 text-sm"
                 style={{
-                  background: 'rgba(0,0,0,0.2)',
+                  background: T.inputBg,
                   border: `1px solid ${T.cardBorder}`,
                   color: T.text,
                   borderRadius: '3px',
