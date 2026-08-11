@@ -315,7 +315,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   useEffect(() => {
     const updateBg = () => {
       const w = window.innerWidth;
-      setBgImage(w < 768 ? 'mbbqbg.jpg' : 'bbqbg.jpg');
+      setBgImage(w < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
     };
     updateBg();
     window.addEventListener('resize', updateBg);

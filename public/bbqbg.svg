@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#1a1a4e"/>
+      <stop offset="100%" stop-color="#0a0a1a"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <path id="heart" d="M0,-15 C-8,-25 -20,-20 -20,-10 C-20,0 0,15 0,20 C0,15 20,0 20,-10 C20,-20 8,-25 0,-15Z"/>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <!-- 散点光晕背景 -->
+  <ellipse cx="300" cy="200" rx="180" ry="140" fill="#1e3a5f" opacity="0.4" filter="url(#soft)"/>
+  <ellipse cx="1400" cy="600" rx="200" ry="160" fill="#3a1e4a" opacity="0.35" filter="url(#soft)"/>
+  <ellipse cx="900" cy="900" rx="220" ry="130" fill="#1a3a3a" opacity="0.3" filter="url(#soft)"/>
+  <ellipse cx="1700" cy="250" rx="150" ry="120" fill="#2a1e3a" opacity="0.3" filter="url(#soft)"/>
+  <ellipse cx="200" cy="800" rx="160" ry="130" fill="#1e2a4a" opacity="0.35" filter="url(#soft)"/>
+  <!-- 多彩爱心 -->
+  <g transform="translate(120,80) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(350,50) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(580,100) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(800,60) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1050,90) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1300,50) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1550,80) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(1780,60) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(80,200) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(280,230) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(500,190) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(720,220) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(950,200) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1180,230) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1400,190) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1630,220) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1850,200) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(150,340) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(370,310) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(590,350) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(810,320) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1040,340) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(1270,310) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1500,350) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1720,320) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(60,460) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(290,480) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(510,450) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(740,470) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(970,450) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1190,480) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1420,450) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(1650,470) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1880,460) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(100,590) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(330,610) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(560,580) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(780,600) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1010,580) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1240,610) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1470,590) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1700,610) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(190,720) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(420,700) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(650,730) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(880,710) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1100,730) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(1330,700) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1560,720) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1790,710) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(80,840) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(310,860) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(540,830) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(770,850) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1000,830) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1230,860) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1460,840) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(1690,860) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1920,830) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(120,970) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(350,950) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(580,980) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(800,960) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#c77dff"/></g>
+  <g transform="translate(1030,980) scale(1.0)" filter="url(#glow)"><use href="#heart" fill="#7fffd4"/></g>
+  <g transform="translate(1260,950) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#ff9a3c"/></g>
+  <g transform="translate(1490,970) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#ff6b9d"/></g>
+  <g transform="translate(1720,960) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 模糊光斑增强梦幻感 -->
+  <ellipse cx="200" cy="150" rx="40" ry="30" fill="#ff6b9d" opacity="0.15" filter="url(#soft)"/>
+  <ellipse cx="600" cy="280" rx="35" ry="25" fill="#4fc3f7" opacity="0.12" filter="url(#soft)"/>
+  <ellipse cx="1000" cy="170" rx="45" ry="30" fill="#c77dff" opacity="0.1" filter="url(#soft)"/>
+  <ellipse cx="1400" cy="400" rx="38" ry="28" fill="#7fffd4" opacity="0.12" filter="url(#soft)"/>
+  <ellipse cx="1800" cy="350" rx="42" ry="32" fill="#ff9a3c" opacity="0.1" filter="url(#soft)"/>
+  <ellipse cx="300" cy="500" rx="36" ry="26" fill="#ff6b9d" opacity="0.1" filter="url(#soft)"/>
+  <ellipse cx="700" cy="650" rx="40" ry="30" fill="#4fc3f7" opacity="0.12" filter="url(#soft)"/>
+  <ellipse cx="1100" cy="800" rx="44" ry="32" fill="#c77dff" opacity="0.1" filter="url(#soft)"/>
+  <ellipse cx="1500" cy="900" rx="38" ry="28" fill="#7fffd4" opacity="0.12" filter="url(#soft)"/>
+  <ellipse cx="1750" cy="750" rx="35" ry="25" fill="#ff9a3c" opacity="0.1" filter="url(#soft)"/>
+</svg>
