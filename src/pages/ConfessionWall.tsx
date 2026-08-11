@@ -138,8 +138,8 @@ function ConfessionCard({
               style={{
                 width: 28,
                 height: 28,
-                background: 'var(--color-primary-light)',
-                color: 'var(--color-primary)',
+                background: T.labelBg,
+                color: T.primary,
                 borderRadius: '3px',
               }}
             >
@@ -148,7 +148,7 @@ function ConfessionCard({
           ) : (
             <Avatar username={c.username} avatar={c.avatar} size={28} />
           )}
-          <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+          <span className="text-sm font-medium" style={{ color: T.text }}>
             {c.anonymous ? '匿名' : c.username}
           </span>
           {c.target_name && (
@@ -465,7 +465,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 style={{
                   background: 'rgba(0,0,0,0.2)',
                   border: `1px solid ${T.cardBorder}`,
-                  color: 'var(--color-text)',
+                  color: T.text,
                   borderRadius: '3px',
                   padding: '6px 10px 6px 28px',
                   outline: 'none',
