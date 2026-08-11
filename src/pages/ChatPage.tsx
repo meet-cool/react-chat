@@ -690,12 +690,12 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧：分类导航条 + 内容区 */}
         <aside
-          className={`border-r md:relative md:translate-x-0 md:z-auto flex transition-[width] duration-200 ease-out ${
+          className={`border-r flex transition-[width] duration-200 ease-out ${
             leftCollapsed ? 'md:w-14' : 'md:w-72'
           } ${
-            mobileSidebar === 'rooms'
-              ? 'w-72 fixed inset-y-0 left-0 top-0 z-50 translate-x-0 transition-transform duration-200 ease-out'
-              : 'w-72 fixed inset-y-0 left-0 top-0 z-50 -translate-x-full transition-transform duration-200 ease-out md:translate-x-0 md:static md:w-auto'
+            mobileSidebar !== null
+              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-auto'
+              : 'fixed inset-y-0 left-0 top-0 z-50 -translate-x-full w-full md:w-auto md:translate-x-0 md:static md:z-auto'
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
@@ -792,11 +792,20 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
           {/* 分类内容区 */}
           <div
-            className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 ${
+            className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
+            {mobileSidebar && (
+              <button
+                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full"
+                style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-divider)' }}
+                onClick={() => setMobileSidebar(null)}
+              >
+                <X size={16} />
+              </button>
+            )}
             {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
