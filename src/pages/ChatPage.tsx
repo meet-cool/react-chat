@@ -966,34 +966,35 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             </div>
           )}
         </main>
-
-        {/* 右侧：成员列表 */}
-        {/* 桌面端：flex 布局内正常显示；移动端：绝对定位浮层 */}
-        <aside
-          className={`
-            md:flex border-l bg-[var(--color-card)] transition-all duration-200 ease-out
-            /* 桌面端：正常 flex 流内，静态定位 */
-            md:static md:z-auto md:opacity-100 md:w-60 md:flex-shrink-0
-            ${rightCollapsed ? 'md:w-0 md:pointer-events-none md:opacity-0' : ''}
-            /* 移动端：绝对覆盖全容器 */
-            absolute inset-0 z-50 w-60 h-full
-            ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}
-          `}
-          style={{ borderColor: 'var(--color-divider)' }}
-        >
-          {activeRoom && !showPrivate ? (
-            <div className="flex flex-col h-full w-60 relative">
-              <button
-                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1"
-                onClick={() => setMobileSidebar(null)}
-              >
-                <X size={14} />
-              </button>
-              <MemberList members={members} loading={membersLoading} />
-            </div>
-          ) : null}
-        </aside>
       </div>
+
+      {/* 右侧：成员列表 */}
+      {/* 桌面端：flex 布局内正常显示（static） */}
+      {/* 移动端：fixed 覆盖整个视口（由 mobileSidebar 控制显隐） */}
+      <aside
+        className={`
+          md:flex border-l bg-[var(--color-card)] transition-all duration-200 ease-out
+          /* 桌面端：正常 flex 流，static 定位 */
+          md:static md:w-60 md:flex-shrink-0 md:opacity-100 md:z-auto
+          ${rightCollapsed ? 'md:w-0 md:pointer-events-none md:opacity-0' : 'md:w-60'}
+          /* 移动端：fixed 全屏浮层，默认隐藏 */
+          fixed inset-y-0 right-0 top-0 z-50 w-60 h-full
+          ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}
+        `}
+        style={{ borderColor: 'var(--color-divider)' }}
+      >
+        {activeRoom && !showPrivate ? (
+          <div className="flex flex-col h-full w-60 relative">
+            <button
+              className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1"
+              onClick={() => setMobileSidebar(null)}
+            >
+              <X size={14} />
+            </button>
+            <MemberList members={members} loading={membersLoading} />
+          </div>
+        ) : null}
+      </aside>
 
       {/* 移动端遮罩（层级低于侧边栏，点击关闭） */}
       {mobileSidebar && (
