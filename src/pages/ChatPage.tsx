@@ -913,7 +913,15 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   {/* 移动端：成员列表触发按钮 */}
                   <button
                     className="btn btn-sm md:hidden p-1"
-                    onClick={() => setMobileSidebar(mobileSidebar === 'members' ? null : 'members')}
+                    onClick={() => {
+                      if (mobileSidebar === 'members') {
+                        setMobileSidebar(null);
+                        setRightCollapsed(false);
+                      } else {
+                        setMobileSidebar('members');
+                        setRightCollapsed(true);
+                      }
+                    }}
                     title="成员列表"
                   >
                     <Users size={14} />
