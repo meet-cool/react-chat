@@ -421,8 +421,8 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate('/confessions/new')}
-              className="btn btn-primary btn-sm"
-              style={{ padding: '4px 12px' }}
+              className="btn btn-sm"
+              style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
             >
               <SendHorizonal size={14} />
               写表白
