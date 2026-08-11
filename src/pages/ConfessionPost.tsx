@@ -184,7 +184,7 @@ export function ConfessionPost() {
             maxLength={50}
             className="text-sm w-full"
             style={{
-              background: 'rgba(0,0,0,0.2)',
+              background: T.inputBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',

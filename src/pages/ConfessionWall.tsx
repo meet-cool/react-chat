@@ -422,7 +422,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 placeholder="搜索表白内容..."
                 className="w-full text-sm pl-8 pr-3"
                 style={{
-                  background: 'rgba(0,0,0,0.2)',
+                  background: T.inputBg,
                   border: `1px solid ${T.cardBorder}`,
                   color: T.text,
                   borderRadius: '3px',
