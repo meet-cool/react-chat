@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Heart, Eye, Trash2, Check, RefreshCw } from 'lucide-react';
+import { Heart, Eye, Trash2, Check, RefreshCw, MoreHorizontal } from 'lucide-react';
 import { adminApi } from '../../lib/api';
 import { useApp } from '../../lib/AppContext';
 import { PaginationBar } from '../../components/admin/PaginationBar';
@@ -42,6 +42,7 @@ export function AdminConfessionsPage() {
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
   const [viewing, setViewing] = useState<ConfessionItem | null>(null);
+  const [menuId, setMenuId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,10 +66,14 @@ export function AdminConfessionsPage() {
     load();
   }, [load]);
 
-  const handleAction = async (item: ConfessionItem, action: 'approve' | 'reject') => {
+  const handleAction = async (item: ConfessionItem, action: 'approve' | 'reject' | 'view') => {
     if (action === 'reject') {
       const ok = await confirm('确认删除这条表白？删除后无法恢复。');
       if (!ok) return;
+    }
+    if (action === 'view') {
+      setViewing(item);
+      return;
     }
     try {
       await adminApi.updateConfession(item.id, action);
@@ -76,24 +81,13 @@ export function AdminConfessionsPage() {
       load();
     } catch (err) {
       addToast(err instanceof Error ? err.message : '操作失败', 'error');
+    } finally {
+      setMenuId(null);
     }
   };
 
-  const btnBase: React.CSSProperties = {
-    padding: '4px 10px',
-    borderRadius: 3,
-    fontSize: 12,
-    border: '1px solid var(--color-border)',
-    cursor: 'pointer',
-    background: 'var(--color-card-alt)',
-    color: 'var(--color-text-muted)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-  };
-
   return (
-    <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
+    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 20 }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
           表白审核
@@ -122,21 +116,21 @@ export function AdminConfessionsPage() {
       </div>
 
       {/* 列表 */}
-      {loading ? (
-        <div className="flex justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
-          <RefreshCw size={20} className="animate-spin" />
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
-          <Heart size={32} opacity={0.3} />
-          <p className="mt-2 text-sm">暂无内容</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
+      <div className="space-y-2" style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+        {loading ? (
+          <div className="flex justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
+            <RefreshCw size={20} className="animate-spin" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
+            <Heart size={32} opacity={0.3} />
+            <p className="mt-2 text-sm">暂无内容</p>
+          </div>
+        ) : (
+          items.map((item) => (
             <div
               key={item.id}
-              className="flex items-start gap-3 p-3 rounded"
+              className="flex items-start gap-3 p-3 rounded relative"
               style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}
             >
               <Avatar username={item.user_avatar || item.username} avatar={item.user_avatar} size={36} />
@@ -162,30 +156,62 @@ export function AdminConfessionsPage() {
                   <span><Eye size={12} className="inline mr-0.5" />{item.comment_count}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5 flex-shrink-0">
-                {item.status === 2 && (
+              {/* 三点菜单 */}
+              <div className="relative flex-shrink-0">
+                <button
+                  className="p-1 rounded transition-colors"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  onClick={(e) => { e.stopPropagation(); setMenuId(menuId === item.id ? null : item.id); }}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+                {menuId === item.id && (
                   <>
-                    <button
-                      style={{ ...btnBase, color: 'var(--color-success)', borderColor: 'var(--color-success)' }}
-                      onClick={() => handleAction(item, 'approve')}
-                      title="通过"
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
+                    <div
+                      className="absolute right-0 top-8 z-50 min-w-[120px] rounded shadow-lg overflow-hidden"
+                      style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
                     >
-                      <Check size={13} />
-                    </button>
-                    <button
-                      style={{ ...btnBase, color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
-                      onClick={() => handleAction(item, 'reject')}
-                      title="删除"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2"
+                        style={{ color: 'var(--color-text)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        onClick={() => handleAction(item, 'view')}
+                      >
+                        <Eye size={13} /> 查看详情
+                      </button>
+                      {item.status === 2 && (
+                        <>
+                          <div style={{ borderBottom: '1px solid var(--color-divider)' }} />
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2"
+                            style={{ color: 'var(--color-success)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => handleAction(item, 'approve')}
+                          >
+                            <Check size={13} /> 通过
+                          </button>
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2"
+                            style={{ color: 'var(--color-error)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => handleAction(item, 'reject')}
+                          >
+                            <Trash2 size={13} /> 下架
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* 查看详情弹窗 */}
       {viewing && (
