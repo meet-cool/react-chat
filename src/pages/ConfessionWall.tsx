@@ -430,7 +430,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => navigate('/confessions/ranking')}
               className="btn btn-sm"
-              style={{ minHeight: 34 }}
+              style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
             >
               <Trophy size={14} />
               排行榜
@@ -439,7 +439,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <button
                 onClick={() => navigate('/confessions/bookmarks')}
                 className="btn btn-sm"
-                style={{ padding: '4px 12px' }}
+                style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
               >
                 <Bookmark size={14} />
               </button>
