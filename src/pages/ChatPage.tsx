@@ -673,7 +673,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             className="btn btn-sm"
             title="退出登录"
             style={{
-              borderRadius: 20,
+              borderRadius: 6,
               padding: '4px 12px',
               borderColor: 'var(--color-error)',
               color: 'var(--color-error)',
