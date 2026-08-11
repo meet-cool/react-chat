@@ -90,6 +90,7 @@ export function ReportDialog({
                         color: 'var(--color-text)',
                       }
                 }
+                onClick={() => setReason(r)}
                 onMouseEnter={(e) => {
                   if (!selected) e.currentTarget.style.background = 'var(--color-hover-bg)';
                 }}

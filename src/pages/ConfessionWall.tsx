@@ -135,7 +135,8 @@ function ConfessionCard({
             className={`btn btn-sm ${c.liked ? 'btn-error' : ''}`}
             style={{
               minWidth: 32,
-              padding: '2px 6px',
+              maxHeight: 26,
+              padding: '0 6px',
               ...(c.liked
                 ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
                 : { color: 'var(--color-text-muted)' }
@@ -148,7 +149,7 @@ function ConfessionCard({
           <button
             onClick={() => setShowComments(!showComments)}
             className="btn btn-sm"
-            style={{ minWidth: 32, padding: '2px 6px', color: 'var(--color-text-muted)' }}
+            style={{ minWidth: 32, maxHeight: 26, padding: '0 6px', color: 'var(--color-text-muted)' }}
           >
             <MessageCircle size={13} />
             <span className="ml-0.5 text-xs">{c.comment_count}</span>
@@ -159,7 +160,8 @@ function ConfessionCard({
               className="btn btn-sm"
               style={{
                 minWidth: 32,
-                padding: '2px 6px',
+                maxHeight: 26,
+                padding: '0 6px',
                 color: c.bookmarked ? 'var(--color-warning)' : 'var(--color-text-muted)',
               }}
               title="收藏"
