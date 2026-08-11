@@ -411,7 +411,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               </button>
             )}
             <div>
-              <h1 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+              <h1 className="text-base font-bold flex items-center gap-2" style={{ color: T.text }}>
                 <Heart size={18} style={{ color: 'var(--color-error)' }} />
                 表白墙
               </h1>
