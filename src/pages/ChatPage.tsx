@@ -967,17 +967,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           )}
         </main>
 
-        {/* 右侧：成员列表 */}
-        {/* 桌面端：flex 流内 static，正常布局 */}
-        {/* 移动端：fixed 覆盖全视口，translate-x 控制滑入滑出 */}
+        {/* 右侧：成员列表（桌面端）— 正常 flex 流内显示 */}
+        <aside
+          className="hidden md:flex flex-col border-l w-60 flex-shrink-0 bg-[var(--color-card)] transition-all duration-200 ease-out"
+          style={{ borderColor: 'var(--color-divider)', ...(rightCollapsed ? { width: 0, opacity: 0, pointerEvents: 'none' } : {}) }}
+        >
+          {activeRoom && !showPrivate && (
+            <MemberList members={members} loading={membersLoading} />
+          )}
+        </aside>
+
+        {/* 右侧：成员列表（移动端）— fixed 浮层，由 mobileSidebar 控制 */}
         <aside
           className={`
-            border-l bg-[var(--color-card)] transition-all duration-200 ease-out
-            /* 桌面端：flex 流内，static 定位 */
-            md:static md:flex md:w-60 md:flex-shrink-0 md:opacity-100 md:z-auto
-            ${rightCollapsed ? 'md:w-0 md:pointer-events-none md:opacity-0' : ''}
-            /* 移动端：fixed 全屏浮层，默认隐藏 */
-            fixed inset-y-0 right-0 top-0 z-50 w-60 h-full
+            md:hidden fixed inset-y-0 right-0 top-0 z-50 w-60 h-full
+            border-l bg-[var(--color-card)] transition-transform duration-200 ease-out
             ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}
           `}
           style={{ borderColor: 'var(--color-divider)' }}
@@ -985,7 +989,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           {activeRoom && !showPrivate ? (
             <div className="flex flex-col h-full w-60 relative">
               <button
-                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1"
+                className="absolute top-3 right-3 z-10 btn btn-sm p-1"
                 onClick={() => setMobileSidebar(null)}
               >
                 <X size={14} />
