@@ -63,14 +63,6 @@ function ConfessionCard({
     }
   };
 
-  const handleShare = () => {
-    const url = `${window.location.origin}/confessions/${c.slug}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      window.dispatchEvent(new CustomEvent('arcle-toast', { detail: { message: '链接已复制', type: 'success' } }));
-    }
-  };
-
   const handleReport = async (reason: string) => {
     await confessionApi.report(c.slug, reason);
     addToast('举报已提交，我们会尽快处理', 'success');
@@ -177,25 +169,15 @@ function ConfessionCard({
             </button>
           )}
         </div>
-        {/* 右侧：分享 + 更多 */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleShare}
-            className="btn btn-sm"
-            style={{ color: 'var(--color-text-muted)' }}
-            title="分享"
-          >
-            <Share2 size={14} />
-          </button>
-          <button
-            onClick={() => setShowReport(true)}
-            className="btn btn-sm"
-            style={{ color: 'var(--color-text-muted)' }}
-            title="举报"
-          >
-            <MoreVertical size={14} />
-          </button>
-        </div>
+        {/* 右侧：更多（三个点） */}
+        <button
+          onClick={() => setShowReport(true)}
+          className="btn btn-sm ml-auto"
+          style={{ minWidth: 28, padding: '2px 4px', color: 'var(--color-text-muted)' }}
+          title="举报"
+        >
+          <MoreVertical size={13} />
+        </button>
       </div>
 
       {/* 举报弹窗 */}
@@ -267,10 +249,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [isLogged, setIsLogged] = useState(false);
 
   const loadConfessions = useCallback(
-    async (p = 1) => {
+    async (p = 1, searchVal?: string, sortVal?: SortType) => {
       setLoading(true);
       try {
-        const res = await confessionApi.list(p, { search, sort });
+        const res = await confessionApi.list(p, {
+          search: searchVal ?? search,
+          sort: sortVal ?? sort,
+        });
         setConfessions(res.items);
         setTotal(res.pagination.total);
         setPage(p);
@@ -323,7 +308,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
 
   const handleSearch = () => {
     setPage(1);
-    loadConfessions(1);
+    loadConfessions(1, search, sort);
   };
 
   const hasNextPage = page * 20 < total;
@@ -437,11 +422,14 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => setViewMode('card')}
               className={`p-1.5 ${viewMode === 'card' ? '' : ''}`}
-              style={
-                viewMode === 'card'
+              style={{
+                minWidth: 28,
+                minHeight: 28,
+                ...(viewMode === 'card'
                   ? { background: 'var(--color-primary)', color: '#fff' }
                   : { background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }
-              }
+                ),
+              }}
               title="列表视图"
             >
               <List size={14} />
@@ -449,11 +437,14 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => setViewMode('grid')}
               className="p-1.5"
-              style={
-                viewMode === 'grid'
+              style={{
+                minWidth: 28,
+                minHeight: 28,
+                ...(viewMode === 'grid'
                   ? { background: 'var(--color-primary)', color: '#fff' }
                   : { background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }
-              }
+                ),
+              }}
               title="网格视图"
             >
               <LayoutGrid size={14} />
