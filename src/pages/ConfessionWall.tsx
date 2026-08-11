@@ -188,7 +188,7 @@ function ConfessionCard({
               maxHeight: 26,
               padding: '0 6px',
               ...(c.liked
-                ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
+                ? { background: T.primary, color: '#fff', borderColor: T.primary }
                 : { color: T.textMuted }
               ),
             }}
@@ -276,8 +276,8 @@ function ConfessionCard({
               <button
                 onClick={handleComment}
                 disabled={loading || !commentText.trim()}
-                className="btn btn-primary btn-sm"
-                style={{ padding: '4px 12px' }}
+                className="btn btn-sm"
+                style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
               >
                 <SendHorizonal size={14} />
               </button>
