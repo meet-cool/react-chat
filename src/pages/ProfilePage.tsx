@@ -45,7 +45,7 @@ export function ProfilePage() {
 
   if (!info) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }}>
         加载失败
       </div>
     );
