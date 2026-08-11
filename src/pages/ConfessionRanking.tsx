@@ -48,7 +48,7 @@ export function ConfessionRanking() {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [theme]);
 
   const loadRanking = useCallback(async (type: 'likes' | 'comments') => {
     setLoading(true);

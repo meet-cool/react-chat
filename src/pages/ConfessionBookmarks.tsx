@@ -38,7 +38,7 @@ export function ConfessionBookmarks() {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [theme]);
 
   const loadBookmarks = useCallback(async () => {
     const token = localStorage.getItem('arcle_token');

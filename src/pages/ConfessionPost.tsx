@@ -38,7 +38,7 @@ export function ConfessionPost() {
     updateBg();
     window.addEventListener('resize', updateBg);
     return () => window.removeEventListener('resize', updateBg);
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');

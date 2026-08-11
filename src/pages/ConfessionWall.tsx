@@ -326,7 +326,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     updateBg();
     window.addEventListener('resize', updateBg);
     return () => window.removeEventListener('resize', updateBg);
-  }, []);
+  }, [theme]);
 
   const loadConfessions = useCallback(
     async (p = 1, searchVal?: string, sortVal?: SortType) => {

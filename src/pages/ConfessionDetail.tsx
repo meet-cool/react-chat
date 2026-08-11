@@ -61,7 +61,7 @@ export function ConfessionDetail() {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [theme]);
 
   const loadDetail = useCallback(async () => {
     if (!slug) return;
