@@ -7,8 +7,6 @@ import {
   Star,
   Share2,
   Search,
-  LayoutGrid,
-  List,
   Trophy,
   Bookmark,
   MoreVertical,
@@ -432,13 +430,6 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 }}
               />
             </div>
-            <button
-              onClick={handleSearch}
-              className="btn btn-sm"
-              style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
-            >
-              搜索
-            </button>
           </div>
           <select
             value={sort}
@@ -457,42 +448,6 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <option value="likes">最热</option>
             <option value="comments">最多评论</option>
           </select>
-          <div
-            className="flex border"
-            style={{ borderColor: T.cardBorder, borderRadius: '3px', overflow: 'hidden' }}
-          >
-            <button
-              onClick={() => setViewMode('card')}
-              className={`p-1.5 ${viewMode === 'card' ? '' : ''}`}
-              style={{
-                minWidth: 28,
-                minHeight: 28,
-                ...(viewMode === 'card'
-                  ? { background: T.primary, color: '#fff' }
-                  : { background: T.inputBg, color: T.textMuted }
-                ),
-              }}
-              title="列表视图"
-            >
-              <List size={14} />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className="p-1.5"
-              style={{
-                minWidth: 28,
-                minHeight: 28,
-                ...(viewMode === 'grid'
-                  ? { background: T.primary, color: '#fff' }
-                  : { background: T.inputBg, color: T.textMuted }
-                ),
-              }}
-              title="网格视图"
-            >
-              <LayoutGrid size={14} />
-            </button>
-          </div>
-          {/* 主题选择 */}
           <select
             value={theme}
             onChange={(e) => setTheme(e.target.value as ThemeKey)}
