@@ -154,9 +154,12 @@ export function BottlePage() {
     <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
       {/* 头部 */}
       <div
-        className="px-4 py-3 border-b flex items-center justify-between"
+        className="px-4 py-3 border-b flex items-center gap-3"
         style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
       >
+        <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36 }}>
+          <ArrowLeft size={14} />
+        </button>
         <div>
           <h1 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <SendHorizonal size={18} style={{ color: 'var(--color-primary)' }} />
