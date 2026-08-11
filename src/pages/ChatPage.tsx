@@ -648,7 +648,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 color: 'var(--color-primary)',
                 borderColor: 'var(--color-primary)',
                 background: 'var(--color-primary-light)',
-                borderRadius: 20,
+                borderRadius: 6,
                 padding: '4px 12px',
               }}
             >
@@ -701,20 +701,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         >
           {/* 分类竖条 */}
           <div
-            className="w-14 flex flex-col items-center py-3 gap-1 border-r flex-shrink-0 relative"
+            className="w-14 flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative"
             style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
           >
             {/* 左侧活跃指示条 */}
             <div
-              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r transition-all duration-200"
+              className="absolute left-0 w-1 rounded-r transition-all duration-200"
               style={{
+                height: 56,
                 background: 'var(--color-primary)',
-                opacity: 0.7,
-                boxShadow: `0 0 8px var(--color-primary)`,
-                ...(category === 'recent' || category === 'rooms' || category === 'contacts' || category === 'confession' || category === 'bottle' || category === 'points' || category === 'extensions'
-                  ? { height: '36%' }
-                  : { height: 0 }),
-                top: category === 'recent' ? '10%' : category === 'rooms' ? '22%' : category === 'contacts' ? '34%' : category === 'confession' ? '46%' : category === 'bottle' ? '58%' : category === 'points' ? '70%' : '82%',
+                opacity: 0.8,
+                boxShadow: '0 0 6px var(--color-primary)',
+                top: (() => {
+                  const map: Record<string, number> = { recent: 40, rooms: 96, contacts: 152, confession: 208, bottle: 264, points: 320, extensions: 376 };
+                  return map[category] ?? 40;
+                })(),
               }}
             />
             {sidebarCategories.map((c) => {
@@ -727,7 +728,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     handleSidebarClick(c.k);
                     if (leftCollapsed) setLeftCollapsed(false);
                   }}
-                  className="w-10 h-10 flex items-center justify-center transition-all duration-150 rounded-lg relative"
+                  className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl relative"
                   style={
                     isActive
                       ? {
@@ -1068,7 +1069,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>选择聊天室开始对话</p>
                 <button
                   className="md:hidden btn btn-sm mt-2"
-                  style={{ borderRadius: 20, padding: '6px 16px' }}
+                  style={{ borderRadius: 6, padding: '6px 16px' }}
                   onClick={() => setMobileSidebar('rooms')}
                 >
                   <Menu size={14} /> 查看聊天室
