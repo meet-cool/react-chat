@@ -106,7 +106,7 @@ export function ConfessionRanking() {
         </button>
         <div className="flex-1">
           <h1 className="text-base font-bold flex items-center gap-2" style={{ color: T.text }}>
-            <Trophy size={18} style={{ color: 'var(--color-warning)' }} />
+            <Trophy size={18} style={{ color: T.warning }} />
             表白墙排行榜
           </h1>
         </div>
@@ -249,7 +249,7 @@ export function ConfessionRanking() {
                   {/* 收藏（登录用户） */}
                   <button
                     className="flex-shrink-0 p-1"
-                    style={{ color: c.bookmarked ? 'var(--color-warning)' : T.textMuted }}
+                    style={{ color: c.bookmarked ? T.warning : T.textMuted }}
                     title="收藏"
                     onClick={() => handleBookmark(c.slug)}
                   >

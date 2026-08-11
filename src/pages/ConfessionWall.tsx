@@ -164,7 +164,7 @@ function ConfessionCard({
                 minWidth: 32,
                 maxHeight: 26,
                 padding: '0 6px',
-                color: c.bookmarked ? 'var(--color-warning)' : T.textMuted,
+                color: c.bookmarked ? T.warning : T.textMuted,
                 background: 'transparent',
                 border: 'none',
               }}
@@ -369,7 +369,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             )}
             <div>
               <h1 className="text-base font-bold flex items-center gap-2" style={{ color: T.text }}>
-                <Heart size={18} style={{ color: 'var(--color-error)' }} />
+                <Heart size={18} style={{ color: T.error }} />
                 表白墙
               </h1>
             </div>

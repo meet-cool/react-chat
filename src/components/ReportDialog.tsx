@@ -149,6 +149,7 @@ export function ReportDialog({
           <button
             className="btn btn-sm btn-error"
             disabled={!finalReason || submitting}
+            style={{ background: T.error, color: '#fff', borderColor: T.error }}
             onClick={submit}
           >
             {submitting ? (

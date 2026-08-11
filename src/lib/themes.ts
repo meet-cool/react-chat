@@ -11,6 +11,8 @@ export const THEMES: Record<ThemeKey, {
   divider: string;
   labelBg: string;
   inputBg: string;
+  warning: string;
+  error: string;
 }> = {
   ocean: {
     primary: '#4fc3f7',
@@ -23,6 +25,8 @@ export const THEMES: Record<ThemeKey, {
     divider: 'rgba(79,195,247,0.15)',
     labelBg: 'rgba(79,195,247,0.18)',
     inputBg: 'rgba(0,0,0,0.2)',
+    warning: '#fbbf24',
+    error: '#f87171',
   },
   pink: {
     primary: '#f472b6',
@@ -35,6 +39,8 @@ export const THEMES: Record<ThemeKey, {
     divider: 'rgba(244,114,182,0.15)',
     labelBg: 'rgba(244,114,182,0.18)',
     inputBg: 'rgba(0,0,0,0.2)',
+    warning: '#fbbf24',
+    error: '#f87171',
   },
   default: {
     primary: 'var(--color-primary)',
@@ -47,5 +53,7 @@ export const THEMES: Record<ThemeKey, {
     divider: 'var(--color-divider)',
     labelBg: 'var(--color-primary-light)',
     inputBg: 'var(--color-bg-page)',
+    warning: 'var(--color-warning)',
+    error: 'var(--color-error)',
   },
 };

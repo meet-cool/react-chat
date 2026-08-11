@@ -305,7 +305,7 @@ export function ConfessionDetail() {
               <button
                 onClick={handleBookmark}
                 className="btn btn-sm flex-1"
-                style={confession.bookmarked ? { color: 'var(--color-warning)' } : { color: T.textMuted }}
+                style={confession.bookmarked ? { color: T.warning } : { color: T.textMuted }}
               >
                 <Star size={14} fill={confession.bookmarked ? 'currentColor' : 'none'} />
                 收藏
