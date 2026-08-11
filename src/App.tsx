@@ -11,6 +11,7 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminRoomsPage } from './pages/admin/AdminRoomsPage';
 import { AdminMessagesPage } from './pages/admin/AdminMessagesPage';
+import { AdminConfessionsPage } from './pages/admin/AdminConfessionsPage';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { PortalPage } from './pages/PortalPage';
 import { ConfessionWall } from './pages/ConfessionWall';
@@ -141,6 +142,7 @@ export default function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="rooms" element={<AdminRoomsPage />} />
             <Route path="messages" element={<AdminMessagesPage />} />
+            <Route path="confessions" element={<AdminConfessionsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

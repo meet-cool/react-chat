@@ -409,4 +409,10 @@ export const adminApi = {
     adminGet<AdminPaginated<AdminMessage>>('/messages', p),
   deleteMessage: (id: number, scope: 'room' | 'private') =>
     adminDelete<null>(`/messages/${id}?scope=${scope}`),
+
+  // 表白墙管理
+  confessions: (p: { page?: number; per_page?: number; status?: string }) =>
+    adminGet<AdminPaginated<Confession & { username: string; user_avatar: string; status_label: string; content_short: string }>>('/confessions', p),
+  updateConfession: (id: number, action: 'approve' | 'reject') =>
+    adminPost<null>(`/confessions/${id}`, { action }),
 };

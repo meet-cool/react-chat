@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   MessageCircle,
+  Heart,
 } from 'lucide-react';
 import { useAdminAuth } from '../../lib/AdminContext';
 import { Avatar } from '../../components/Avatar';
@@ -23,6 +24,7 @@ const menuItems = [
   { k: 'users', label: '用户管理', path: '/admin/users', icon: Users },
   { k: 'rooms', label: '房间管理', path: '/admin/rooms', icon: MessageSquare },
   { k: 'messages', label: '消息审查', path: '/admin/messages', icon: MessageCircle },
+  { k: 'confessions', label: '表白审核', path: '/admin/confessions', icon: Heart },
 ];
 
 export function AdminLayout() {
