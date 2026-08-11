@@ -5,6 +5,7 @@ import {
   MessageCircle,
   Trash2,
   RotateCcw,
+  ArrowLeft,
 } from 'lucide-react';
 import { bottleApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
