@@ -35,7 +35,12 @@ export function ConfessionDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [theme, setTheme] = useState<ThemeKey>(() => (localStorage.getItem('confession_theme') as ThemeKey) || 'pink');
-  const [bgImage, setBgImage] = useState('mbbqbg.svg');
+  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg' | 'mbbqbg-dark.svg' | 'bbqbg-dark.svg'>(() => {
+    const isOcean = theme === 'ocean';
+    return window.innerWidth < 768
+      ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+      : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg');
+  });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const T = THEMES[theme];
@@ -46,8 +51,12 @@ export function ConfessionDetail() {
 
   useEffect(() => {
     const handleResize = () => {
+      const isOcean = theme === 'ocean';
       setWindowWidth(window.innerWidth);
-      setBgImage(window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+      setBgImage(window.innerWidth < 768
+        ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+        : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg')
+      );
     };
     handleResize();
     window.addEventListener('resize', handleResize);

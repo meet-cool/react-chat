@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1334" viewBox="0 0 750 1334">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#0d1f3c"/>
+      <stop offset="100%" stop-color="#050d1a"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <path id="heart" d="M0,-15 C-8,-25 -20,-20 -20,-10 C-20,0 0,15 0,20 C0,15 20,0 20,-10 C20,-20 8,-25 0,-15Z"/>
+  </defs>
+  <rect width="750" height="1334" fill="url(#bg)"/>
+  <!-- 深蓝光晕 -->
+  <ellipse cx="150" cy="180" rx="120" ry="90" fill="#0a2a4a" opacity="0.5" filter="url(#soft)"/>
+  <ellipse cx="580" cy="500" rx="130" ry="100" fill="#0a2a4a" opacity="0.4" filter="url(#soft)"/>
+  <ellipse cx="350" cy="900" rx="140" ry="80" fill="#0a2a4a" opacity="0.35" filter="url(#soft)"/>
+  <ellipse cx="650" cy="200" rx="100" ry="80" fill="#0a2a4a" opacity="0.35" filter="url(#soft)"/>
+  <ellipse cx="100" cy="1100" rx="110" ry="90" fill="#0a2a4a" opacity="0.4" filter="url(#soft)"/>
+  <!-- 爱心 行1 -->
+  <g transform="translate(80,60) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(200,45) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(330,70) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(460,50) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(580,75) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(700,55) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <!-- 行2 -->
+  <g transform="translate(50,160) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(180,175) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(310,155) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(440,170) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(570,155) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(700,170) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <!-- 行3 -->
+  <g transform="translate(90,270) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(220,255) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(350,280) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(480,260) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(610,275) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(720,255) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <!-- 行4 -->
+  <g transform="translate(60,370) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(190,385) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(320,365) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(450,380) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(580,365) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(710,380) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 行5 -->
+  <g transform="translate(80,470) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(210,490) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(340,470) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(470,485) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(600,470) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(730,490) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <!-- 行6 -->
+  <g transform="translate(50,570) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(180,590) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(310,570) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(440,585) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(570,570) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(700,585) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 行7 -->
+  <g transform="translate(90,680) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(220,665) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(350,680) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(480,665) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(610,680) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(730,665) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <!-- 行8 -->
+  <g transform="translate(60,780) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(190,800) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(320,780) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(450,795) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(580,780) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(710,795) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 行9 -->
+  <g transform="translate(80,880) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(210,895) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(340,880) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(470,895) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(600,880) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(730,895) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <!-- 行10 -->
+  <g transform="translate(50,990) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(180,1005) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(310,990) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(440,1005) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(570,990) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(700,1005) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 行11 -->
+  <g transform="translate(90,1100) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(220,1085) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(350,1100) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(480,1085) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(610,1100) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(730,1085) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <!-- 行12 -->
+  <g transform="translate(60,1200) scale(0.75)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(190,1215) scale(0.85)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(320,1200) scale(0.6)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(450,1215) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(580,1200) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(710,1215) scale(0.55)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <!-- 行13 -->
+  <g transform="translate(100,1310) scale(0.8)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <g transform="translate(300,1295) scale(0.65)" filter="url(#glow)"><use href="#heart" fill="#4fc3f7"/></g>
+  <g transform="translate(500,1310) scale(0.9)" filter="url(#glow)"><use href="#heart" fill="#81d4fa"/></g>
+  <g transform="translate(680,1295) scale(0.7)" filter="url(#glow)"><use href="#heart" fill="#b3e5fc"/></g>
+  <!-- 模糊光斑 -->
+  <ellipse cx="120" cy="130" rx="30" ry="22" fill="#4fc3f7" opacity="0.1" filter="url(#soft)"/>
+  <ellipse cx="350" cy="250" rx="28" ry="20" fill="#81d4fa" opacity="0.08" filter="url(#soft)"/>
+  <ellipse cx="550" cy="400" rx="32" ry="24" fill="#b3e5fc" opacity="0.07" filter="url(#soft)"/>
+  <ellipse cx="200" cy="600" rx="26" ry="18" fill="#4fc3f7" opacity="0.07" filter="url(#soft)"/>
+  <ellipse cx="600" cy="750" rx="30" ry="22" fill="#81d4fa" opacity="0.07" filter="url(#soft)"/>
+  <ellipse cx="150" cy="950" rx="28" ry="20" fill="#b3e5fc" opacity="0.07" filter="url(#soft)"/>
+  <ellipse cx="500" cy="1100" rx="32" ry="24" fill="#4fc3f7" opacity="0.07" filter="url(#soft)"/>
+  <ellipse cx="680" cy="1250" rx="26" ry="18" fill="#81d4fa" opacity="0.07" filter="url(#soft)"/>
+</svg>

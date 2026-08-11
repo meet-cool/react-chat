@@ -15,9 +15,12 @@ export function ConfessionBookmarks() {
     return saved && THEMES[saved] ? saved : 'pink';
   });
 
-  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg'>(() =>
-    window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg'
-  );
+  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg' | 'mbbqbg-dark.svg' | 'bbqbg-dark.svg'>(() => {
+    const isOcean = theme === 'ocean';
+    return window.innerWidth < 768
+      ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+      : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg');
+  });
 
   const T = THEMES[theme];
 
@@ -27,7 +30,11 @@ export function ConfessionBookmarks() {
 
   useEffect(() => {
     const handleResize = () => {
-      setBgImage(window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+      const isOcean = theme === 'ocean';
+      setBgImage(window.innerWidth < 768
+        ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+        : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg')
+      );
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

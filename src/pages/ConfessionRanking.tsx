@@ -24,7 +24,12 @@ export function ConfessionRanking() {
   const [activeTab, setActiveTab] = useState<'likes' | 'comments'>('likes');
   const [isLogged, setIsLogged] = useState(false);
   const [theme, setTheme] = useState<ThemeKey>(() => (localStorage.getItem('confession_theme') as ThemeKey) || 'pink');
-  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg'>('mbbqbg.svg');
+  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg' | 'mbbqbg-dark.svg' | 'bbqbg-dark.svg'>(() => {
+    const isOcean = theme === 'ocean';
+    return window.innerWidth < 768
+      ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+      : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg');
+  });
 
   const T = THEMES[theme];
 
@@ -34,7 +39,11 @@ export function ConfessionRanking() {
 
   useEffect(() => {
     const handleResize = () => {
-      setBgImage(window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+      const isOcean = theme === 'ocean';
+      setBgImage(window.innerWidth < 768
+        ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+        : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg')
+      );
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -77,7 +86,7 @@ export function ConfessionRanking() {
   return (
     <div
       className="flex flex-col h-full"
-      style={{ background: T.cardBg, backgroundImage: `url('/bg/${bgImage}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      style={{ background: T.cardBg, backgroundImage: `url(/${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
       {/* 头部 */}
       <div

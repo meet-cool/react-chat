@@ -317,7 +317,11 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   useEffect(() => {
     const updateBg = () => {
       const w = window.innerWidth;
-      setBgImage(w < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+      const isOcean = theme === 'ocean';
+      setBgImage(w < 768
+        ? (isOcean ? 'mbbqbg-dark.svg' : 'mbbqbg.svg')
+        : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg')
+      );
     };
     updateBg();
     window.addEventListener('resize', updateBg);
