@@ -112,7 +112,9 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
       );
       // 刷新历史
       loadHistory();
-      // 刷新用户信息（积分、等级、经验）
+      // 刷新积分信息（points、exp、level）
+      loadPoints();
+      // 刷新用户信息（同步到聊天页头像栏）
       if (onUserUpdate) {
         try {
           const updated = await authApi.profile();

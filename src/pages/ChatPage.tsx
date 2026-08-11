@@ -100,6 +100,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const lastManualActionRef = useRef<number>(Date.now());
   // 成员列表是否已加载过（首次加载才显示骨架屏）
   const membersLoadedRef = useRef(false);
+  // 上次加载成员的房间ID（用于切换房间时显示骨架屏）
+  const lastLoadRoomRef = useRef<number | null>(null);
   // MessageInput 插入文本方法引用（@提及用）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
   // 防重复处理鉴权错误
@@ -223,11 +225,13 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
   // 加载成员列表（带去重，防止定时刷新造成闪烁）
   const loadMembers = useCallback(async (roomId: number) => {
-    // 仅在首次加载或手动切换房间时显示骨架屏，定时刷新静默更新
+    // 切换房间或首次加载时显示骨架屏，定时刷新静默更新
+    const isRoomSwitch = lastLoadRoomRef.current !== roomId;
     const isRecentManual = Date.now() - lastManualActionRef.current <= 5000;
-    setMembersLoading((prev) => prev || !membersLoadedRef.current || isRecentManual);
+    setMembersLoading((prev) => prev || isRoomSwitch || !membersLoadedRef.current || isRecentManual);
     try {
       const list = await roomApi.members(roomId);
+      lastLoadRoomRef.current = roomId;
       membersLoadedRef.current = true;
       setMembers((prev) => {
         const prevById = new Map(prev.map((m) => [m.id, m]));
@@ -248,6 +252,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleSelectRoom = useCallback(
     async (room: Room) => {
       lastManualActionRef.current = Date.now();
+      lastLoadRoomRef.current = null;
       setActiveRoom((prev) => {
         if (prev && prev.id === room.id) return prev;
         return room;
@@ -277,6 +282,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
         if (freshRoom.joined) {
           // 已加入：直接切换
+          lastLoadRoomRef.current = null;
           setActiveRoom(freshRoom);
           setMessages([]);
           lastMessageIdRef.current = 0;
@@ -289,6 +295,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           await loadRooms();
           const joinedRoom = rooms.find((r) => r.id === room.id);
           if (joinedRoom) {
+            lastLoadRoomRef.current = null;
             setActiveRoom(joinedRoom);
             setMessages([]);
             lastMessageIdRef.current = 0;
@@ -506,6 +513,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleClosePrivate = useCallback(() => {
     setShowPrivate(false);
     setPrivateTarget(null);
+    setRightCollapsed(false);
+    lastLoadRoomRef.current = null;
   }, []);
 
   // 退出登录
