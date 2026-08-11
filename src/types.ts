@@ -281,6 +281,7 @@ export interface Confession {
   avatar: string;
   like_count: number;
   comment_count: number;
+  bookmark_count: number;
   liked: boolean;
   bookmarked: boolean;
   slug: string;

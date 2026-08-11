@@ -132,39 +132,48 @@ function ConfessionCard({
 
       {/* 操作栏 */}
       <div
-        className="flex items-center gap-1 px-4 pb-3"
+        className="flex items-center gap-1 px-3 py-2"
         style={{ borderTop: '1px solid var(--color-divider)', marginTop: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 左侧：互动按钮 */}
-        <div className="flex items-center gap-1 flex-1">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => onLike(c.slug)}
-            className={`btn btn-sm flex-1 ${c.liked ? 'btn-error' : ''}`}
-            style={
-              c.liked
+            className={`btn btn-sm ${c.liked ? 'btn-error' : ''}`}
+            style={{
+              minWidth: 32,
+              padding: '2px 6px',
+              ...(c.liked
                 ? { background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }
                 : { color: 'var(--color-text-muted)' }
-            }
+              ),
+            }}
           >
-            <Heart size={14} fill={c.liked ? 'currentColor' : 'none'} />
-            {c.like_count}
+            <Heart size={13} fill={c.liked ? 'currentColor' : 'none'} />
+            <span className="ml-0.5 text-xs">{c.like_count}</span>
           </button>
           <button
             onClick={() => setShowComments(!showComments)}
-            className="btn btn-sm flex-1"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="btn btn-sm"
+            style={{ minWidth: 32, padding: '2px 6px', color: 'var(--color-text-muted)' }}
           >
-            <MessageCircle size={14} />
-            {c.comment_count}
+            <MessageCircle size={13} />
+            <span className="ml-0.5 text-xs">{c.comment_count}</span>
           </button>
           {isLogged && (
             <button
               onClick={() => onBookmark(c.slug)}
-              className="btn btn-sm flex-1"
-              style={c.bookmarked ? { color: 'var(--color-warning)' } : { color: 'var(--color-text-muted)' }}
+              className="btn btn-sm"
+              style={{
+                minWidth: 32,
+                padding: '2px 6px',
+                color: c.bookmarked ? 'var(--color-warning)' : 'var(--color-text-muted)',
+              }}
+              title="收藏"
             >
-              <Star size={14} fill={c.bookmarked ? 'currentColor' : 'none'} />
+              <Star size={13} fill={c.bookmarked ? 'currentColor' : 'none'} />
+              <span className="ml-0.5 text-xs">{c.bookmark_count ?? 0}</span>
             </button>
           )}
         </div>
@@ -455,13 +464,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
 
       {/* 列表 */}
       <div
-        className="flex-1 overflow-y-auto p-3"
+        className="flex-1 overflow-y-auto p-4"
         style={
           viewMode === 'grid'
             ? {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: 12,
+                gap: 16,
                 alignContent: 'start',
               }
             : {}
@@ -489,11 +498,12 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
           confessions.map((c) => (
             <div
               key={c.id}
+              className="mb-3"
               style={
-                viewMode === 'grid'
-                  ? { minHeight: 200, display: 'flex', flexDirection: 'column' }
-                  : { borderBottom: '1px solid var(--color-divider)' }
-              }
+            viewMode === 'grid'
+              ? { minHeight: 200, display: 'flex', flexDirection: 'column' }
+              : { borderBottom: '1px solid var(--color-divider)', paddingBottom: '12px' }
+          }
             >
               <ConfessionCard
                 c={c}
