@@ -292,6 +292,7 @@ export interface Confession {
   slug: string;
   create_time: number;
   create_time_fmt: string;
+  status?: number;
 }
 
 export interface ConfessionComment {
