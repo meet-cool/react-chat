@@ -182,13 +182,13 @@ function ConfessionCard({
         <div className="flex items-center gap-1">
           <button
             onClick={() => onLike(c.slug)}
-            className={`btn btn-sm ${c.liked ? 'btn-error' : ''}`}
+            className="btn btn-sm"
             style={{
               minWidth: 32,
               maxHeight: 26,
               padding: '0 6px',
               ...(c.liked
-                ? { background: T.primary, color: '#fff', borderColor: T.primary }
+                ? { background: 'transparent', color: T.primary, borderColor: 'transparent' }
                 : { color: T.textMuted }
               ),
             }}
