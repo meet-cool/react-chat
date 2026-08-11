@@ -110,9 +110,10 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   // 401 处理函数
   const handleAuthError = useCallback(() => {
     clearToken();
+    onLogout(); // 清除 user 状态，防止 /login → /chat 循环跳转
     addToast('登录已过期，请重新登录', 'warning');
     setTimeout(() => navigate('/login', { replace: true }), 500);
-  }, [addToast, navigate]);
+  }, [addToast, navigate, onLogout]);
 
   // 加载房间列表
   const loadRooms = useCallback(async () => {
