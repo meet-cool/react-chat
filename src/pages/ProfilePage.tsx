@@ -37,7 +37,7 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)' }}>
         <div className="w-8 h-8 border-2 animate-spin rounded-full" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }} />
       </div>
     );
