@@ -349,10 +349,9 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     <div
       className="flex flex-col h-screen"
       style={{
-        backgroundColor: T.cardBg,
-        backgroundImage: bgImage ? `url(/${bgImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: bgImage
+          ? `url(/${bgImage}) center center / cover no-repeat ${T.cardBg}`
+          : T.cardBg,
       }}
     >
       {/* 头部 */}
