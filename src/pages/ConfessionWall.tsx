@@ -279,7 +279,7 @@ function ConfessionCard({
                 onClick={handleComment}
                 disabled={loading || !commentText.trim()}
                 className="btn btn-sm"
-                style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: T.textMuted }}
+                style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
               >
                 <SendHorizonal size={14} />
               </button>
@@ -445,7 +445,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <button
                 onClick={() => navigate('/confessions/bookmarks')}
                 className="btn btn-sm"
-                style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
+                style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
               >
                 <Bookmark size={14} />
               </button>
