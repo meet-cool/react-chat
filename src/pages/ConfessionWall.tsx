@@ -252,7 +252,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortType>('latest');
-  const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [viewMode] = useState<ViewMode>('card');
   const [isLogged, setIsLogged] = useState(false);
   const [bgImage, setBgImage] = useState('');
   const [theme, setTheme] = useState<ThemeKey>(() => {
