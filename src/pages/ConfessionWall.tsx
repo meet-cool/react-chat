@@ -477,7 +477,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={handleSearch}
               className="btn btn-sm"
-              style={{ minHeight: 32 }}
+              style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}
             >
               搜索
             </button>
@@ -581,7 +581,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <Heart size={40} opacity={0.4} />
             <p className="text-sm">还没有表白</p>
             {isLogged && (
-              <button onClick={() => navigate('/confessions/new')} className="btn btn-sm">
+              <button onClick={() => navigate('/confessions/new')} className="btn btn-sm" style={{ padding: '4px 12px', background: T.primary, color: '#fff', borderColor: T.primary }}>
                 <SendHorizonal size={14} />
                 写第一条
               </button>
