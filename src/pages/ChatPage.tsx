@@ -65,7 +65,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
-  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
