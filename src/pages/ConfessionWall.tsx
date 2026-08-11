@@ -349,7 +349,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     <div
       className="flex flex-col h-screen"
       style={{
-        background: T.cardBg,
+        backgroundColor: T.cardBg,
         backgroundImage: bgImage ? `url(/${bgImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
