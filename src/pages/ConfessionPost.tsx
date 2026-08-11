@@ -4,6 +4,7 @@ import { Heart, SendHorizonal, ArrowLeft, UserPlus } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession } from '../types';
+import { ThemeKey, THEMES } from '../lib/themes';
 
 export function ConfessionPost() {
   const navigate = useNavigate();
@@ -13,6 +14,27 @@ export function ConfessionPost() {
   const [anonymous, setAnonymous] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isLogged, setIsLogged] = useState(false);
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem('confession_theme');
+    return (saved === 'ocean' || saved === 'pink' || saved === 'default') ? saved : 'pink';
+  });
+  const [bgImage, setBgImage] = useState('');
+
+  const T = THEMES[theme];
+
+  useEffect(() => {
+    localStorage.setItem('confession_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const updateBg = () => {
+      const w = window.innerWidth;
+      setBgImage(w < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+    };
+    updateBg();
+    window.addEventListener('resize', updateBg);
+    return () => window.removeEventListener('resize', updateBg);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');
@@ -52,16 +74,30 @@ export function ConfessionPost() {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
+    <div
+      className="flex flex-col h-full"
+      style={
+        bgImage
+          ? {
+              background: `url(/${bgImage}) center center / cover no-repeat`,
+              backgroundAttachment: 'fixed',
+            }
+          : { background: T.cardBg }
+      }
+    >
       {/* 头部 */}
       <div
         className="px-4 py-3 border-b flex items-center gap-3"
-        style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+        style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
-        <button onClick={() => navigate('/confessions')} className="btn btn-sm" style={{ minWidth: 36 }}>
+        <button
+          onClick={() => navigate('/confessions')}
+          className="btn btn-sm"
+          style={{ minWidth: 36, background: 'transparent', border: 'none' }}
+        >
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: 'var(--color-text)' }}>
+        <h1 className="text-base font-bold" style={{ color: T.text }}>
           写表白
         </h1>
         {!isLogged && (
@@ -72,6 +108,25 @@ export function ConfessionPost() {
             未登录 · 审核制
           </span>
         )}
+        <div className="ml-auto">
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as ThemeKey)}
+            className="text-sm"
+            style={{
+              background: 'rgba(0,0,0,0.2)',
+              border: `1px solid ${T.cardBorder}`,
+              color: T.text,
+              borderRadius: '3px',
+              padding: '4px 8px',
+              outline: 'none',
+            }}
+          >
+            <option value="ocean">🌊 蔚蓝无边星海</option>
+            <option value="pink">🌸 粉色浪漫花海</option>
+            <option value="default">🎨 默认主题</option>
+          </select>
+        </div>
       </div>
 
       {!isLogged && (
@@ -89,7 +144,7 @@ export function ConfessionPost() {
       <div className="flex-1 p-4 flex flex-col gap-4">
         {/* 内容 */}
         <div>
-          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--color-text)' }}>
+          <label className="text-sm font-medium mb-1 block" style={{ color: T.text }}>
             表白内容 <span style={{ color: 'var(--color-error)' }}>*</span>
           </label>
           <textarea
@@ -99,9 +154,9 @@ export function ConfessionPost() {
             rows={6}
             className="text-sm resize-none"
             style={{
-              background: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text)',
+              background: 'rgba(0,0,0,0.2)',
+              border: `1px solid ${T.cardBorder}`,
+              color: T.text,
               borderRadius: '3px',
               padding: '10px 12px',
               outline: 'none',
@@ -109,14 +164,14 @@ export function ConfessionPost() {
               minHeight: 120,
             }}
           />
-          <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs mt-1" style={{ color: T.textMuted }}>
             {content.length}/500
           </p>
         </div>
 
         {/* 对象昵称 */}
         <div>
-          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--color-text)' }}>
+          <label className="text-sm font-medium mb-1 block" style={{ color: T.text }}>
             对象昵称（选填）
           </label>
           <input
@@ -127,9 +182,9 @@ export function ConfessionPost() {
             maxLength={50}
             className="text-sm w-full"
             style={{
-              background: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text)',
+              background: 'rgba(0,0,0,0.2)',
+              border: `1px solid ${T.cardBorder}`,
+              color: T.text,
               borderRadius: '3px',
               padding: '8px 12px',
               outline: 'none',
@@ -139,25 +194,25 @@ export function ConfessionPost() {
 
         {/* 匿名/实名 */}
         <div>
-          <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--color-text)' }}>
+          <label className="text-sm font-medium mb-2 block" style={{ color: T.text }}>
             显示方式
           </label>
           <div className="flex gap-3">
             <button
               onClick={() => setAnonymous(true)}
-              className={`flex-1 py-2 text-sm transition-all ${anonymous ? 'border-primary' : ''}`}
+              className="flex-1 py-2 text-sm transition-all"
               style={
                 anonymous
                   ? {
-                      background: 'var(--color-primary-light)',
-                      color: 'var(--color-primary)',
-                      border: '2px solid var(--color-primary)',
+                      background: T.labelBg,
+                      color: T.primary,
+                      border: `2px solid ${T.primary}`,
                       borderRadius: '3px',
                     }
                   : {
-                      background: 'var(--color-card)',
-                      color: 'var(--color-text-muted)',
-                      border: '2px solid var(--color-border)',
+                      background: T.cardBg,
+                      color: T.textMuted,
+                      border: `2px solid ${T.cardBorder}`,
                       borderRadius: '3px',
                     }
               }
@@ -167,19 +222,19 @@ export function ConfessionPost() {
             </button>
             <button
               onClick={() => setAnonymous(false)}
-              className={`flex-1 py-2 text-sm transition-all ${!anonymous ? 'border-primary' : ''}`}
+              className="flex-1 py-2 text-sm transition-all"
               style={
                 !anonymous
                   ? {
-                      background: 'var(--color-primary-light)',
-                      color: 'var(--color-primary)',
-                      border: '2px solid var(--color-primary)',
+                      background: T.labelBg,
+                      color: T.primary,
+                      border: `2px solid ${T.primary}`,
                       borderRadius: '3px',
                     }
                   : {
-                      background: 'var(--color-card)',
-                      color: 'var(--color-text-muted)',
-                      border: '2px solid var(--color-border)',
+                      background: T.cardBg,
+                      color: T.textMuted,
+                      border: `2px solid ${T.cardBorder}`,
                       borderRadius: '3px',
                     }
               }
@@ -194,8 +249,8 @@ export function ConfessionPost() {
         <button
           onClick={handleSubmit}
           disabled={submitting || !content.trim() || content.trim().length < 2}
-          className="btn btn-primary w-full"
-          style={{ minHeight: 44 }}
+          style={{ minHeight: 44, background: T.primary, color: '#fff', borderColor: T.primary }}
+          className="w-full"
         >
           <SendHorizonal size={16} />
           {submitting ? '提交中...' : '发送表白'}

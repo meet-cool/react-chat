@@ -4,11 +4,34 @@ import { ArrowLeft, Heart, MessageCircle } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import type { Confession, ConfessionComment } from '../types';
 import { Avatar } from '../components/Avatar';
+import { THEMES } from '../lib/themes';
+import type { ThemeKey } from '../lib/themes';
 
 export function ConfessionBookmarks() {
   const navigate = useNavigate();
-  const [bookmarks, setBookmarks] = useState<Confession[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem('confession_theme') as ThemeKey | null;
+    return saved && THEMES[saved] ? saved : 'pink';
+  });
+
+  const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg'>(() =>
+    window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg'
+  );
+
+  const T = THEMES[theme];
+
+  useEffect(() => {
+    localStorage.setItem('confession_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setBgImage(window.innerWidth < 768 ? 'mbbqbg.svg' : 'bbqbg.svg');
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadBookmarks = useCallback(async () => {
     const token = localStorage.getItem('arcle_token');
@@ -27,6 +50,9 @@ export function ConfessionBookmarks() {
     }
   }, [navigate]);
 
+  const [bookmarks, setBookmarks] = useState<Confession[]>([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     loadBookmarks();
   }, [loadBookmarks]);
@@ -38,30 +64,53 @@ export function ConfessionBookmarks() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
+    <div
+      className="flex flex-col h-full"
+      style={{
+        background: T.cardBg,
+        backgroundImage: `url('/assets/${bgImage}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       {/* 头部 */}
       <div
         className="px-4 py-3 border-b flex items-center gap-3"
-        style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+        style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
-        <button onClick={() => navigate('/confessions')} className="btn btn-sm" style={{ minWidth: 36 }}>
+        <button
+          onClick={() => navigate('/confessions')}
+          className="btn btn-sm"
+          style={{ minWidth: 36, background: 'transparent', border: 'none' }}
+        >
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: 'var(--color-text)' }}>
+        <h1 className="text-base font-bold" style={{ color: T.text }}>
           我的收藏
         </h1>
+        <select
+          value={theme}
+          onChange={(e) => setTheme(e.target.value as ThemeKey)}
+          className="ml-auto text-xs"
+          style={{ background: T.cardBg, color: T.text, border: `1px solid ${T.cardBorder}`, borderRadius: '3px', padding: '4px 8px' }}
+        >
+          <option value="pink">粉色</option>
+          <option value="ocean">海洋</option>
+          <option value="default">默认</option>
+        </select>
       </div>
 
       {/* 列表 */}
       <div className="flex-1 overflow-y-auto p-3">
         {loading ? (
-          <div className="flex items-center justify-center py-20" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="flex items-center justify-center py-20" style={{ color: T.textMuted }}>
             加载中...
           </div>
         ) : bookmarks.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-20 gap-3"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: T.textMuted }}
           >
             <Heart size={40} opacity={0.4} />
             <p className="text-sm">还没有收藏的表白</p>
@@ -75,40 +124,40 @@ export function ConfessionBookmarks() {
               <div
                 key={c.id}
                 className="p-3"
-                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+                style={{ background: T.cardBg, border: `1px solid ${T.cardBorder}` }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   {c.anonymous ? (
                     <div
                       className="w-7 h-7 flex items-center justify-center font-bold text-xs"
-                      style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '3px' }}
+                      style={{ background: T.labelBg, color: T.primary, borderRadius: '3px' }}
                     >
                       匿
                     </div>
                   ) : (
                     <Avatar username={c.username} avatar={c.avatar} size={28} />
                   )}
-                  <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                  <span className="text-sm font-medium" style={{ color: T.text }}>
                     {c.anonymous ? '匿名' : c.username}
                   </span>
-                  <span className="text-xs ml-auto" style={{ color: 'var(--color-text-muted)' }}>
+                  <span className="text-xs ml-auto" style={{ color: T.textMuted }}>
                     {c.create_time_fmt}
                   </span>
                 </div>
-                <p className="text-sm mb-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                <p className="text-sm mb-2 leading-relaxed" style={{ color: T.textSecondary }}>
                   {c.content}
                 </p>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
-                    <Heart size={12} style={{ color: 'var(--color-error)' }} /> {c.like_count}
+                  <span className="text-xs flex items-center gap-1" style={{ color: T.textMuted }}>
+                    <Heart size={12} style={{ color: T.primary }} /> {c.like_count}
                   </span>
-                  <span className="text-xs flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
+                  <span className="text-xs flex items-center gap-1" style={{ color: T.textMuted }}>
                     <MessageCircle size={12} /> {c.comment_count}
                   </span>
                   <button
                     onClick={() => handleRemove(c.slug)}
                     className="ml-auto text-xs"
-                    style={{ color: 'var(--color-text-muted)' }}
+                    style={{ color: T.textMuted }}
                   >
                     取消收藏
                   </button>
