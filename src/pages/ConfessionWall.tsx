@@ -276,7 +276,7 @@ function ConfessionCard({
                 onClick={handleComment}
                 disabled={loading || !commentText.trim()}
                 className="btn btn-primary btn-sm"
-                style={{ minHeight: 32 }}
+                style={{ padding: '4px 12px' }}
               >
                 <SendHorizonal size={14} />
               </button>
@@ -400,7 +400,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     >
       {/* 头部 */}
       <div
-        className="px-4 py-3 border-b"
+        className="sticky top-0 z-10 px-4 py-3 border-b"
         style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -421,7 +421,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => navigate('/confessions/new')}
               className="btn btn-primary btn-sm"
-              style={{ minHeight: 34 }}
+              style={{ padding: '4px 12px' }}
             >
               <SendHorizonal size={14} />
               写表白
@@ -438,7 +438,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <button
                 onClick={() => navigate('/confessions/bookmarks')}
                 className="btn btn-sm"
-                style={{ minHeight: 34 }}
+                style={{ padding: '4px 12px' }}
               >
                 <Bookmark size={14} />
               </button>
@@ -509,7 +509,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 minWidth: 28,
                 minHeight: 28,
                 ...(viewMode === 'card'
-                  ? { background: 'var(--color-primary)', color: '#fff' }
+                  ? { background: T.primary, color: '#fff' }
                   : { background: 'rgba(0,0,0,0.2)', color: T.textMuted }
                 ),
               }}
@@ -524,7 +524,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                 minWidth: 28,
                 minHeight: 28,
                 ...(viewMode === 'grid'
-                  ? { background: 'var(--color-primary)', color: '#fff' }
+                  ? { background: T.primary, color: '#fff' }
                   : { background: 'rgba(0,0,0,0.2)', color: T.textMuted }
                 ),
               }}
