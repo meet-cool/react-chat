@@ -194,7 +194,7 @@ export function ConfessionRanking() {
                   style={{
                     background: T.cardBg,
                     border: `1px solid ${T.cardBorder}`,
-                    ...(index < 3 ? { borderColor: 'var(--color-warning)', borderWidth: 2 } : {}),
+                    ...(index < 3 ? { borderColor: T.warning, borderWidth: 2 } : {}),
                   }}
                 >
                   {/* 排名 */}
@@ -202,7 +202,7 @@ export function ConfessionRanking() {
                     className="w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0"
                     style={
                       index < 3
-                        ? { background: 'var(--color-warning)', color: '#fff', borderRadius: '3px' }
+                        ? { background: T.warning, color: '#fff', borderRadius: '3px' }
                         : { background: T.inputBg, color: T.textMuted, borderRadius: '3px' }
                     }
                   >

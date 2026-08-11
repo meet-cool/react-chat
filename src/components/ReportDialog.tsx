@@ -143,7 +143,7 @@ export function ReportDialog({
           className="px-4 py-3 flex items-center justify-end gap-2"
           style={{ borderTop: `1px solid ${T.divider}` }}
         >
-          <button className="btn btn-sm" onClick={onClose}>
+          <button className="btn btn-sm" onClick={onClose} style={{ background: 'transparent', border: 'none', color: T.textMuted }}>
             取消
           </button>
           <button
