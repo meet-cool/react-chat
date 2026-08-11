@@ -969,17 +969,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
         {/* 右侧：成员列表（桌面端静态，移动端浮层） */}
         <aside
-          className={`border-l transition-[width,opacity] duration-200 ease-out ${
+          className={`border-l transition-[width,opacity,transform] duration-200 ease-out ${
             rightCollapsed ? 'w-0 overflow-hidden opacity-0 pointer-events-none' : 'w-60 md:w-60'
           } ${
             mobileSidebar === 'members'
-              ? 'fixed inset-y-0 right-0 top-0 z-50 translate-x-0'
-              : 'fixed inset-y-0 right-0 top-0 z-50 -translate-x-full md:translate-x-0 md:static'
+              ? 'fixed inset-y-0 right-0 top-0 z-50 w-60 translate-x-0'
+              : 'fixed inset-y-0 right-0 top-0 z-50 w-60 -translate-x-full md:translate-x-0 md:static md:z-auto md:opacity-100'
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
           {activeRoom && !showPrivate ? (
-            <div className="relative h-full">
+            <div className="flex flex-col h-full">
               <button
                 className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1"
                 onClick={() => setMobileSidebar(null)}

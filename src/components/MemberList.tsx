@@ -21,27 +21,27 @@ export function MemberList({ members, loading }: MemberListProps) {
   const sortedOffline = [...offline].sort(sortFn);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-card)' }}>
-      <div className="p-4 border-b" style={{ borderColor: 'var(--color-divider)' }}>
-        <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-          <Users size={18} /> 成员
-          <span className="text-sm font-normal" style={{ color: 'var(--color-text-muted)' }}>
+    <div className="flex flex-col h-full min-h-0" style={{ background: 'var(--color-card)' }}>
+      <div className="flex-shrink-0 p-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+        <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+          <Users size={15} /> 成员
+          <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>
             ({online.length} 在线 / {members.length})
           </span>
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {loading ? (
-          <div className="p-4 space-y-2">
+          <div className="p-3 space-y-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton h-12" />
+              <div key={i} className="skeleton h-10" />
             ))}
           </div>
         ) : (
           <>
             {sortedOnline.length > 0 && (
-              <div className="px-4 py-2 text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="px-3 py-2 text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
                 在线 - {sortedOnline.length}
               </div>
             )}
@@ -50,7 +50,7 @@ export function MemberList({ members, loading }: MemberListProps) {
             ))}
 
             {sortedOffline.length > 0 && (
-              <div className="px-4 py-2 text-xs font-medium mt-2" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="px-3 py-2 text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
                 离线 - {sortedOffline.length}
               </div>
             )}
@@ -70,25 +70,26 @@ function MemberItem({ member }: { member: RoomMember }) {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2 transition-colors"
+      className="flex items-center gap-2.5 px-3 py-2.5 transition-colors"
       style={{ opacity: member.online ? 1 : 0.6 }}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      <Avatar username={member.username} avatar={member.avatar} size={32} online={member.online} />
+      <Avatar username={member.username} avatar={member.avatar} size={30} online={member.online} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 min-w-0">
           <span className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>
             {member.username}
           </span>
           {isOwner && <Crown size={12} style={{ color: 'var(--color-warning)' }} />}
           {!isOwner && isAdmin && (
             <span
-              className="text-[10px] px-1 py-0.5"
+              className="text-[10px] px-1.5 py-0.5 flex-shrink-0"
               style={{
                 background: 'var(--color-primary-light)',
                 color: 'var(--color-primary)',
                 border: '1px solid var(--color-primary)',
+                lineHeight: '1.4',
               }}
             >
               管理
@@ -96,7 +97,7 @@ function MemberItem({ member }: { member: RoomMember }) {
           )}
         </div>
         {member.bio && (
-          <p className="text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--color-text-light)' }}>
             {member.bio}
           </p>
         )}
