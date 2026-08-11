@@ -283,6 +283,10 @@ export const confessionApi = {
 
   bookmarks: (page = 1) =>
     get<PaginatedData<Confession>>(`/chat/confessions/bookmarks?page=${page}&per_page=20`),
+  mine: (page = 1, options?: { per_page?: number }) =>
+    get<PaginatedData<Confession & { status_label: string; create_time_fmt: string }>>(
+      `/chat/confessions/mine?page=${page}${options?.per_page ? `&per_page=${options.per_page}` : ''}`,
+    ),
 
   ranking: (type: string = 'likes', limit: number = 10) =>
     get<Confession[]>(`/chat/confessions/ranking?type=${type}&limit=${limit}`),

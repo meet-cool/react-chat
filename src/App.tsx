@@ -19,6 +19,7 @@ import { ConfessionPost } from './pages/ConfessionPost';
 import { ConfessionRanking } from './pages/ConfessionRanking';
 import { ConfessionBookmarks } from './pages/ConfessionBookmarks';
 import { ConfessionDetail } from './pages/ConfessionDetail';
+import { ConfessionMine } from './pages/ConfessionMine';
 import { BottlePage } from './pages/BottlePage';
 import { PointsPage } from './pages/PointsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -101,6 +102,10 @@ export default function App() {
           <Route
             path="/confessions/bookmarks"
             element={user ? <ConfessionBookmarks /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/confessions/mine"
+            element={user ? <ConfessionMine /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/confessions/:slug"

@@ -391,13 +391,22 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               排行榜
             </button>
             {isLogged && (
-              <button
-                onClick={() => navigate('/confessions/bookmarks')}
-                className="btn btn-sm"
-                style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
-              >
-                <Bookmark size={14} />
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/confessions/mine')}
+                  className="btn btn-sm"
+                  style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
+                >
+                  <Heart size={14} /> 我的表白
+                </button>
+                <button
+                  onClick={() => navigate('/confessions/bookmarks')}
+                  className="btn btn-sm"
+                  style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
+                >
+                  <Bookmark size={14} />
+                </button>
+              </>
             )}
           </div>
         </div>
