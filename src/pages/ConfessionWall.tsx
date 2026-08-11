@@ -237,6 +237,7 @@ function ConfessionCard({
         open={showReport}
         onClose={() => setShowReport(false)}
         onConfirm={handleReport}
+        theme={theme}
       />
 
       {/* 评论区 */}

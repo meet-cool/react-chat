@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Flag, X, Loader2 } from 'lucide-react';
+import { type ThemeKey, THEMES } from '../lib/themes';
 
 interface ReportDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
   submitting?: boolean;
+  theme?: ThemeKey;
 }
 
 const REASONS = [
@@ -22,9 +24,11 @@ export function ReportDialog({
   onClose,
   onConfirm,
   submitting,
+  theme = 'default',
 }: ReportDialogProps) {
   const [reason, setReason] = useState('');
   const [custom, setCustom] = useState('');
+  const T = THEMES[theme];
 
   if (!open) return null;
 
@@ -42,25 +46,25 @@ export function ReportDialog({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm shadow-[var(--shadow-lg)]"
-        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+        className="w-full max-w-sm"
+        style={{ background: T.cardBg, border: `1px solid ${T.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="flex items-center justify-between px-4 py-3 border-b"
-          style={{ borderColor: 'var(--color-divider)' }}
+          className="flex items-center justify-between px-4 py-3"
+          style={{ borderBottom: `1px solid ${T.divider}` }}
         >
           <div className="flex items-center gap-2">
             <Flag size={18} style={{ color: 'var(--color-error)' }} />
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: T.text }}>
               举报内容
             </h3>
           </div>
           <button
             onClick={onClose}
             className="p-1 rounded transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+            style={{ color: T.textMuted }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = T.labelBg)}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <X size={16} />
@@ -68,7 +72,7 @@ export function ReportDialog({
         </div>
 
         <div className="p-4 space-y-1.5">
-          <p className="text-xs mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs mb-2.5" style={{ color: T.textMuted }}>
             请选择举报原因
           </p>
           {REASONS.map((r) => {
@@ -80,19 +84,19 @@ export function ReportDialog({
                 style={
                   selected
                     ? {
-                        background: 'var(--color-primary-light)',
-                        border: '1px solid var(--color-primary)',
-                        color: 'var(--color-primary)',
+                        background: T.labelBg,
+                        border: `1px solid ${T.primary}`,
+                        color: T.primary,
                       }
                     : {
                         background: 'transparent',
-                        border: '1px solid var(--color-border-light)',
-                        color: 'var(--color-text)',
+                        border: `1px solid ${T.cardBorder}`,
+                        color: T.text,
                       }
                 }
                 onClick={() => setReason(r)}
                 onMouseEnter={(e) => {
-                  if (!selected) e.currentTarget.style.background = 'var(--color-hover-bg)';
+                  if (!selected) e.currentTarget.style.background = T.labelBg;
                 }}
                 onMouseLeave={(e) => {
                   if (!selected) e.currentTarget.style.background = 'transparent';
@@ -101,15 +105,12 @@ export function ReportDialog({
                 <span
                   className="flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
                   style={{
-                    borderColor: selected ? 'var(--color-primary)' : 'var(--color-border)',
-                    background: selected ? 'var(--color-primary)' : 'transparent',
+                    borderColor: selected ? T.primary : T.cardBorder,
+                    background: selected ? T.primary : 'transparent',
                   }}
                 >
                   {selected && (
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: '#fff' }}
-                    />
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#fff' }} />
                   )}
                 </span>
                 <span>{r}</span>
@@ -126,9 +127,9 @@ export function ReportDialog({
               maxLength={200}
               className="mt-2 w-full text-sm"
               style={{
-                background: 'var(--color-bg-page)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
+                background: 'rgba(0,0,0,0.2)',
+                border: `1px solid ${T.cardBorder}`,
+                color: T.text,
                 borderRadius: '3px',
                 padding: '6px 10px',
                 outline: 'none',
@@ -139,8 +140,8 @@ export function ReportDialog({
         </div>
 
         <div
-          className="px-4 py-3 border-t flex items-center justify-end gap-2"
-          style={{ borderColor: 'var(--color-divider)' }}
+          className="px-4 py-3 flex items-center justify-end gap-2"
+          style={{ borderTop: `1px solid ${T.divider}` }}
         >
           <button className="btn btn-sm" onClick={onClose}>
             取消
