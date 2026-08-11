@@ -52,52 +52,87 @@ export function ReportDialog({
         >
           <div className="flex items-center gap-2">
             <Flag size={18} style={{ color: 'var(--color-error)' }} />
-            <h3 className="font-semibold" style={{ color: 'var(--color-text)' }}>
-              举报消息
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>
+              举报内容
             </h3>
           </div>
-          <button onClick={onClose} className="p-1" style={{ color: 'var(--color-text-muted)' }}>
+          <button
+            onClick={onClose}
+            className="p-1 rounded transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          >
             <X size={16} />
           </button>
         </div>
 
-        <div className="p-4 space-y-2">
-          <p className="text-sm mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-            请选择举报原因：
+        <div className="p-4 space-y-1.5">
+          <p className="text-xs mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+            请选择举报原因
           </p>
-          {REASONS.map((r) => (
-            <label
-              key={r}
-              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors"
-              style={{
-                border:
-                  reason === r
-                    ? '1px solid var(--color-primary)'
-                    : '1px solid var(--color-border-light)',
-                background:
-                  reason === r ? 'var(--color-primary-light)' : 'transparent',
-                color: 'var(--color-text)',
-              }}
-            >
-              <input
-                type="radio"
-                name="report-reason"
-                checked={reason === r}
-                onChange={() => setReason(r)}
-                style={{ accentColor: 'var(--color-primary)' }}
-              />
-              <span>{r}</span>
-            </label>
-          ))}
+          {REASONS.map((r) => {
+            const selected = reason === r;
+            return (
+              <label
+                key={r}
+                className="flex items-center gap-3 px-3 py-2.5 rounded text-sm cursor-pointer transition-all"
+                style={
+                  selected
+                    ? {
+                        background: 'var(--color-primary-light)',
+                        border: '1px solid var(--color-primary)',
+                        color: 'var(--color-primary)',
+                      }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid var(--color-border-light)',
+                        color: 'var(--color-text)',
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (!selected) e.currentTarget.style.background = 'var(--color-hover-bg)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!selected) e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <span
+                  className="flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                  style={{
+                    borderColor: selected ? 'var(--color-primary)' : 'var(--color-border)',
+                    background: selected ? 'var(--color-primary)' : 'transparent',
+                  }}
+                >
+                  {selected && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: '#fff' }}
+                    />
+                  )}
+                </span>
+                <span>{r}</span>
+              </label>
+            );
+          })}
 
           {reason === '其他' && (
             <textarea
               rows={2}
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
-              placeholder="请描述举报原因"
+              placeholder="请描述举报原因（选填）"
               maxLength={200}
-              className="mt-2"
+              className="mt-2 w-full text-sm"
+              style={{
+                background: 'var(--color-bg-page)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+                borderRadius: '3px',
+                padding: '6px 10px',
+                outline: 'none',
+                resize: 'vertical',
+              }}
             />
           )}
         </div>
@@ -106,11 +141,11 @@ export function ReportDialog({
           className="px-4 py-3 border-t flex items-center justify-end gap-2"
           style={{ borderColor: 'var(--color-divider)' }}
         >
-          <button className="btn" onClick={onClose}>
+          <button className="btn btn-sm" onClick={onClose}>
             取消
           </button>
           <button
-            className="btn btn-error"
+            className="btn btn-sm btn-error"
             disabled={!finalReason || submitting}
             onClick={submit}
           >
