@@ -8,7 +8,7 @@ import { Avatar } from '../../components/Avatar';
 interface ConfessionItem {
   id: number;
   user_id: number;
-  anonymous: number;
+  anonymous: boolean;
   content: string;
   content_short: string;
   target_name: string;

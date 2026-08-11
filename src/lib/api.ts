@@ -412,7 +412,7 @@ export const adminApi = {
 
   // 表白墙管理
   confessions: (p: { page?: number; per_page?: number; status?: string }) =>
-    adminGet<AdminPaginated<Confession & { username: string; user_avatar: string; status_label: string; content_short: string }>>('/confessions', p),
+    adminGet<AdminPaginated<Confession & { username: string; user_avatar: string; status_label: string; content_short: string; status: number }>>('/confessions', p),
   updateConfession: (id: number, action: 'approve' | 'reject') =>
     adminPost<null>(`/confessions/${id}`, { action }),
 };
