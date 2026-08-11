@@ -273,6 +273,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       if (joiningRef.current.has(room.id)) return;
       joiningRef.current.add(room.id);
       lastManualActionRef.current = Date.now();
+      // 退出私聊模式
+      setShowPrivate(false);
+      setPrivateTarget(null);
+      setRightCollapsed(false);
+      lastLoadRoomRef.current = null;
       try {
         // 先刷新房间列表，拿到最新的 joined 状态
         await loadRooms();
@@ -964,7 +969,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
         {/* 右侧：成员列表（桌面端静态，移动端浮层） */}
         <aside
-          className={`border-l transition-all duration-200 ease-out ${
+          className={`border-l transition-[width,opacity] duration-200 ease-out ${
             rightCollapsed ? 'w-0 overflow-hidden opacity-0 pointer-events-none' : 'w-60 md:w-60'
           } ${
             mobileSidebar === 'members'
