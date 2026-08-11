@@ -749,7 +749,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   }}
                   title={c.label}
                 >
-                  <Icon size={18} />
+                  <Icon size={22} />
                 </button>
               );
             })}
