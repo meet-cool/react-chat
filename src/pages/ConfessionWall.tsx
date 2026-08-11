@@ -154,7 +154,7 @@ function ConfessionCard({
           {c.target_name && (
             <span
               className="text-xs px-1.5 py-0.5"
-              style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '3px' }}
+              style={{ background: T.labelBg, color: T.primary, borderRadius: '3px' }}
             >
               → {c.target_name}
             </span>
