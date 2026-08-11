@@ -21,6 +21,7 @@ import {
   Heart,
   SendHorizonal,
   Star,
+  User,
 } from 'lucide-react';
 import type { ChatMessage, Room, RoomMember, UserInfo, Conversation } from '../types';
 import { clearToken, messageApi, roomApi, conversationApi } from '../lib/api';
@@ -484,6 +485,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     setShowPrivate(true);
     setCategory('recent');
     setActiveRoom(null);
+    setMobileSidebar(null);
   }, []);
 
   // 从通讯录发起私聊
@@ -492,6 +494,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     setShowPrivate(true);
     setCategory('recent');
     setActiveRoom(null);
+    setMobileSidebar(null);
   }, []);
 
   // 清空外部 target（仅清空，不关闭私聊界面）

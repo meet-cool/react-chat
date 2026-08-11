@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Star, Gift, Calendar } from 'lucide-react';
-import { userApi } from '../lib/api';
+import { authApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -14,13 +14,15 @@ function getLevelColor(level: number) {
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { addToast, user } = useApp();
+  const { addToast } = useApp();
   const [info, setInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
+    const token = localStorage.getItem('arcle_token');
+    if (!token) return;
     try {
-      const u = await userApi.profile();
+      const u = await authApi.profile();
       setInfo(u);
     } catch {
       // 静默失败
@@ -28,11 +30,6 @@ export function ProfilePage() {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    loadProfile();
-  }, [user, loadProfile]);
 
   if (loading) {
     return (

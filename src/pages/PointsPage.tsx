@@ -10,7 +10,7 @@ import {
   Gift,
   Sparkles,
 } from 'lucide-react';
-import { pointsApi } from '../lib/api';
+import { pointsApi, authApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 
@@ -57,7 +57,11 @@ function LevelBadge({ level }: { level: number }) {
   );
 }
 
-export function PointsPage() {
+interface PointsPageProps {
+  onUserUpdate?: (u: UserInfo) => void;
+}
+
+export function PointsPage({ onUserUpdate }: PointsPageProps) {
   const navigate = useNavigate();
   const { addToast } = useApp();
   const [pointsInfo, setPointsInfo] = useState<PointsInfo | null>(null);
@@ -108,6 +112,13 @@ export function PointsPage() {
       );
       // 刷新历史
       loadHistory();
+      // 刷新用户信息（积分、等级、经验）
+      if (onUserUpdate) {
+        try {
+          const updated = await authApi.profile();
+          onUserUpdate(updated);
+        } catch { /* 静默 */ }
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '签到失败';
       if (!msg.includes('今日已签到')) {

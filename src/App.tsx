@@ -20,6 +20,7 @@ import { ConfessionBookmarks } from './pages/ConfessionBookmarks';
 import { ConfessionDetail } from './pages/ConfessionDetail';
 import { BottlePage } from './pages/BottlePage';
 import { PointsPage } from './pages/PointsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -114,7 +115,7 @@ export default function App() {
           {/* 积分中心 - 需登录 */}
           <Route
             path="/points"
-            element={user ? <PointsPage /> : <Navigate to="/login" replace />}
+            element={<PointsPage onUserUpdate={(u) => setUser(u as UserInfo)} />}
           />
 
           {/* 个人主页 - 需登录 */}

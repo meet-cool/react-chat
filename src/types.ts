@@ -33,6 +33,7 @@ export interface UserInfo {
   sign_in_streak: number;
   last_sign_in_date: string;
   qq: string;
+  online?: boolean;
 }
 
 // 登录/注册响应
