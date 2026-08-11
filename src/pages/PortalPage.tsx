@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -144,7 +144,13 @@ export function PortalPage() {
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const navigatedRef = useRef(false);
+
   useEffect(() => {
+    // 防止重复导航
+    if (navigatedRef.current) return;
+    navigatedRef.current = true;
+
     // 检查是否已登录，已登录则跳转到聊天页
     const token = getToken();
     if (token) {
@@ -162,7 +168,7 @@ export function PortalPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [navigate]);
+  }, []);
 
   return (
     <div
