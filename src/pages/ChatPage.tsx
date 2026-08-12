@@ -731,7 +731,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     handleSidebarClick(c.k);
                     if (leftCollapsed) setLeftCollapsed(false);
                   }}
-                  className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl relative"
+                  className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-xl relative"
                   style={
                     isActive
                       ? {
@@ -753,7 +753,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   }}
                   title={c.label}
                 >
-                  <Icon size={22} />
+                  <Icon size={24} />
                 </button>
               );
             })}
@@ -772,24 +772,24 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             {/* 设置按钮 */}
             <button
               onClick={() => setShowSettings(true)}
-              className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl"
+              className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-xl"
               style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title="设置"
             >
-              <Settings size={22} />
+              <Settings size={24} />
             </button>
             {/* 折叠按钮（仅桌面端） */}
             <button
               onClick={() => setLeftCollapsed((v) => !v)}
-              className="w-12 h-12 hidden md:flex items-center justify-center transition-all duration-150 rounded-xl"
+              className="w-14 h-14 hidden md:flex items-center justify-center transition-all duration-150 rounded-xl"
               style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title={leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}
             >
-              {leftCollapsed ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}
+              {leftCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
             </button>
           </div>
 
