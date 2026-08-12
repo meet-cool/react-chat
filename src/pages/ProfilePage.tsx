@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
-import { authApi, userApi } from '../lib/api';
+import { authApi, userApi, getToken } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -15,12 +15,20 @@ function getLevelColor(level: number) {
 export function ProfilePage() {
   const navigate = useNavigate();
   const { username } = useParams<{ username?: string }>();
-  const { addToast, user: currentUser } = useApp();
+  const { addToast } = useApp();
 
-  const isSelf = !username || username === currentUser?.username;
+  const [selfUser, setSelfUser] = useState<UserInfo | null>(null);
   const [info, setInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
+
+  // 先加载当前登录用户信息，用于判断是否查看自己的主页
+  useEffect(() => {
+    if (!getToken()) return;
+    authApi.profile().then(setSelfUser).catch(() => {});
+  }, []);
+
+  const isSelf = !username || !selfUser || username === selfUser.username;
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
