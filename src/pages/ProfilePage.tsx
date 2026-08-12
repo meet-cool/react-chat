@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
 import { authApi, userApi } from '../lib/api';
@@ -21,75 +21,46 @@ export function ProfilePage({ user }: ProfilePageProps) {
   const { username } = useParams<{ username?: string }>();
   const { addToast } = useApp();
 
-  // 用传入的 user prop 判断，不依赖异步 API 加载
   const selfUsername = user?.username || '';
   const isSelf = !username || username === selfUsername;
   const [info, setInfo] = useState<UserInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
 
-  // 用 ref 跟踪是否已导航离开，防止异步回调在卸载后仍 setState
-  const abortedRef = useRef(false);
-
-  // 稳定的 loadProfile，不依赖易变的 isSelf/username/navigate
-  const loadProfileRef = useRef<{ current: () => Promise<void> }>({
-    current: async () => {},
-  });
-
-  const doLoadProfile = useCallback(async () => {
-    abortedRef.current = false;
-    // 重置上次请求标记
-    const prevAborted = abortedRef.current;
-    abortedRef.current = false;
-
-    // 如果是查看自己，且已经加载过，直接复用
-    const isSelfNow = !username || username === selfUsername;
-    if (isSelfNow && !prevAborted) {
-      // 已经有 info 就不用重复请求
-      if (!info) {
-        try {
-          const u = await authApi.profile();
-          if (!abortedRef.current) setInfo(u);
-        } catch (err) {
-          if (!abortedRef.current) {
-            const msg = err instanceof Error ? err.message : '';
-            if (msg.includes('403') || msg.includes('隐藏')) {
-              addToast('该用户已隐藏主页', 'warning');
-            }
-            navigate(-1);
-            abortedRef.current = true;
-          }
-        }
-      }
-      return;
-    }
-
-    // 查看他人主页
-    if (!username) return;
-    try {
-      const u = await userApi.getOtherProfile(username.trim());
-      if (!abortedRef.current) setInfo(u);
-    } catch (err) {
-      if (abortedRef.current) return;
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('403') || msg.includes('隐藏')) {
-        addToast('该用户已隐藏主页', 'warning');
-      } else if (msg.includes('404') || msg.includes('不存在')) {
-        addToast('用户不存在', 'error');
-      }
-      navigate(-1);
-      abortedRef.current = true;
-    } finally {
-      if (!abortedRef.current) setLoading(false);
-    }
-  }, [username, selfUsername, info, navigate, addToast]);
-
   useEffect(() => {
-    abortedRef.current = false;
+    let cancelled = false;
     setLoading(true);
-    doLoadProfile().catch(() => {});
-    return () => { abortedRef.current = true; };
-  }, [doLoadProfile]);
+    setError(null);
+
+    const load = async () => {
+      try {
+        if (isSelf) {
+          const u = await authApi.profile();
+          if (!cancelled) setInfo(u);
+        } else {
+          const u = await userApi.getOtherProfile(username!);
+          if (!cancelled) setInfo(u);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('403') || msg.includes('隐藏')) {
+          addToast('该用户已隐藏主页', 'warning');
+          navigate(-1);
+        } else if (msg.includes('404') || msg.includes('不存在')) {
+          setError('用户不存在');
+        } else {
+          setError(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [isSelf, username]); // 只依赖稳定的值，isSelf 和 username 在同一个路由下不变
 
   const handleToggleVisible = async () => {
     if (!info) return;
@@ -109,6 +80,17 @@ export function ProfilePage({ user }: ProfilePageProps) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)' }}>
         <div className="w-8 h-8 border-2 animate-spin rounded-full" style={{ borderTopColor: 'var(--color-primary)', borderLeftColor: 'var(--color-border)', borderBottomColor: 'var(--color-border)', borderRightColor: 'var(--color-border)' }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)', color: 'var(--color-text-muted)' }}>
+        <div className="text-center">
+          <p className="mb-3">{error || '加载失败'}</p>
+          <button className="btn btn-sm" onClick={() => navigate(-1)}>返回</button>
+        </div>
       </div>
     );
   }
