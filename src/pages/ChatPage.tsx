@@ -1138,7 +1138,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           style={{ borderColor: 'var(--color-divider)', ...(rightCollapsed ? { width: 0, opacity: 0, pointerEvents: 'none' } : {}) }}
         >
           {activeRoom && !showPrivate && (
-            <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username)}`)} />
+            <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)} />
           )}
         </aside>
 
