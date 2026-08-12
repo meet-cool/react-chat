@@ -719,8 +719,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 opacity: 0.8,
                 boxShadow: '0 0 6px var(--color-primary)',
                 top: (() => {
-                    const map: Record<string, number> = { recent: 28, rooms: 76, contacts: 124, confession: 172, bottle: 220, points: 268, extensions: 316 };
-                    return map[category] ?? 28;
+                    const map: Record<string, number> = { recent: 24, rooms: 72, contacts: 120, confession: 168, bottle: 216, points: 264, extensions: 312 };
+                    return map[category] ?? 24;
                   })(),
               }}
             />

@@ -240,7 +240,7 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
             }}
             title={u.i_follow ? '取消关注' : '关注'}
           >
-            {u.i_follow ? <UserMinus size={13} /> : <UserPlus size={13} />}
+            {u.i_follow ? <UserMinus size={16} /> : <UserPlus size={16} />}
           </button>
         </div>
       </div>
