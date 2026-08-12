@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 export interface PaginationBarProps {
   current: number;
@@ -18,73 +18,72 @@ export function PaginationBar({
   const from = total === 0 ? 0 : (current - 1) * perPage + 1;
   const to = Math.min(current * perPage, total);
 
-  const pages: (number | string)[] = [];
+  const pages: (number | '…')[] = [];
   const window = 2;
-  const push = (v: number | string) => pages.push(v);
   for (let i = 1; i <= last; i++) {
     if (
       i === 1 ||
       i === last ||
       (i >= current - window && i <= current + window)
     ) {
-      push(i);
+      pages.push(i);
     } else if (pages[pages.length - 1] !== '…') {
-      push('…');
+      pages.push('…');
     }
   }
 
+  const btnBase = 'inline-flex items-center justify-center min-w-8 h-8 px-2 text-xs font-medium rounded-lg transition-all duration-150';
+  const btnDisabled = 'opacity-40 cursor-not-allowed';
+  const btnEnabled = 'hover:opacity-80 active:scale-95';
+  const btnActive = 'bg-[var(--color-primary)] text-white border border-[var(--color-primary)]';
+  const btnGhost = 'bg-transparent border border-[var(--color-border)] text-[var(--color-text)]';
+
   return (
-    <div
-      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4"
-      style={{ color: 'var(--color-text-secondary)' }}
-    >
-      <div className="text-xs">
-        共 <b style={{ color: 'var(--color-text)' }}>{total}</b> 条，第 {from}-{to} 条
-      </div>
-      <div className="flex items-center gap-1">
+    <div className="flex items-center justify-between gap-2 px-3 py-2.5 flex-wrap">
+      {/* 信息 */}
+      <p className="text-xs text-[var(--color-text-muted)] shrink-0">
+        共 <span className="text-[var(--color-text)] font-semibold">{total}</span> 条
+      </p>
+
+      {/* 分页控件 */}
+      <div className="flex items-center gap-1.5 flex-shrink min-w-0">
         <button
-          className="btn btn-sm"
+          className={`${btnBase} ${current <= 1 ? btnDisabled : btnGhost + ' ' + btnEnabled}`}
           disabled={current <= 1}
           onClick={() => onChange(current - 1)}
+          title="上一页"
         >
-          <ChevronLeft size={14} /> 上一页
+          <ChevronLeft size={14} />
         </button>
+
         <div className="flex items-center gap-1">
           {pages.map((p, idx) =>
-            typeof p === 'string' ? (
+            p === '…' ? (
               <span
                 key={idx}
-                className="px-2 text-xs"
-                style={{ color: 'var(--color-text-muted)' }}
+                className="w-8 h-8 flex items-center justify-center text-xs text-[var(--color-text-muted)]"
               >
-                …
+                <MoreHorizontal size={14} />
               </span>
             ) : (
               <button
                 key={idx}
-                className="btn btn-sm"
-                style={
-                  p === current
-                    ? {
-                        background: 'var(--color-primary)',
-                        color: '#FFFFFF',
-                        borderColor: 'var(--color-primary)',
-                      }
-                    : undefined
-                }
-                onClick={() => onChange(p)}
+                className={`${btnBase} ${p === current ? btnActive : btnGhost + ' ' + btnEnabled}`}
+                onClick={() => onChange(p as number)}
               >
                 {p}
               </button>
             ),
           )}
         </div>
+
         <button
-          className="btn btn-sm"
+          className={`${btnBase} ${current >= last ? btnDisabled : btnGhost + ' ' + btnEnabled}`}
           disabled={current >= last}
           onClick={() => onChange(current + 1)}
+          title="下一页"
         >
-          下一页 <ChevronRight size={14} />
+          <ChevronRight size={14} />
         </button>
       </div>
     </div>
