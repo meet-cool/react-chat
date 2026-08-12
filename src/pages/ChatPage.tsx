@@ -819,15 +819,18 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-            {mobileSidebar && (
-              <button
-                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full"
-                style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-divider)' }}
+            <button
+                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full transition-opacity duration-200"
+                style={{
+                  background: 'var(--color-card-alt)',
+                  border: '1px solid var(--color-divider)',
+                  opacity: mobileSidebar ? 1 : 0,
+                  pointerEvents: mobileSidebar ? 'auto' : 'none',
+                }}
                 onClick={() => setMobileSidebar(null)}
               >
                 <X size={16} />
               </button>
-            )}
             {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
