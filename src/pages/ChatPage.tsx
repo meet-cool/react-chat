@@ -700,7 +700,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             leftCollapsed ? 'md:w-14' : 'md:w-72 md:fixed md:inset-y-0 md:left-0 md:z-50'
           } ${
             mobileSidebar !== null
-              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:hidden'
+              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-auto'
               : 'fixed inset-y-0 left-0 top-0 z-50 -translate-x-full w-full md:w-auto md:translate-x-0 md:static md:z-auto'
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
@@ -813,6 +813,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               <span>{leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}</span>
             </button>
           </div>
+
           {/* 移动端关闭按钮（定位在侧栏最右上角） */}
           <button
             className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full transition-opacity duration-200"
@@ -834,7 +835,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-            {showPrivate ? null : category === 'recent' ? (
+              {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
                 conversations={conversations}
@@ -1139,32 +1140,30 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           style={{ borderColor: 'var(--color-divider)', ...(rightCollapsed ? { width: 0, opacity: 0, pointerEvents: 'none' } : {}) }}
         >
           {activeRoom && !showPrivate && (
-            <MemberList members={members} loading={membersLoading} />
+            <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)} />
           )}
         </aside>
 
         {/* 右侧：成员列表（移动端）— fixed 浮层，由 mobileSidebar 控制 */}
         <aside
           className={`
-            md:hidden fixed inset-y-0 right-0 top-0 z-50 w-60 h-full relative
+            md:hidden fixed inset-y-0 right-0 top-0 z-50 w-60 h-full
             border-l bg-[var(--color-card)] transition-transform duration-200 ease-out
             ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}
           `}
           style={{ borderColor: 'var(--color-divider)' }}
         >
-          {activeRoom && !showPrivate && (
-            <>
-              {/* 成员侧边栏关闭按钮 */}
+          {activeRoom && !showPrivate ? (
+            <div className="flex flex-col h-full w-60 relative">
               <button
-                className="absolute top-3 right-3 z-10 btn btn-sm p-1 rounded-full"
-                style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-divider)' }}
+                className="absolute top-3 right-3 z-10 btn btn-sm p-1"
                 onClick={() => setMobileSidebar(null)}
               >
                 <X size={14} />
               </button>
               <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)} />
-            </>
-          )}
+            </div>
+          ) : null}
         </aside>
       </div>
 
