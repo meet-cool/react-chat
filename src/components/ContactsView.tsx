@@ -203,11 +203,11 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
           {u.mutual && (
             <button
               onClick={() => handleMessage(u)}
-              className="btn btn-sm p-0 justify-center flex-shrink-0"
-              style={{ width: 34, height: 30, minWidth: 34 }}
+              className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-full"
+              style={{ width: 36, height: 36, minWidth: 36 }}
               title="发起私聊"
             >
-              <MessageSquare size={13} />
+              <MessageSquare size={14} />
             </button>
           )}
           <button
