@@ -18,6 +18,7 @@ interface MessageListProps {
   currentUserId: number;
   onMention?: (username: string) => void;
   onMessage?: (userId: number) => void;
+  onViewProfile?: (username: string) => void;
   onReact?: (msgId: number, emoji: string) => void;
   onReply?: (msg: ChatMessage) => void;
   onForward?: (msg: ChatMessage) => void;
@@ -167,6 +168,7 @@ export function MessageList({
         onClose={() => setMenu((m) => ({ ...m, open: false }))}
         onMention={onMention}
         onMessage={onMessage}
+        onViewProfile={(username) => onViewProfile?.(username)}
       />
 
       {/* 消息操作菜单 */}

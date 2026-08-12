@@ -1060,6 +1060,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 onReply={handleReply}
                 onForward={handleForward}
                 onReport={handleReport}
+                onViewProfile={(username) => navigate(`/profile/${encodeURIComponent(username)}`)}
               />
 
               {/* 输入框 */}
@@ -1137,7 +1138,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           style={{ borderColor: 'var(--color-divider)', ...(rightCollapsed ? { width: 0, opacity: 0, pointerEvents: 'none' } : {}) }}
         >
           {activeRoom && !showPrivate && (
-            <MemberList members={members} loading={membersLoading} />
+            <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username)}`)} />
           )}
         </aside>
 
@@ -1158,7 +1159,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               >
                 <X size={14} />
               </button>
-              <MemberList members={members} loading={membersLoading} />
+              <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username)}`)} />
             </div>
           ) : null}
         </aside>

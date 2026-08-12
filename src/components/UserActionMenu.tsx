@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserPlus, UserMinus, AtSign, MessageSquare, X } from 'lucide-react';
+import { UserPlus, UserMinus, AtSign, MessageSquare, X, User } from 'lucide-react';
 import type { FollowStatus } from '../types';
 import { followApi } from '../lib/api';
 import { Avatar } from './Avatar';
@@ -19,6 +19,7 @@ interface UserActionMenuProps {
   onMention?: (username: string) => void;
   onMessage?: (userId: number) => void;
   onFollowChange?: (followed: boolean, mutual: boolean) => void;
+  onViewProfile?: () => void;
 }
 
 export function UserActionMenu({
@@ -239,6 +240,17 @@ export function UserActionMenu({
             需互相关注
           </span>
         )}
+      </button>
+
+      <button
+        onClick={() => { onViewProfile?.(); onClose(); }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
+        style={{ color: 'var(--color-text)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <User size={15} style={{ color: 'var(--color-primary)' }} />
+        <span>查看主页</span>
       </button>
     </div>
   );

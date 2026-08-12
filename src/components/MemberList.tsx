@@ -7,7 +7,7 @@ interface MemberListProps {
   loading?: boolean;
 }
 
-export function MemberList({ members, loading }: MemberListProps) {
+export function MemberList({ members, loading, onSelect }: MemberListProps) {
   const online = members.filter((m) => m.online);
   const offline = members.filter((m) => !m.online);
 
@@ -64,14 +64,15 @@ export function MemberList({ members, loading }: MemberListProps) {
   );
 }
 
-function MemberItem({ member }: { member: RoomMember }) {
+function MemberItem({ member, onSelect }: { member: RoomMember; onSelect?: (username: string) => void }) {
   const isOwner = member.is_owner;
   const isAdmin = member.role === 'admin';
 
   return (
     <div
       className="flex items-center gap-2.5 px-3 py-2.5 transition-colors"
-      style={{ opacity: member.online ? 1 : 0.6 }}
+      style={{ opacity: member.online ? 1 : 0.6, cursor: onSelect ? 'pointer' : 'default' }}
+      onClick={() => onSelect?.(member.username)}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
