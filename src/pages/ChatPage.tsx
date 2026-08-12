@@ -705,7 +705,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         >
           {/* 分类竖条 */}
           <div
-            className="w-14 flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative"
+            className={`flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200 ${
+              showLabels ? 'w-44' : 'w-14'
+            }`}
             style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
           >
             {/* 左侧活跃指示条 */}
