@@ -92,7 +92,7 @@ export function ConfessionBookmarks() {
         >
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: T.text }}>
+        <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>
           我的收藏
         </h1>
         <select

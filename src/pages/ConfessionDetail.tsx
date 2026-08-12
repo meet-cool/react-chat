@@ -208,7 +208,7 @@ export function ConfessionDetail() {
         >
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: T.text }}>
+        <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>
           表白详情
         </h1>
         <div className="flex-1" />
