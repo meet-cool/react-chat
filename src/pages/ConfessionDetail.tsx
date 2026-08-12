@@ -311,11 +311,11 @@ export function ConfessionDetail() {
                 className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200 hover:opacity-80"
                 style={{
                   height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                  border: `1px solid ${confession.bookmarked ? T.warning : T.textMuted} !important`,
-                  background: confession.bookmarked ? `${T.warning}22 !important` : 'transparent !important',
+                  border: `1px solid ${confession.bookmarked ? T.warning : T.textMuted}`,
+                  background: confession.bookmarked ? `${T.warning}22` : 'transparent',
                   color: confession.bookmarked ? T.warning : T.textMuted,
                   cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
-                  minHeight: '32px !important',
+                  minHeight: 32,
                 }}
               >
                 <Star size={14} fill={confession.bookmarked ? 'currentColor' : 'none'} />
@@ -342,10 +342,10 @@ export function ConfessionDetail() {
                 className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
                 style={{
                   width: 32, height: 32, padding: 0,
-                  border: `1px solid ${T.textMuted} !important`,
-                  background: 'transparent !important',
+                  border: `1px solid ${T.textMuted}`,
+                  background: 'transparent',
                   color: T.textMuted, cursor: 'pointer', borderRadius: 3,
-                  minHeight: '32px !important',
+                  minHeight: 32,
                 }}
                 title="举报"
               >
@@ -388,9 +388,9 @@ export function ConfessionDetail() {
                       className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
                       style={{
                         height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                        border: `1px solid ${T.textMuted} !important`,
-                        background: 'transparent !important', color: T.textMuted,
-                        borderRadius: 3, minHeight: '32px !important', cursor: 'pointer',
+                        border: `1px solid ${T.textMuted}`,
+                        background: 'transparent', color: T.textMuted,
+                        borderRadius: 3, minHeight: 32, cursor: 'pointer',
                       }}
                     >
                       取消
