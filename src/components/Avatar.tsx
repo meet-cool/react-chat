@@ -20,7 +20,7 @@ function getColor(name: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export function Avatar({ username, avatar, size = 40, online }: AvatarProps) {
+export function Avatar({ username, avatar, size = 40, online, onClick }: AvatarProps) {
   const color = getColor(username);
   const initial = username.charAt(0).toUpperCase();
 
