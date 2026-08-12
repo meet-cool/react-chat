@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './lib/AppContext';
 import { AdminAuthProvider } from './lib/AdminContext';
 import { ToastContainer } from './components/Toast';
+import { PageTransition } from './components/PageTransition';
 import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
