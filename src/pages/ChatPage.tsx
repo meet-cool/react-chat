@@ -1060,7 +1060,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 onReply={handleReply}
                 onForward={handleForward}
                 onReport={handleReport}
-                onViewProfile={(username) => navigate(`/profile/${encodeURIComponent(username)}`)}
+                onViewProfile={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)}
               />
 
               {/* 输入框 */}
