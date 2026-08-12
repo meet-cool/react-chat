@@ -798,18 +798,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             >
               <Settings size={24} />
             </button>
-            {/* 折叠按钮（桌面端 + 移动端） */}
-            <button
-              onClick={() => setLeftCollapsed((v) => !v)}
-              className="flex btn items-center gap-2 text-sm font-medium"
-              style={{ minHeight: 56, minWidth: 56, padding: '0 12px', color: 'var(--color-text-light)', background: 'transparent' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              title={leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}
-            >
-              {leftCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-              <span className="hidden md:inline">{leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}</span>
-            </button>
             {/* 移动端关闭按钮（仅侧边栏打开时显示） */}
             {mobileSidebar !== null && (
               <button
