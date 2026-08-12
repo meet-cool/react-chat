@@ -116,17 +116,18 @@ export function ConfessionPost() {
             onChange={(e) => setTheme(e.target.value as ThemeKey)}
             className="text-sm"
             style={{
-              background: T.inputBg,
-              border: `1px solid ${T.cardBorder}`,
+              background: 'transparent',
+              border: 'none',
               color: T.text,
               borderRadius: '3px',
               padding: '4px 8px',
               outline: 'none',
+              cursor: 'pointer',
             }}
           >
-            <option value="ocean">🌊 蔚蓝无边星海</option>
-            <option value="pink">🌸 粉色浪漫花海</option>
-            <option value="default">🎨 默认主题</option>
+            <option value="ocean">蔚蓝无边星海</option>
+            <option value="pink">粉色浪漫花海</option>
+            <option value="default">默认主题</option>
           </select>
         </div>
       </div>
