@@ -4,8 +4,7 @@ import type { ReactNode } from 'react';
 
 /**
  * 页面切换淡入动画组件
- * 每次路由变化时淡出→淡入（200ms）
- * 使用 location.key 确保嵌套路由也能触发
+ * 每次路由变化时淡出→淡入（200ms），首次加载立即显示
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -15,14 +14,11 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!mountedRef.current) {
-      // 首次渲染：不播放动画，直接显示
       mountedRef.current = true;
       return;
     }
-    // 路由变化：先淡出
     setOpacity(0);
     const timer = setTimeout(() => {
-      // 再换新内容并淡入
       setVersion((v) => v + 1);
       setOpacity(1);
     }, 180);

@@ -462,6 +462,9 @@ export function PortalPage() {
           <span style={{ color: 'var(--color-text)' }}>ARCLE</span>
         </div>
         <p className="mb-3">© 2024 ARCLE 在线聊天平台</p>
+        <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          Build v1.0.18 | {new Date().toLocaleDateString('zh-CN')}
+        </p>
         <div className="flex items-center justify-center gap-4">
           <button onClick={() => navigate('/terms')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>服务条款</button>
           <button onClick={() => navigate('/privacy')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>隐私政策</button>
