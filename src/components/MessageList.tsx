@@ -45,6 +45,7 @@ export function MessageList({
   currentUserId,
   onMention,
   onMessage,
+  onViewProfile,
   onReact,
   onReply,
   onForward,
