@@ -279,7 +279,7 @@ export const confessionApi = {
     post<{ liked: boolean; like_count: number }>(`/chat/confessions/${encodeURIComponent(slug)}/like`),
 
   bookmark: (slug: string) =>
-    post<{ bookmarked: boolean }>(`/chat/confessions/${encodeURIComponent(slug)}/bookmark`),
+    post<{ bookmarked: boolean; bookmark_count: number }>(`/chat/confessions/${encodeURIComponent(slug)}/bookmark`),
 
   bookmarks: (page = 1) =>
     get<PaginatedData<Confession>>(`/chat/confessions/bookmarks?page=${page}&per_page=20`),

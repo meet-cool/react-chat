@@ -327,7 +327,9 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
     }
     confessionApi.bookmark(slug).then((res) => {
       setConfessions((prev) =>
-        prev.map((c) => (c.slug === slug ? { ...c, bookmarked: res.bookmarked } : c))
+        prev.map((c) =>
+          c.slug === slug ? { ...c, bookmarked: res.bookmarked, bookmark_count: res.bookmark_count } : c
+        )
       );
     });
   }, [isLogged, addToast, navigate]);
