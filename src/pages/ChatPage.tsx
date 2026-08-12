@@ -82,6 +82,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   // 电脑端侧边栏折叠
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
 
   // 消息操作：引用回复、转发、举报
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -731,14 +732,15 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     handleSidebarClick(c.k);
                     if (leftCollapsed) setLeftCollapsed(false);
                   }}
-                  className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-xl relative"
+                  className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-all duration-150 w-full ${
+                    showLabels ? 'justify-start' : 'justify-center'
+                  }`}
                   style={
                     isActive
                       ? {
-                          background: 'var(--color-primary)',
-                          color: '#fff',
-                          boxShadow: `0 2px 12px var(--color-primary)`,
-                          transform: 'scale(1.05)',
+                          background: 'var(--color-primary-light)',
+                          color: 'var(--color-primary)',
+                          borderLeft: '3px solid var(--color-primary)',
                         }
                       : {
                           color: 'var(--color-text-light)',
@@ -753,10 +755,24 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   }}
                   title={c.label}
                 >
-                  <Icon size={24} />
+                  <Icon size={20} />
+                  {showLabels && <span className="text-sm font-medium truncate">{c.label}</span>}
                 </button>
               );
             })}
+            <button
+              onClick={() => setShowLabels((v) => !v)}
+              className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-150 w-full text-xs ${
+                showLabels ? 'justify-start' : 'justify-center'
+              }`}
+              style={{ color: 'var(--color-text-muted)', background: 'transparent' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              title={showLabels ? '收起文字' : '显示文字'}
+            >
+              {showLabels ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              {showLabels && <span>收起</span>}
+            </button>
             <div className="flex-1" />
             {/* 个人主页 */}
             <button
