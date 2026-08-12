@@ -23,6 +23,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
   // 用传入的 user prop 判断，不依赖异步 API 加载
   const selfUsername = user?.username || '';
+  const isSelf = !username || username === selfUsername;
   const [info, setInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
