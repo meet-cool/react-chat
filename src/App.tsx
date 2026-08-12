@@ -26,6 +26,7 @@ import { PointsPage } from './pages/PointsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { DebugPage } from './pages/DebugPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
