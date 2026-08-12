@@ -800,18 +800,29 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             >
               <Settings size={24} />
             </button>
-            {/* 折叠按钮（仅桌面端） */}
+            {/* 折叠按钮（桌面端 + 移动端） */}
             <button
               onClick={() => setLeftCollapsed((v) => !v)}
-              className="hidden md:flex btn items-center gap-2 text-sm font-medium"
+              className="flex btn items-center gap-2 text-sm font-medium"
               style={{ minHeight: 56, minWidth: 56, padding: '0 12px', color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               title={leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}
             >
               {leftCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-              <span>{leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}</span>
+              <span className="hidden md:inline">{leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}</span>
             </button>
+            {/* 移动端关闭按钮（仅侧边栏打开时显示） */}
+            {mobileSidebar !== null && (
+              <button
+                className="md:hidden btn btn-sm p-1.5 rounded-full"
+                style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-divider)' }}
+                onClick={() => setMobileSidebar(null)}
+                title="关闭侧边栏"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           {/* 分类内容区 */}
@@ -821,18 +832,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-            <button
-                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full transition-opacity duration-200"
-                style={{
-                  background: 'var(--color-card-alt)',
-                  border: '1px solid var(--color-divider)',
-                  opacity: mobileSidebar ? 1 : 0,
-                  pointerEvents: mobileSidebar ? 'auto' : 'none',
-                }}
-                onClick={() => setMobileSidebar(null)}
-              >
-                <X size={16} />
-              </button>
             {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
