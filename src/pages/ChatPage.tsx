@@ -59,16 +59,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [indicatorTop, setIndicatorTop] = useState(24);
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const sidebarColRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      const btn = categoryBtnRefs.current.get(category);
-      const col = sidebarColRef.current;
-      if (btn && col) {
-        setIndicatorTop(btn.offsetTop - col.offsetTop + 8);
-      }
-    });
-  }, [category, showLabels]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
