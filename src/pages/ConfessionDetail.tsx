@@ -189,10 +189,7 @@ export function ConfessionDetail() {
     <div
       className="flex flex-col h-screen"
       style={{
-        background: T.cardBg,
-        backgroundImage: `url(/${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: `url(/${bgImage}) center center / cover ${T.cardBg}`,
       }}
     >
       {/* 头部 */}
