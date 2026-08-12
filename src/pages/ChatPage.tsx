@@ -985,16 +985,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   >
                     <Menu size={16} />
                   </button>
-                  {/* 桌面端左侧折叠按钮 */}
-                  <button
-                    className="hidden md:flex btn items-center gap-2 text-sm font-medium"
-                    style={{ minHeight: 56, minWidth: 56, padding: '0 12px' }}
-                    onClick={() => setLeftCollapsed((v) => !v)}
-                    title={leftCollapsed ? '展开左侧栏' : '折叠左侧栏'}
-                  >
-                    {leftCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-                    <span>{leftCollapsed ? '展开侧边栏' : '折叠侧边栏'}</span>
-                  </button>
                   <Hash size={18} style={{ color: 'var(--color-text-muted)' }} />
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate" style={{ color: 'var(--color-text)' }}>
