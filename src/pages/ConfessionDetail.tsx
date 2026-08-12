@@ -292,18 +292,17 @@ export function ConfessionDetail() {
                 className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200"
                 style={{
                   height: 32,
-                  padding: '0 12px',
+                  padding: '0 12px !important',
                   fontSize: 13,
                   fontWeight: 500,
                   fontFamily: 'inherit',
-                  border: `1px solid ${confession.liked ? T.primary : T.textMuted}`,
-                  background: confession.liked ? T.primary : 'transparent',
+                  border: `1px solid ${confession.liked ? T.primary : T.textMuted} !important`,
+                  background: confession.liked ? T.primary : 'transparent !important',
                   color: confession.liked ? '#fff' : T.textMuted,
                   cursor: 'pointer',
                   borderRadius: 3,
                   whiteSpace: 'nowrap',
                   minHeight: '32px !important',
-                  padding: '0 12px !important',
                 }}
               >
                 <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
