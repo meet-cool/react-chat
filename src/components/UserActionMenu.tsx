@@ -31,6 +31,7 @@ export function UserActionMenu({
   onMention,
   onMessage,
   onFollowChange,
+  onViewProfile,
 }: UserActionMenuProps) {
   const { addToast } = useApp();
   const [status, setStatus] = useState<FollowStatus | null>(null);
