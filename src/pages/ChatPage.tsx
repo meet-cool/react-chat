@@ -95,6 +95,16 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const btn = categoryBtnRefs.current.get(category);
+      const col = sidebarColRef.current;
+      if (btn && col) {
+        setIndicatorTop(btn.offsetTop - col.offsetTop + 8);
+      }
+    });
+  }, [category, showLabels]);
+
   // 消息操作：引用回复、转发、举报
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [forwardMsg, setForwardMsg] = useState<ChatMessage | null>(null);
