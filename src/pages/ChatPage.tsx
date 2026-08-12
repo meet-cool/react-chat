@@ -691,10 +691,10 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
       {/* 主体三栏布局 */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 左侧：分类导航条 + 内容区 */}
+        {/* 左侧：分类导航条 + 内容区（桌面端展开时为 fixed 覆盖层） */}
         <aside
           className={`border-r flex transition-[width] duration-200 ease-out ${
-            leftCollapsed ? 'md:w-14' : 'md:w-72'
+            leftCollapsed ? 'md:w-14' : 'md:w-72 md:fixed md:inset-y-0 md:left-0 md:z-50'
           } ${
             mobileSidebar !== null
               ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-auto'
@@ -911,6 +911,19 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             )}
           </div>
         </aside>
+
+        {/* 左侧展开时的右侧阴影遮罩（桌面端） */}
+        {!leftCollapsed && !mobileSidebar && (
+          <div
+            className="hidden md:block fixed inset-y-0 left-72 right-0 z-40 cursor-pointer"
+            style={{
+              background: 'linear-gradient(to right, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 40%, transparent 70%)',
+              pointerEvents: 'all',
+            }}
+            onClick={() => setLeftCollapsed(true)}
+            aria-label="点击关闭侧边栏"
+          />
+        )}
 
         {/* 中间：消息区 / 私聊区 */}
         <main className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--color-bg)' }}>
