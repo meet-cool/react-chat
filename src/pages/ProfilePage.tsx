@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
-import { authApi, userApi, getToken } from '../lib/api';
+import { authApi, userApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -12,23 +12,21 @@ function getLevelColor(level: number) {
   return LEVEL_COLORS[Math.min(level - 1, LEVEL_COLORS.length - 1)] ?? LEVEL_COLORS[0];
 }
 
-export function ProfilePage() {
+interface ProfilePageProps {
+  user?: UserInfo;
+}
+
+export function ProfilePage({ user }: ProfilePageProps) {
   const navigate = useNavigate();
   const { username } = useParams<{ username?: string }>();
   const { addToast } = useApp();
 
-  const [selfUser, setSelfUser] = useState<UserInfo | null>(null);
+  // 用传入的 user prop 判断，不依赖异步 API 加载
+  const selfUsername = user?.username || '';
+  const isSelf = !username || username === selfUsername;
   const [info, setInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
-
-  // 先加载当前登录用户信息，用于判断是否查看自己的主页
-  useEffect(() => {
-    if (!getToken()) return;
-    authApi.profile().then(setSelfUser).catch(() => {});
-  }, []);
-
-  const isSelf = !username || !selfUser || username === selfUser.username;
 
   const loadProfile = useCallback(async () => {
     setLoading(true);

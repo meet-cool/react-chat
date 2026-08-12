@@ -132,7 +132,7 @@ export default function App() {
             {/* 个人主页 - 需登录 */}
             <Route
               path="/profile/:username"
-              element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
+              element={user ? <ProfilePage user={user} /> : <Navigate to="/login" replace />}
             />
 
             {/* 管理后台登录（无需鉴权） */}
