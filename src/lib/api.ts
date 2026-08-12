@@ -26,7 +26,16 @@ import type {
   BottleReply,
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_STORAGE_KEY = 'arcle_api_base';
+
+export function getApiBaseUrl(): string {
+  return localStorage.getItem(API_STORAGE_KEY) || DEFAULT_API_BASE;
+}
+
+export function setApiBaseUrl(url: string): void {
+  localStorage.setItem(API_STORAGE_KEY, url.trim());
+}
 
 /** 获取本地存储的 token */
 export function getToken(): string {
