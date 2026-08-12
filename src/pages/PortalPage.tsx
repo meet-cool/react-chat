@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getToken } from '../lib/api';
 import type { UserInfo } from '../types';
+import titleImg from '../../public/title.png';
 
 interface PublicStats {
   total_users: number;
@@ -221,6 +222,13 @@ export function PortalPage() {
       {/* Hero 区域 */}
       <section className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
+          {/* 标题图 */}
+          <img
+            src={titleImg}
+            alt="Arcle 聊天互联"
+            className="w-full max-w-3xl mx-auto mb-10 rounded-xl shadow-[var(--shadow-lg)]"
+            style={{ objectFit: 'contain', maxHeight: '320px' }}
+          />
           <div
             className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-sm"
             style={{
