@@ -72,7 +72,7 @@ function MemberItem({ member, onSelect }: { member: RoomMember; onSelect?: (user
     <div
       className="flex items-center gap-2.5 px-3 py-2.5 transition-colors"
       style={{ opacity: member.online ? 1 : 0.6, cursor: onSelect ? 'pointer' : 'default' }}
-      onClick={() => onSelect?.(member.username)}
+      onClick={() => onSelect?.(member.username.trim())}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >

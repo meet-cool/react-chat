@@ -1159,7 +1159,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               >
                 <X size={14} />
               </button>
-              <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username)}`)} />
+              <MemberList members={members} loading={membersLoading} onSelect={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)} />
             </div>
           ) : null}
         </aside>

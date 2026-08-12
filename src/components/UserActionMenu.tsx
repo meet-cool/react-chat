@@ -19,7 +19,7 @@ interface UserActionMenuProps {
   onMention?: (username: string) => void;
   onMessage?: (userId: number) => void;
   onFollowChange?: (followed: boolean, mutual: boolean) => void;
-  onViewProfile?: () => void;
+  onViewProfile?: (username: string) => void;
 }
 
 export function UserActionMenu({

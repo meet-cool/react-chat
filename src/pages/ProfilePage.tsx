@@ -43,6 +43,9 @@ export function ProfilePage({ user }: ProfilePageProps) {
       if (msg.includes('403') || msg.includes('隐藏')) {
         addToast('该用户已隐藏主页', 'warning');
         navigate(-1);
+      } else if (msg.includes('404') || msg.includes('不存在')) {
+        addToast('用户不存在', 'error');
+        navigate(-1);
       }
     } finally {
       setLoading(false);
