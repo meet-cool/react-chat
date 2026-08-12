@@ -23,6 +23,8 @@ import { ConfessionMine } from './pages/ConfessionMine';
 import { BottlePage } from './pages/BottlePage';
 import { PointsPage } from './pages/PointsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -151,6 +153,11 @@ export default function App() {
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* 服务条款 */}
+          <Route path="/terms" element={<TermsPage />} />
+          {/* 隐私政策 */}
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
         <ToastContainer />
       </AdminAuthProvider>

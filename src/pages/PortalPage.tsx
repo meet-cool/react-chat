@@ -168,7 +168,7 @@ export function PortalPage() {
           setStats(data.data);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
 
     return () => clearTimeout(timer);
@@ -223,12 +223,7 @@ export function PortalPage() {
       <section className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* 标题图 */}
-          <img
-            src={titleImg}
-            alt="Arcle 聊天互联"
-            className="w-full max-w-3xl mx-auto mb-10 rounded-xl shadow-[var(--shadow-lg)]"
-            style={{ objectFit: 'contain', maxHeight: '320px' }}
-          />
+
           <div
             className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-sm"
             style={{
@@ -238,7 +233,7 @@ export function PortalPage() {
             }}
           >
             <Zap size={16} />
-            <span>实时群聊 · 多主题切换 · Markdown 支持</span>
+            <span>实时群聊 · 多主题切换</span>
           </div>
 
           <h1
@@ -251,7 +246,12 @@ export function PortalPage() {
             让连接{' '}
             <span style={{ color: 'var(--color-primary)' }}>更简单</span>
           </h1>
-
+          <img
+            src={titleImg}
+            alt="Arcle 聊天互联"
+            className="w-full max-w-3xl mx-auto mb-10 rounded-xl shadow-[var(--shadow-lg)]"
+            style={{ objectFit: 'contain', maxHeight: '220px' }}
+          />
           <p
             className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
             style={{ color: 'var(--color-text-secondary)' }}
@@ -266,7 +266,7 @@ export function PortalPage() {
               className="btn btn-primary btn-lg"
               style={{ minHeight: 52, minWidth: 200 }}
             >
-              立即注册 <ArrowRight size={18} />
+              立即开始 <ArrowRight size={18} />
             </button>
             <button
               onClick={() => {
@@ -447,7 +447,7 @@ export function PortalPage() {
             className="btn btn-primary btn-lg"
             style={{ minHeight: 56, minWidth: 200 }}
           >
-            立即注册 <ArrowRight size={18} />
+            立即开始 <ArrowRight size={18} />
           </button>
         </div>
       </section>
@@ -461,7 +461,11 @@ export function PortalPage() {
           <MessageSquare size={16} style={{ color: 'var(--color-primary)' }} />
           <span style={{ color: 'var(--color-text)' }}>ARCLE</span>
         </div>
-        <p>© 2024 ARCLE 在线聊天平台. All rights reserved.</p>
+        <p className="mb-3">© 2024 ARCLE 在线聊天平台</p>
+        <div className="flex items-center justify-center gap-4">
+          <button onClick={() => navigate('/terms')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>服务条款</button>
+          <button onClick={() => navigate('/privacy')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>隐私政策</button>
+        </div>
       </footer>
     </div>
   );
