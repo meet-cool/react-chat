@@ -726,16 +726,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           >
             {/* 左侧活跃指示条 */}
             <div
-              className="absolute left-0 w-1 rounded-r transition-all duration-200"
+              className="absolute left-0 w-1 rounded-r"
               style={{
                 height: 56,
                 background: 'var(--color-primary)',
                 opacity: 0.8,
                 boxShadow: '0 0 6px var(--color-primary)',
-                top: (() => {
-                    const map: Record<string, number> = { recent: 24, rooms: 72, contacts: 120, confession: 168, bottle: 216, points: 264, extensions: 312 };
-                    return map[category] ?? 24;
-                  })(),
+                top: indicatorTop,
+                transition: 'top 0.2s ease-out',
               }}
             />
             {sidebarCategories.map((c) => {
