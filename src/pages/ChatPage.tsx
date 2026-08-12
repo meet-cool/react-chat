@@ -281,6 +281,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       setShowPrivate(false);
       setPrivateTarget(null);
       setRightCollapsed(false);
+      setMobileSidebar(null);
       lastLoadRoomRef.current = null;
       try {
         // 先刷新房间列表，拿到最新的 joined 状态
@@ -604,7 +605,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         navigate('/points');
       } else {
         setCategory(k);
-        if (k === 'rooms' || k === 'contacts') setMobileSidebar(k);
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          setMobileSidebar(k);
+        }
       }
     },
     [navigate]
@@ -823,6 +826,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   setPrivateTarget(null);
                   setActiveRoom(null);
                   setActiveConv(conv);
+                  setMobileSidebar(null);
                 }}
                 loading={roomsLoading}
               />
