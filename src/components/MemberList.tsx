@@ -5,6 +5,7 @@ import { Avatar } from './Avatar';
 interface MemberListProps {
   members: RoomMember[];
   loading?: boolean;
+  onSelect?: (username: string) => void;
 }
 
 export function MemberList({ members, loading, onSelect }: MemberListProps) {
@@ -46,7 +47,7 @@ export function MemberList({ members, loading, onSelect }: MemberListProps) {
               </div>
             )}
             {sortedOnline.map((m) => (
-              <MemberItem key={`o-${m.id}`} member={m} />
+              <MemberItem key={`o-${m.id}`} member={m} onSelect={onSelect} />
             ))}
 
             {sortedOffline.length > 0 && (
@@ -55,7 +56,7 @@ export function MemberList({ members, loading, onSelect }: MemberListProps) {
               </div>
             )}
             {sortedOffline.map((m) => (
-              <MemberItem key={`f-${m.id}`} member={m} />
+              <MemberItem key={`f-${m.id}`} member={m} onSelect={onSelect} />
             ))}
           </>
         )}
