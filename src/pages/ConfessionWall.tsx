@@ -134,7 +134,7 @@ function ConfessionCard({
         <div className="flex items-center gap-1">
           <button
             onClick={() => onLike(c.slug)}
-            className="btn btn-sm"
+            className="btn btn-sm btn-ghost"
             style={{
               minWidth: 32,
               maxHeight: 26,
@@ -177,11 +177,11 @@ function ConfessionCard({
         </div>
         {/* 右侧：更多（三个点） */}
         <button
-          onClick={() => setShowReport(true)}
-          className="btn btn-sm ml-auto"
-          style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted }}
-          title="举报"
-        >
+            onClick={() => setShowReport(true)}
+            className="btn btn-sm ml-auto btn-ghost"
+            style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted }}
+            title="举报"
+          >
           <MoreVertical size={13} />
         </button>
       </div>

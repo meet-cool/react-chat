@@ -158,7 +158,7 @@ export function BottlePage() {
         className="px-4 py-3 border-b flex items-center gap-3"
         style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
       >
-        <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36 }}>
+        <button onClick={() => navigate('/chat')} className="btn btn-sm btn-ghost" style={{ minWidth: 36 }}>
           <ArrowLeft size={14} />
         </button>
         <div>
