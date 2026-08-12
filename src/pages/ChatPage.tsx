@@ -72,7 +72,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showRoomSettings, setShowRoomSettings] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo>(user);
-  const [mobileSidebar, setMobileSidebar] = useState<'rooms' | 'members' | 'contacts' | null>(null);
+  const [mobileSidebar, setMobileSidebar] = useState<SidebarCategory | 'members' | null>(null);
 
   // 私聊：外部触发目标用户
   const [privateTarget, setPrivateTarget] = useState<number | null>(null);
