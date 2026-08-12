@@ -202,7 +202,7 @@ export function ConfessionDetail() {
           className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
           style={{
             width: 32, height: 32, padding: 0,
-            background: 'transparent !important', border: 'none !important',
+            background: 'transparent', border: 'none',
             color: T.textMuted, cursor: 'pointer', borderRadius: 3,
           }}
         >
@@ -296,11 +296,11 @@ export function ConfessionDetail() {
                 className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200 hover:opacity-90"
                 style={{
                   height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                  border: `1px solid ${confession.liked ? T.primary : T.textMuted} !important`,
-                  background: confession.liked ? T.primary : 'transparent !important',
+                  border: `1px solid ${confession.liked ? T.primary : T.textMuted}`,
+                  background: confession.liked ? T.primary : 'transparent',
                   color: confession.liked ? '#fff' : T.textMuted,
                   cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
-                  minHeight: '32px !important',
+                  minHeight: 32,
                 }}
               >
                 <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
@@ -329,10 +329,10 @@ export function ConfessionDetail() {
                 className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-80"
                 style={{
                   height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                  border: `1px solid ${T.textMuted} !important`,
-                  background: 'transparent !important',
+                  border: `1px solid ${T.textMuted}`,
+                  background: 'transparent',
                   color: T.textMuted, cursor: 'pointer', borderRadius: 3,
-                  minHeight: '32px !important',
+                  minHeight: 32,
                 }}
               >
                 <Share2 size={14} /> 分享
@@ -360,10 +360,10 @@ export function ConfessionDetail() {
                     className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
                     style={{
                       width: 32, height: 32, padding: 0,
-                      border: `1px solid ${T.textMuted} !important`,
-                      background: 'transparent !important',
+                      border: `1px solid ${T.textMuted}`,
+                      background: 'transparent',
                       color: T.textMuted, cursor: 'pointer', borderRadius: 3,
-                      minHeight: '32px !important',
+                      minHeight: 32,
                     }}
                     title="删除"
                   >
@@ -376,9 +376,9 @@ export function ConfessionDetail() {
                       className="flex items-center justify-center gap-1 transition-all duration-200"
                       style={{
                         height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                        background: T.error !important, color: '#fff',
-                        border: `1px solid ${T.error} !important`, borderRadius: 3,
-                        minHeight: '32px !important', cursor: 'pointer',
+                        background: T.error, color: '#fff',
+                        border: `1px solid ${T.error}`, borderRadius: 3,
+                        minHeight: 32, cursor: 'pointer',
                       }}
                     >
                       确认删除
@@ -494,8 +494,8 @@ export function ConfessionDetail() {
                 style={{
                   height: 36, padding: '0 16px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
                   background: T.primary, color: '#fff',
-                  border: `1px solid ${T.primary} !important`, borderRadius: 3,
-                  minHeight: '36px !important', cursor: 'pointer',
+                  border: `1px solid ${T.primary}`, borderRadius: 3,
+                  minHeight: 36, cursor: 'pointer',
                 }}
               >
                 <UserPlus size={14} />
