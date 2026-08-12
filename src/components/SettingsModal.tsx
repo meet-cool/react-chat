@@ -40,6 +40,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [motto, setMotto] = useState(user.motto || '');
   const [birthday, setBirthday] = useState(user.birthday || '');
   const [age, setAge] = useState(user.age || 0);
+  const [profileVisible, setProfileVisible] = useState<boolean>(user.profile_visible !== false);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
