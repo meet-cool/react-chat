@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Globe,
   Heart,
+  Settings,
 } from 'lucide-react';
 import { getToken } from '../lib/api';
 import type { UserInfo } from '../types';
@@ -469,6 +470,17 @@ export function PortalPage() {
           <button onClick={() => navigate('/terms')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>服务条款</button>
           <button onClick={() => navigate('/privacy')} className="hover:underline" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}>隐私政策</button>
         </div>
+        <button
+          onClick={() => navigate('/debug')}
+          className="mt-3 flex items-center gap-1 mx-auto text-xs transition-opacity hover:opacity-80"
+          style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.4 }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+          title="开发者调试"
+        >
+          <Settings size={12} />
+          <span>调试</span>
+        </button>
       </footer>
     </div>
   );

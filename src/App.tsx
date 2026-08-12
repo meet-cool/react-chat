@@ -160,6 +160,9 @@ export default function App() {
             <Route path="/terms" element={<TermsPage />} />
             {/* 隐私政策 */}
             <Route path="/privacy" element={<PrivacyPage />} />
+
+            {/* 开发者调试 */}
+            <Route path="/debug" element={<DebugPage />} />
           </Routes>
         </PageTransition>
         <ToastContainer />
