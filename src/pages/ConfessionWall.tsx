@@ -450,7 +450,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',
-              padding: '6px 8px',
+              padding: '4px 6px',
               outline: 'none',
             }}
           >

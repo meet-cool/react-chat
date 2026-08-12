@@ -120,7 +120,7 @@ export function ConfessionPost() {
               border: 'none',
               color: T.text,
               borderRadius: '3px',
-              padding: '4px 8px',
+              padding: '4px 6px',
               outline: 'none',
               cursor: 'pointer',
             }}
