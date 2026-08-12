@@ -211,11 +211,10 @@ export function ConfessionDetail() {
         <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>
           表白详情
         </h1>
-        <div className="flex-1" />
         <select
           value={theme}
           onChange={(e) => setTheme(e.target.value as ThemeKey)}
-          className="text-xs px-2 py-1"
+          className="text-xs px-1 py-0.5 shrink-0"
           style={{
             background: T.labelBg,
             border: `1px solid ${T.cardBorder}`,

@@ -105,8 +105,8 @@ export function ConfessionMine() {
         <select
           value={theme}
           onChange={(e) => setTheme(e.target.value as ThemeKey)}
-          className="text-xs"
-          style={{ background: T.cardBg, color: T.text, border: `1px solid ${T.cardBorder}`, borderRadius: '3px', padding: '4px 8px' }}
+          className="text-xs px-1 py-0.5 shrink-0"
+          style={{ background: T.cardBg, color: T.text, border: `1px solid ${T.cardBorder}`, borderRadius: '3px', padding: '3px 4px' }}
         >
           <option value="pink">粉色</option>
           <option value="ocean">海洋</option>

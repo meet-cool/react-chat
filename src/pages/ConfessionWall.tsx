@@ -467,13 +467,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',
-              padding: '6px 8px',
+              padding: '4px 6px',
               outline: 'none',
             }}
           >
-            <option value="ocean"> 蔚蓝无边星海</option>
-            <option value="pink"> 粉色浪漫花海</option>
-            <option value="default"> 默认主题</option>
+            <option value="ocean">海洋</option>
+            <option value="pink">粉色</option>
+            <option value="default">默认</option>
           </select>
         </div>
       </div>
