@@ -151,12 +151,13 @@ export function PortalPage() {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
 
-    // 检查是否已登录，已登录则跳转到聊天页
-    const token = getToken();
-    if (token) {
-      navigate('/chat', { replace: true });
-      return;
-    }
+    // 等待 App 完成用户检查后再跳转，避免循环重定向
+    const timer = setTimeout(() => {
+      const token = getToken();
+      if (token) {
+        navigate('/chat', { replace: true });
+      }
+    }, 800);
 
     // 加载公开统计数据
     fetch('/chat/public/stats')
@@ -168,6 +169,8 @@ export function PortalPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
