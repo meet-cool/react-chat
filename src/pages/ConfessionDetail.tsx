@@ -474,9 +474,9 @@ export function ConfessionDetail() {
                 className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-90"
                 style={{
                   height: 36, padding: '0 16px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                  background: commenting ? `${T.primary}88 !important` : T.primary,
-                  color: '#fff', border: `1px solid ${T.primary} !important`,
-                  borderRadius: 3, minHeight: '36px !important', cursor: commenting ? 'not-allowed' : 'pointer',
+                  background: commenting ? `${T.primary}88` : T.primary,
+                  color: '#fff', border: `1px solid ${T.primary}`,
+                  borderRadius: 3, minHeight: 36, cursor: commenting ? 'not-allowed' : 'pointer',
                 }}
               >
                 <SendHorizonal size={14} />
