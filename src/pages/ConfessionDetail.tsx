@@ -289,12 +289,22 @@ export function ConfessionDetail() {
             <div className="flex items-center gap-1 flex-1">
               <button
                 onClick={handleLike}
-                className={`btn btn-sm flex-1 ${confession.liked ? '' : ''}`}
-                style={
-                  confession.liked
-                    ? { background: T.primary, color: '#fff', borderColor: T.primary }
-                    : { background: 'transparent', color: T.textMuted, borderColor: T.textMuted, borderWidth: '1px' }
-                }
+                className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200"
+                style={{
+                  height: 32,
+                  padding: '0 12px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  fontFamily: 'inherit',
+                  border: `1px solid ${confession.liked ? T.primary : T.textMuted}`,
+                  background: confession.liked ? T.primary : 'transparent',
+                  color: confession.liked ? '#fff' : T.textMuted,
+                  cursor: 'pointer',
+                  borderRadius: 3,
+                  whiteSpace: 'nowrap',
+                  minHeight: '32px !important',
+                  padding: '0 12px !important',
+                }}
               >
                 <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
                 喜欢 {confession.like_count}
