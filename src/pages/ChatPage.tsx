@@ -696,7 +696,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧：分类导航条 + 内容区（桌面端展开时为 fixed 覆盖层） */}
         <aside
-          className={`border-r flex transition-[width] duration-200 ease-out relative ${
+          className={`border-r flex transition-[width] duration-200 ease-out ${
             leftCollapsed ? 'md:w-14' : 'md:w-72 md:fixed md:inset-y-0 md:left-0 md:z-50'
           } ${
             mobileSidebar !== null
@@ -814,28 +814,26 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             </button>
           </div>
 
-          {/* 移动端关闭按钮（定位在侧栏最右上角） */}
-          <button
-            className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full transition-opacity duration-200"
-            style={{
-              background: 'var(--color-card-alt)',
-              border: '1px solid var(--color-divider)',
-              opacity: mobileSidebar ? 1 : 0,
-              pointerEvents: mobileSidebar ? 'auto' : 'none',
-            }}
-            onClick={() => setMobileSidebar(null)}
-          >
-            <X size={16} />
-          </button>
-
           {/* 分类内容区 */}
           <div
-            className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 ${
+            className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
             }`}
             style={{ width: leftCollapsed ? 0 : undefined }}
           >
-              {showPrivate ? null : category === 'recent' ? (
+            <button
+                className="md:hidden absolute top-3 right-3 z-10 btn btn-sm p-1.5 rounded-full transition-opacity duration-200"
+                style={{
+                  background: 'var(--color-card-alt)',
+                  border: '1px solid var(--color-divider)',
+                  opacity: mobileSidebar ? 1 : 0,
+                  pointerEvents: mobileSidebar ? 'auto' : 'none',
+                }}
+                onClick={() => setMobileSidebar(null)}
+              >
+                <X size={16} />
+              </button>
+            {showPrivate ? null : category === 'recent' ? (
               <RecentChatsView
                 rooms={rooms}
                 conversations={conversations}
