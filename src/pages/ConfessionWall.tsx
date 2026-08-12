@@ -359,7 +359,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         className="sticky top-0 z-10 px-4 py-3 border-b"
         style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-3">
             {!isMainPage && (
               <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36, background: 'transparent', border: 'none' }}>
@@ -469,9 +469,9 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               outline: 'none',
             }}
           >
-            <option value="ocean">🌊 蔚蓝无边星海</option>
-            <option value="pink">🌸 粉色浪漫花海</option>
-            <option value="default">🎨 默认主题</option>
+            <option value="ocean"> 蔚蓝无边星海</option>
+            <option value="pink"> 粉色浪漫花海</option>
+            <option value="default"> 默认主题</option>
           </select>
         </div>
       </div>
