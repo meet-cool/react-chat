@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
 import { authApi, userApi } from '../lib/api';
@@ -28,32 +28,47 @@ export function ProfilePage({ user }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
 
+  // 防止重复加载 / navigate(-1) 后仍触发 setState
+  const abortRef = useRef(false);
+  const prevUsernameRef = useRef<string | undefined>(undefined);
+
   const loadProfile = useCallback(async () => {
+    // 已在导航离开，不再处理后续回调
+    if (abortRef.current) return;
+    // 避免同用户名重复请求
+    if (username === prevUsernameRef.current && isSelf) {
+      return;
+    }
+    prevUsernameRef.current = username;
     setLoading(true);
+    const controller = new AbortController();
     try {
       if (isSelf) {
         const u = await authApi.profile();
-        setInfo(u);
+        if (!abortRef.current) setInfo(u);
       } else {
         const u = await userApi.getOtherProfile(username!);
-        setInfo(u);
+        if (!abortRef.current) setInfo(u);
       }
     } catch (err) {
+      if (abortRef.current) return;
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('403') || msg.includes('隐藏')) {
         addToast('该用户已隐藏主页', 'warning');
-        navigate(-1);
       } else if (msg.includes('404') || msg.includes('不存在')) {
         addToast('用户不存在', 'error');
-        navigate(-1);
       }
+      navigate(-1);
+      abortRef.current = true;
     } finally {
-      setLoading(false);
+      if (!abortRef.current) setLoading(false);
     }
   }, [isSelf, username, navigate, addToast]);
 
   useEffect(() => {
+    abortRef.current = false;
     loadProfile();
+    return () => { abortRef.current = true; };
   }, [loadProfile]);
 
   const handleToggleVisible = async () => {
