@@ -664,7 +664,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             className="flex items-center gap-2 px-2.5 py-1 rounded-full"
             style={{ border: '1px solid var(--color-border-light)', background: 'var(--color-card-alt)' }}
           >
-            <Avatar username={currentUser.username} avatar={currentUser.avatar} size={28} online />
+            <Avatar username={currentUser.username} avatar={currentUser.avatar} size={28} online
+              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username)}`)}
+            />
             <span
               className="text-sm hidden sm:inline"
               style={{ color: 'var(--color-text-secondary)' }}

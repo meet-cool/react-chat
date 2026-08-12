@@ -136,10 +136,17 @@ export const userApi = {
     motto?: string;
     birthday?: string;
     age?: number;
+    profile_visible?: number;
   }) => put<UserInfo>('/chat/user/profile', data),
 
   updatePassword: (data: { old_password: string; new_password: string }) =>
     put<null>('/chat/user/password', data),
+
+  getOtherProfile: (username: string) =>
+    get<UserInfo>(`/chat/user/profile/${encodeURIComponent(username)}`),
+
+  updateProfileVisible: (visible: boolean) =>
+    put<{ profile_visible: number }>('/chat/user/profile/visible', { profile_visible: visible ? 1 : 0 }),
 };
 
 // ============ 聊天室 API ============

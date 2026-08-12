@@ -3,6 +3,7 @@ interface AvatarProps {
   avatar?: string;
   size?: number;
   online?: boolean;
+  onClick?: () => void;
 }
 
 // 根据用户名生成稳定颜色
@@ -41,7 +42,10 @@ export function Avatar({ username, avatar, size = 40, online }: AvatarProps) {
   };
 
   return (
-    <div style={containerStyle}>
+    <div
+      style={{ ...containerStyle, cursor: onClick ? 'pointer' : 'default' }}
+      onClick={onClick}
+    >
       {!avatar && initial}
       {online !== undefined && (
         <span

@@ -39,6 +39,7 @@ export interface UserInfo {
   city: string;
   motto: string;
   age: number;
+  profile_visible?: boolean;
 }
 
 // 登录/注册响应

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { userApi } from '../lib/api';
 import { Avatar } from './Avatar';
@@ -52,7 +52,8 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     setMotto(user.motto || '');
     setBirthday(user.birthday || '');
     setAge(user.age || 0);
-  }, [user.avatar, user.bio, user.gender, user.city, user.motto, user.birthday, user.age]);
+    setProfileVisible(user.profile_visible !== false);
+  }, [user.avatar, user.bio, user.gender, user.city, user.motto, user.birthday, user.age, user.profile_visible]);
 
   // 密码表单
   const [oldPwd, setOldPwd] = useState('');
@@ -365,6 +366,37 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                   />
                   <p className="text-xs mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
                     {bio.length}/255
+                  </p>
+                </div>
+
+                {/* 主页可见性 */}
+                <div style={fieldStyle}>
+                  <label className="block text-sm mb-1.5" style={labelStyle}>
+                    <span className="inline-flex items-center gap-1">
+                      {profileVisible ? <ShieldCheck size={14} /> : <Shield size={14} />}
+                      主页可见性
+                    </span>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`btn btn-sm flex-1 justify-center ${profileVisible ? 'btn-primary' : ''}`}
+                      style={profileVisible ? {} : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      onClick={() => setProfileVisible(true)}
+                    >
+                      <ShieldCheck size={14} /> 公开
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm flex-1 justify-center ${!profileVisible ? '' : ''}`}
+                      style={!profileVisible ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      onClick={() => setProfileVisible(false)}
+                    >
+                      <Shield size={14} /> 隐藏
+                    </button>
+                  </div>
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                    隐藏后其他用户将无法查看您的主页详情
                   </p>
                 </div>
 

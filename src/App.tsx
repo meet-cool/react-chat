@@ -131,7 +131,7 @@ export default function App() {
 
             {/* 个人主页 - 需登录 */}
             <Route
-              path="/profile"
+              path="/profile/:username"
               element={user ? <ProfilePage /> : <Navigate to="/login" replace />}
             />
 

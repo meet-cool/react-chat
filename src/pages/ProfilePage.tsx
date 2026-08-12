@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Crown, Star, Gift, Calendar } from 'lucide-react';
-import { authApi } from '../lib/api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
+import { authApi, userApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -14,26 +14,52 @@ function getLevelColor(level: number) {
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { addToast } = useApp();
+  const { username } = useParams<{ username?: string }>();
+  const { addToast, user: currentUser } = useApp();
+
+  const isSelf = !username || username === currentUser?.username;
   const [info, setInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingVisible, setUpdatingVisible] = useState(false);
 
   const loadProfile = useCallback(async () => {
-    const token = localStorage.getItem('arcle_token');
-    if (!token) return;
+    setLoading(true);
     try {
-      const u = await authApi.profile();
-      setInfo(u);
-    } catch {
-      // 静默失败
+      if (isSelf) {
+        const u = await authApi.profile();
+        setInfo(u);
+      } else {
+        const u = await userApi.getOtherProfile(username!);
+        setInfo(u);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('403') || msg.includes('隐藏')) {
+        addToast('该用户已隐藏主页', 'warning');
+        navigate(-1);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSelf, username, navigate, addToast]);
 
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  const handleToggleVisible = async () => {
+    if (!info) return;
+    setUpdatingVisible(true);
+    try {
+      const result = await userApi.updateProfileVisible(!info.profile_visible);
+      setInfo((prev) => prev ? { ...prev, profile_visible: result.profile_visible === 1 } : prev);
+      addToast(result.profile_visible === 1 ? '主页已公开' : '主页已隐藏', 'success');
+    } catch {
+      addToast('设置失败', 'error');
+    } finally {
+      setUpdatingVisible(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -65,8 +91,25 @@ export function ProfilePage() {
           <ArrowLeft size={14} />
         </button>
         <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
-          个人主页
+          {isSelf ? '个人主页' : `@${info.username} 的主页`}
         </h1>
+        {isSelf && (
+          <button
+            onClick={handleToggleVisible}
+            disabled={updatingVisible}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg transition-all"
+            style={{
+              background: info.profile_visible ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
+              color: info.profile_visible ? '#4ade80' : '#ef4444',
+              border: `1px solid ${info.profile_visible ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              opacity: updatingVisible ? 0.6 : 1,
+            }}
+            title={info.profile_visible ? '点击隐藏主页' : '点击公开主页'}
+          >
+            {info.profile_visible ? <ShieldCheck size={12} /> : <Shield size={12} />}
+            {info.profile_visible ? '主页公开' : '主页隐藏'}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -97,6 +140,11 @@ export function ProfilePage() {
                 </span>
               )}
             </div>
+            {!isSelf && info.profile_visible === false && (
+              <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                该用户已隐藏主页信息
+              </p>
+            )}
             {info.bio && (
               <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 {info.bio}
@@ -154,31 +202,104 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* 账号信息 */}
-        <div
-          className="rounded-lg p-4"
-          style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-        >
-          <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>
-            账号信息
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--color-text-muted)' }}>用户名</span>
-              <span style={{ color: 'var(--color-text)' }}>{info.username}</span>
+        {/* 详细信息（仅本人可见） */}
+        {isSelf && (
+          <>
+            {/* 隐私状态 */}
+            <div
+              className="rounded-lg p-4"
+              style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {info.profile_visible ? (
+                    <ShieldCheck size={16} style={{ color: '#4ade80' }} />
+                  ) : (
+                    <Shield size={16} style={{ color: '#ef4444' }} />
+                  )}
+                  <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                    主页可见性
+                  </span>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full" style={{
+                  background: info.profile_visible ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
+                  color: info.profile_visible ? '#4ade80' : '#ef4444',
+                }}>
+                  {info.profile_visible ? '公开' : '隐藏'}
+                </span>
+              </div>
+              <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                隐藏后其他用户将无法查看您的主页详情
+              </p>
             </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--color-text-muted)' }}>邮箱</span>
-              <span style={{ color: 'var(--color-text)' }}>{info.email}</span>
+
+            {/* 账号信息 */}
+            <div
+              className="rounded-lg p-4"
+              style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+            >
+              <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>
+                账号信息
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>用户名</span>
+                  <span style={{ color: 'var(--color-text)' }}>{info.username}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>邮箱</span>
+                  <span style={{ color: 'var(--color-text)' }}>{info.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>注册时间</span>
+                  <span style={{ color: 'var(--color-text)' }}>
+                    {new Date(info.create_time * 1000).toLocaleDateString('zh-CN')}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--color-text-muted)' }}>注册时间</span>
-              <span style={{ color: 'var(--color-text)' }}>
-                {new Date(info.create_time * 1000).toLocaleDateString('zh-CN')}
-              </span>
+          </>
+        )}
+
+        {/* 他人信息（公开字段） */}
+        {!isSelf && info.profile_visible !== false && (
+          <div
+            className="rounded-lg p-4"
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+          >
+            <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>
+              基本信息
+            </h3>
+            <div className="space-y-2 text-sm">
+              {info.gender && (
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>性别</span>
+                  <span style={{ color: 'var(--color-text)' }}>
+                    {info.gender === 'male' ? '男' : info.gender === 'female' ? '女' : '保密'}
+                  </span>
+                </div>
+              )}
+              {info.city && (
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>城市</span>
+                  <span style={{ color: 'var(--color-text)' }}>{info.city}</span>
+                </div>
+              )}
+              {info.motto && (
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>座右铭</span>
+                  <span style={{ color: 'var(--color-text)' }}>{info.motto}</span>
+                </div>
+              )}
+              {info.birthday && (
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--color-text-muted)' }}>生日</span>
+                  <span style={{ color: 'var(--color-text)' }}>{info.birthday}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
