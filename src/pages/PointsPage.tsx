@@ -146,7 +146,7 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
         <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36 }}>
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+        <h1 className="text-base font-bold flex-1 min-w-0 truncate items-center gap-2" style={{ color: 'var(--color-text)' }}>
           <Star size={18} style={{ color: 'var(--color-warning)' }} />
           积分中心
         </h1>

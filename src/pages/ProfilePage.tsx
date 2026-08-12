@@ -64,7 +64,7 @@ export function ProfilePage() {
         <button onClick={() => navigate(-1)} className="btn btn-sm" style={{ minWidth: 36 }}>
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: 'var(--color-text)' }}>
+        <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
           个人主页
         </h1>
       </div>

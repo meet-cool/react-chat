@@ -89,7 +89,7 @@ export function ConfessionPost() {
     >
       {/* 头部 */}
       <div
-        className="px-4 py-3 border-b flex items-center gap-3"
+        className="px-4 py-3 border-b flex items-center gap-3 flex-wrap"
         style={{ background: T.cardBg, borderColor: T.cardBorder }}
       >
         <button
@@ -99,7 +99,7 @@ export function ConfessionPost() {
         >
           <ArrowLeft size={14} />
         </button>
-        <h1 className="text-base font-bold" style={{ color: T.text }}>
+        <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>
           写表白
         </h1>
         {!isLogged && (
