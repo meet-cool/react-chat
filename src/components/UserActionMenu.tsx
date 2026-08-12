@@ -244,7 +244,7 @@ export function UserActionMenu({
       </button>
 
       <button
-        onClick={() => { onViewProfile?.(); onClose(); }}
+        onClick={() => { onViewProfile?.(user.username); onClose(); }}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
         style={{ color: 'var(--color-text)' }}
         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
