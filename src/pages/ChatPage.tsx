@@ -665,7 +665,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             style={{ border: '1px solid var(--color-border-light)', background: 'var(--color-card-alt)' }}
           >
             <Avatar username={currentUser.username} avatar={currentUser.avatar} size={28} online
-              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username)}`)}
+              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
             />
             <span
               className="text-sm hidden sm:inline"
@@ -780,7 +780,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             <div className="flex-1" />
             {/* 个人主页 */}
             <button
-              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username)}`)}
+              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
               className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl"
               style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
