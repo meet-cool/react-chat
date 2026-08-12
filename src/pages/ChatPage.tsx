@@ -780,7 +780,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             <div className="flex-1" />
             {/* 个人主页 */}
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate(`/profile/${encodeURIComponent(currentUser.username)}`)}
               className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl"
               style={{ color: 'var(--color-text-light)', background: 'transparent' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
