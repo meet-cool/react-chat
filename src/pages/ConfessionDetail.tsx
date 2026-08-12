@@ -199,8 +199,12 @@ export function ConfessionDetail() {
       >
         <button
           onClick={() => navigate('/confessions')}
-          className="btn btn-sm"
-          style={{ minWidth: 36, background: 'transparent', border: 'none' }}
+          className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
+          style={{
+            width: 32, height: 32, padding: 0,
+            background: 'transparent !important', border: 'none !important',
+            color: T.textMuted, cursor: 'pointer', borderRadius: 3,
+          }}
         >
           <ArrowLeft size={14} />
         </button>
@@ -289,19 +293,13 @@ export function ConfessionDetail() {
             <div className="flex items-center gap-1 flex-1">
               <button
                 onClick={handleLike}
-                className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200"
+                className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200 hover:opacity-90"
                 style={{
-                  height: 32,
-                  padding: '0 12px !important',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  fontFamily: 'inherit',
+                  height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
                   border: `1px solid ${confession.liked ? T.primary : T.textMuted} !important`,
                   background: confession.liked ? T.primary : 'transparent !important',
                   color: confession.liked ? '#fff' : T.textMuted,
-                  cursor: 'pointer',
-                  borderRadius: 3,
-                  whiteSpace: 'nowrap',
+                  cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
                   minHeight: '32px !important',
                 }}
               >
@@ -310,8 +308,15 @@ export function ConfessionDetail() {
               </button>
               <button
                 onClick={handleBookmark}
-                className="btn btn-sm flex-1"
-                style={confession.bookmarked ? { color: T.warning } : { color: T.textMuted }}
+                className="flex-1 flex items-center justify-center gap-1.5 transition-all duration-200 hover:opacity-80"
+                style={{
+                  height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                  border: `1px solid ${confession.bookmarked ? T.warning : T.textMuted} !important`,
+                  background: confession.bookmarked ? `${T.warning}22 !important` : 'transparent !important',
+                  color: confession.bookmarked ? T.warning : T.textMuted,
+                  cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
+                  minHeight: '32px !important',
+                }}
               >
                 <Star size={14} fill={confession.bookmarked ? 'currentColor' : 'none'} />
                 收藏
@@ -319,13 +324,29 @@ export function ConfessionDetail() {
             </div>
             {/* 右侧：分享 + 三点举报 */}
             <div className="flex items-center gap-1">
-              <button onClick={handleShare} className="btn btn-sm" style={{ color: T.textMuted }}>
+              <button
+                onClick={handleShare}
+                className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-80"
+                style={{
+                  height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                  border: `1px solid ${T.textMuted} !important`,
+                  background: 'transparent !important',
+                  color: T.textMuted, cursor: 'pointer', borderRadius: 3,
+                  minHeight: '32px !important',
+                }}
+              >
                 <Share2 size={14} /> 分享
               </button>
               <button
                 onClick={() => setShowReport(true)}
-                className="btn btn-sm"
-                style={{ color: T.textMuted }}
+                className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                style={{
+                  width: 32, height: 32, padding: 0,
+                  border: `1px solid ${T.textMuted} !important`,
+                  background: 'transparent !important',
+                  color: T.textMuted, cursor: 'pointer', borderRadius: 3,
+                  minHeight: '32px !important',
+                }}
                 title="举报"
               >
                 <MoreVertical size={14} />
@@ -336,8 +357,14 @@ export function ConfessionDetail() {
                 {!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="btn btn-sm"
-                    style={{ color: T.textMuted }}
+                    className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                    style={{
+                      width: 32, height: 32, padding: 0,
+                      border: `1px solid ${T.textMuted} !important`,
+                      background: 'transparent !important',
+                      color: T.textMuted, cursor: 'pointer', borderRadius: 3,
+                      minHeight: '32px !important',
+                    }}
                     title="删除"
                   >
                     <Trash2 size={14} />
@@ -346,15 +373,25 @@ export function ConfessionDetail() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={handleDelete}
-                      className="btn btn-sm btn-error"
-                      style={{ minHeight: 32 }}
+                      className="flex items-center justify-center gap-1 transition-all duration-200"
+                      style={{
+                        height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                        background: T.error !important, color: '#fff',
+                        border: `1px solid ${T.error} !important`, borderRadius: 3,
+                        minHeight: '32px !important', cursor: 'pointer',
+                      }}
                     >
                       确认删除
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="btn btn-sm"
-                      style={{ minHeight: 32 }}
+                      className="flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                      style={{
+                        height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                        border: `1px solid ${T.textMuted} !important`,
+                        background: 'transparent !important', color: T.textMuted,
+                        borderRadius: 3, minHeight: '32px !important', cursor: 'pointer',
+                      }}
                     >
                       取消
                     </button>
@@ -434,8 +471,13 @@ export function ConfessionDetail() {
               <button
                 onClick={handleComment}
                 disabled={commenting || !commentText.trim()}
-                className="btn btn-sm"
-                style={{ minHeight: 36, background: T.primary, color: '#fff', borderColor: T.primary }}
+                className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-90"
+                style={{
+                  height: 36, padding: '0 16px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                  background: commenting ? `${T.primary}88 !important` : T.primary,
+                  color: '#fff', border: `1px solid ${T.primary} !important`,
+                  borderRadius: 3, minHeight: '36px !important', cursor: commenting ? 'not-allowed' : 'pointer',
+                }}
               >
                 <SendHorizonal size={14} />
                 发送
@@ -448,8 +490,13 @@ export function ConfessionDetail() {
                   addToast('请先登录后再评论', 'warning');
                   navigate('/login');
                 }}
-                className="btn btn-sm"
-                style={{ minHeight: 36, background: T.primary, color: '#fff', borderColor: T.primary }}
+                className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-90"
+                style={{
+                  height: 36, padding: '0 16px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                  background: T.primary, color: '#fff',
+                  border: `1px solid ${T.primary} !important`, borderRadius: 3,
+                  minHeight: '36px !important', cursor: 'pointer',
+                }}
               >
                 <UserPlus size={14} />
                 登录后评论
