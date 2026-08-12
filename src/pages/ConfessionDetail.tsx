@@ -293,7 +293,7 @@ export function ConfessionDetail() {
                 style={
                   confession.liked
                     ? { background: T.primary, color: '#fff', borderColor: T.primary }
-                    : { color: T.textMuted }
+                    : { background: 'transparent', color: T.textMuted, borderColor: T.textMuted, borderWidth: '1px' }
                 }
               >
                 <Heart size={14} fill={confession.liked ? 'currentColor' : 'none'} />
