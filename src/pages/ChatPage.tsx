@@ -56,6 +56,19 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const navigate = useNavigate();
 
   const [category, setCategory] = useState<SidebarCategory>('recent');
+  const [indicatorTop, setIndicatorTop] = useState(24);
+  const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const sidebarColRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const btn = categoryBtnRefs.current.get(category);
+      const col = sidebarColRef.current;
+      if (btn && col) {
+        setIndicatorTop(btn.offsetTop - col.offsetTop + 8);
+      }
+    });
+  }, [category, showLabels]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
@@ -705,6 +718,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         >
           {/* 分类竖条 */}
           <div
+            ref={sidebarColRef}
             className={`flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200 ${
               showLabels ? 'w-44' : 'w-14'
             }`}
@@ -730,6 +744,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               return (
                 <button
                   key={c.k}
+                  ref={(el) => { if (el) categoryBtnRefs.current.set(c.k, el); }}
                   onClick={() => {
                     handleSidebarClick(c.k);
                     if (leftCollapsed) setLeftCollapsed(false);
