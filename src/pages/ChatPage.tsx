@@ -720,7 +720,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           <div
             ref={sidebarColRef}
             className={`flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200 ${
-              showLabels ? 'w-44' : 'w-14'
+              showLabels ? 'w-36' : 'w-14'
             }`}
             style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
           >
