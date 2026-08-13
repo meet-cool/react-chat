@@ -24,6 +24,7 @@ import type {
   PaginatedData,
   Bottle,
   BottleReply,
+  SystemInfo,
 } from '../types';
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -111,6 +112,11 @@ function put<T>(path: string, body?: unknown): Promise<T> {
 function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
 }
+
+// ============ 系统信息 API（无需登录） ============
+export const systemApi = {
+  health: () => get<SystemInfo>('/chat/health'),
+};
 
 // ============ 鉴权 API ============
 

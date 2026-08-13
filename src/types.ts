@@ -330,3 +330,11 @@ export interface BottleReply {
   create_time: number;
   create_time_fmt: string;
 }
+
+// ============ 系统信息 ============
+export interface SystemInfo {
+  version: string;
+  build_time: string;
+  php_version: string;
+  uptime: number;
+}

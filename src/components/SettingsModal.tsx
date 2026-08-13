@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
-import { userApi } from '../lib/api';
+import { userApi, systemApi } from '../lib/api';
 import { Avatar } from './Avatar';
-import type { ThemeName, UserInfo } from '../types';
+import type { ThemeName, UserInfo, SystemInfo } from '../types';
 
 interface SettingsModalProps {
   open: boolean;
@@ -27,6 +27,20 @@ const buildQqAvatar = (qq: string) => `${QQ_AVATAR_BASE}${qq}`;
 export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsModalProps) {
   const { theme, setTheme, addToast } = useApp();
   const [tab, setTab] = useState<Tab>('profile');
+
+  // 系统信息
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [systemLoading, setSystemLoading] = useState(false);
+  const [systemError, setSystemError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSystemLoading(true);
+    setSystemError(null);
+    systemApi.health()
+      .then(setSystemInfo)
+      .catch((e: Error) => setSystemError(e.message))
+      .finally(() => setSystemLoading(false));
+  }, []);
 
   // 资料表单
   const [bio, setBio] = useState(user.bio || '');
@@ -489,6 +503,42 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* 系统信息 */}
+            {tab === 'system' && (
+              <div className="flex flex-col gap-4">
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  后端服务连接信息
+                </p>
+                {systemLoading ? (
+                  <div className="flex items-center gap-2 py-4" style={{ color: 'var(--color-text-muted)' }}>
+                    <Loader size={16} className="animate-spin" />
+                    <span className="text-sm">正在连接后端…</span>
+                  </div>
+                ) : systemError ? (
+                  <div className="p-3 rounded text-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                    ⚠ 无法连接后端：{systemError}
+                  </div>
+                ) : systemInfo ? (
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { label: '应用版本', value: systemInfo.version },
+                      { label: '构建时间', value: systemInfo.build_time },
+                      { label: 'PHP 版本', value: systemInfo.php_version },
+                      { label: '运行时长', value: `${Math.floor(systemInfo.uptime / 3600)}时${Math.floor((systemInfo.uptime % 3600) / 60)}分` },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between py-2 px-3 rounded" style={{ background: 'var(--color-card-alt)' }}>
+                        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                        <span className="text-sm font-mono" style={{ color: 'var(--color-text)' }}>{value}</span>
+                      </div>
+                    ))}
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: 'var(--color-success, #22c55e)' }}>
+                      <span>●</span> 后端连接正常 · API: {import.meta.env.VITE_API_BASE_URL || 'localhost:8000'}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
