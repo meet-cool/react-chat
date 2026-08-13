@@ -711,8 +711,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             leftCollapsed ? 'md:w-14' : 'md:w-72 md:fixed md:inset-y-0 md:left-0 md:z-50'
           } ${
             mobileSidebar !== null
-              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-auto'
-              : 'fixed inset-y-0 left-0 top-0 z-50 -translate-x-full w-full md:w-auto md:translate-x-0 md:static md:z-auto'
+              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-50'
+              : 'fixed inset-y-0 left-0 top-0 z-50 -translate-x-full w-full md:w-auto md:translate-x-0 md:static md:z-50'
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
