@@ -33,6 +33,14 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [systemLoading, setSystemLoading] = useState(false);
   const [systemError, setSystemError] = useState<string | null>(null);
 
+  // 调试模式：连续点击构建时间7次触发，localStorage 持久化
+  const DEBUG_CLICKS = 7;
+  const DEBUG_STORAGE_KEY = 'arcle_debug_mode';
+  const [debugClickCount, setDebugClickCount] = useState(0);
+  const [debugMode, setDebugMode] = useState(() => {
+    try { return localStorage.getItem(DEBUG_STORAGE_KEY) === '1'; } catch { return false; }
+  });
+
   useEffect(() => {
     setSystemLoading(true);
     setSystemError(null);
@@ -41,6 +49,18 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
       .catch((e: Error) => setSystemError(e.message))
       .finally(() => setSystemLoading(false));
   }, []);
+
+  const handleDebugBuildTimeClick = () => {
+    if (debugMode) return;
+    const next = debugClickCount + 1;
+    setDebugClickCount(next);
+    if (next >= DEBUG_CLICKS) {
+      setDebugMode(true);
+      try { localStorage.setItem(DEBUG_STORAGE_KEY, '1'); } catch {}
+      setDebugClickCount(0);
+      addToast('调试模式已开启', 'success');
+    }
+  };
 
   // 资料表单
   const [bio, setBio] = useState(user.bio || '');
@@ -525,7 +545,6 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                   <div className="flex flex-col gap-2">
                     {[
                       { label: '应用版本', value: systemInfo.version },
-                      { label: '构建时间', value: systemInfo.build_time },
                       { label: 'PHP 版本', value: systemInfo.php_version },
                       { label: '运行时长', value: `${Math.floor(systemInfo.uptime / 3600)}时${Math.floor((systemInfo.uptime % 3600) / 60)}分` },
                     ].map(({ label, value }) => (
@@ -534,9 +553,43 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                         <span className="text-sm font-mono" style={{ color: 'var(--color-text)' }}>{value}</span>
                       </div>
                     ))}
+                    {/* 调试入口：构建时间可点击，连续7次开启调试模式 */}
+                    <div
+                      onClick={handleDebugBuildTimeClick}
+                      className="flex items-center justify-between py-2 px-3 rounded cursor-pointer transition-colors select-none"
+                      style={{
+                        background: debugClickCount > 0
+                          ? 'rgba(59,130,246,0.12)'
+                          : 'var(--color-card-alt)',
+                        border: debugClickCount > 0
+                          ? '1px dashed var(--color-primary)'
+                          : '1px solid transparent',
+                      }}
+                    >
+                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>构建时间</span>
+                      <span className="text-sm font-mono" style={{ color: 'var(--color-text)' }}>{systemInfo.build_time}</span>
+                    </div>
+                    {debugClickCount > 0 && !debugMode && (
+                      <p className="text-xs text-center" style={{ color: 'var(--color-primary)' }}>
+                        再次点击{DEBUG_CLICKS - debugClickCount}次进入调试模式
+                      </p>
+                    )}
                     <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: 'var(--color-success, #22c55e)' }}>
                       <span>●</span> 后端连接正常 · API: {import.meta.env.VITE_API_BASE_URL || 'localhost:8000'}
                     </div>
+                    {debugMode && (
+                      <button
+                        onClick={() => {
+                          try { localStorage.removeItem(DEBUG_STORAGE_KEY); } catch {}
+                          setDebugMode(false);
+                          addToast('调试模式已关闭，刷新后生效', 'info');
+                        }}
+                        className="w-full py-2 rounded text-sm font-medium transition-colors"
+                        style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+                      >
+                        关闭调试模式
+                      </button>
+                    )}
                   </div>
                 ) : null}
               </div>
