@@ -707,7 +707,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧：分类导航条 + 内容区（桌面端展开时为 fixed 覆盖层） */}
         <aside
-          className={`border-r flex transition-[width] duration-200 ease-out ${
+          className={`border-r flex w-72 flex-shrink-0 md:w-14 transition-all duration-200 ease-out md:relative md:z-0 ${
             leftCollapsed ? 'md:w-14 md:relative md:z-0' : 'md:w-72 md:relative md:z-0'
           } ${
             mobileSidebar !== null ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:relative md:w-auto md:translate-x-0 md:z-0' : 'md:relative md:z-0'
@@ -932,15 +932,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         </aside>
 
         {/* 左侧展开时的右侧阴影遮罩（桌面端） */}
-        {!leftCollapsed && !mobileSidebar && (
+        {leftCollapsed && !mobileSidebar && (
           <div
-            className="hidden md:block fixed inset-y-0 left-72 right-0 z-40 cursor-pointer"
+            className="hidden md:block absolute inset-y-0 left-14 right-0 z-10 cursor-pointer"
             style={{
-              background: 'linear-gradient(to right, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 40%, transparent 70%)',
-              pointerEvents: 'all',
+              background: 'transparent'
             }}
-            onClick={() => setLeftCollapsed(true)}
-            aria-label="点击关闭侧边栏"
+            onClick={() => setLeftCollapsed(false)}
+            aria-label="点击展开侧边栏"
           />
         )}
 
