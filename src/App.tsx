@@ -36,7 +36,6 @@ import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
 export default function App() {
-  const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -74,116 +73,125 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AdminAuthProvider>
-        <PageTransition>
-          <Routes>
-            {/* 门户首页 - 未登录用户可见 */}
-            <Route
-              path="/"
-              element={user ? <Navigate to="/chat" replace /> : <PortalPage />}
-            />
-
-            {/* 登录页 */}
-            <Route
-              path="/login"
-              element={!user ? <LoginPage onLogin={setUser} /> : <Navigate to="/chat" replace />}
-            />
-
-            {/* 聊天页 */}
-            <Route
-              path="/chat"
-              element={
-                user ? <ChatPage user={user} onLogout={() => setUser(null)} /> : <Navigate to="/" replace />
-              }
-            />
-
-            {/* 表白墙 - 允许访客浏览 */}
-            <Route
-              path="/confessions"
-              element={<ConfessionWall />}
-            />
-            <Route
-              path="/confessions/new"
-              element={<ConfessionPost />}
-            />
-            <Route
-              path="/confessions/ranking"
-              element={<ConfessionRanking />}
-            />
-            <Route
-              path="/confessions/bookmarks"
-              element={user ? <ConfessionBookmarks /> : <Navigate to="/login" replace />}
-            />
-            <Route
-              path="/confessions/mine"
-              element={user ? <ConfessionMine /> : <Navigate to="/login" replace />}
-            />
-            <Route
-              path="/confessions/wall"
-              element={<ConfessionWallBoard />}
-            />
-            <Route
-              path="/confessions/:slug"
-              element={<ConfessionDetail />}
-            />
-
-            {/* 漂流瓶 - 允许访客浏览 */}
-            <Route
-              path="/bottles"
-              element={<BottlePage />}
-            />
-
-            {/* 积分中心 - 需登录 */}
-            <Route
-              path="/points"
-              element={<PointsPage onUserUpdate={(u) => setUser(u as UserInfo)} />}
-            />
-
-            {/* 个人主页 - 需登录 */}
-            <Route
-              path="/profile/:username"
-              element={user ? <ProfilePage user={user} /> : <Navigate to="/login" replace />}
-            />
-
-            {/* 管理后台登录（无需鉴权） */}
-            <Route path="/admin/login" element={<AdminLoginPage />} />
-
-            {/* 管理后台路由（需要管理员） */}
-            <Route
-              path="/admin"
-              element={
-                <AdminGuard>
-                  <AdminLayout />
-                </AdminGuard>
-              }
-            >
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="rooms" element={<AdminRoomsPage />} />
-              <Route path="messages" element={<AdminMessagesPage />} />
-              <Route path="confessions" element={<AdminConfessionsPage />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-
-            {/* 服务条款 */}
-            <Route path="/terms" element={<TermsPage />} />
-            {/* 隐私政策 */}
-            <Route path="/privacy" element={<PrivacyPage />} />
-
-            {/* 开发者调试 */}
-            <Route path="/debug" element={<DebugPage />} />
-
-            {/* AI 广场 */}
-            <Route
-              path="/ai"
-              element={user ? <AiPanelPage onBack={() => navigate('/chat')} /> : <Navigate to="/" replace />}
-            />
-          </Routes>
-        </PageTransition>
-        <ToastContainer />
-      </AdminAuthProvider>
+      <AppContent user={user} setUser={setUser} />
     </BrowserRouter>
+  );
+}
+
+function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: UserInfo | null) => void }) {
+  const navigate = useNavigate();
+  return (
+    <AdminAuthProvider>
+      <PageTransition>
+        <Routes>
+          {/* 门户首页 - 未登录用户可见 */}
+          <Route
+            path="/"
+            element={user ? <Navigate to="/chat" replace /> : <PortalPage />}
+          />
+
+          {/* 登录页 */}
+          <Route
+            path="/login"
+            element={!user ? <LoginPage onLogin={setUser} /> : <Navigate to="/chat" replace />}
+          />
+
+          {/* 聊天页 */}
+          <Route
+            path="/chat"
+            element={
+              user ? <ChatPage user={user} onLogout={() => setUser(null)} /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* 表白墙 - 允许访客浏览 */}
+          <Route
+            path="/confessions"
+            element={<ConfessionWall />}
+          />
+          <Route
+            path="/confessions/new"
+            element={<ConfessionPost />}
+          />
+          <Route
+            path="/confessions/ranking"
+            element={<ConfessionRanking />}
+          />
+          <Route
+            path="/confessions/bookmarks"
+            element={user ? <ConfessionBookmarks /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/confessions/mine"
+            element={user ? <ConfessionMine /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/confessions/wall"
+            element={<ConfessionWallBoard />}
+          />
+          <Route
+            path="/confessions/:slug"
+            element={<ConfessionDetail />}
+          />
+
+          {/* 漂流瓶 - 允许访客浏览 */}
+          <Route
+            path="/bottles"
+            element={<BottlePage />}
+          />
+
+          {/* 积分中心 - 需登录 */}
+          <Route
+            path="/points"
+            element={<PointsPage onUserUpdate={(u) => setUser(u as UserInfo)} />}
+          />
+
+          {/* 个人主页 - 需登录 */}
+          <Route
+            path="/profile/:username"
+            element={user ? <ProfilePage user={user} /> : <Navigate to="/login" replace />}
+          />
+
+          {/* 管理后台登录（无需鉴权） */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+
+          {/* 管理后台路由（需要管理员） */}
+          <Route
+            path="/admin"
+            element={
+              <AdminGuard>
+                <AdminLayout />
+              </AdminGuard>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="rooms" element={<AdminRoomsPage />} />
+            <Route path="messages" element={<AdminMessagesPage />} />
+            <Route path="confessions" element={<AdminConfessionsPage />} />
+            <Route path="ai" element={<AdminAiPage />} />
+            <Route path="notice" element={<AdminNoticePage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* 服务条款 */}
+          <Route path="/terms" element={<TermsPage />} />
+          {/* 隐私政策 */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+
+          {/* 开发者调试 */}
+          <Route path="/debug" element={<DebugPage />} />
+
+          {/* AI 广场 */}
+          <Route
+            path="/ai"
+            element={user ? <AiPanelPage onBack={() => navigate('/chat')} /> : <Navigate to="/" replace />}
+          />
+        </Routes>
+        <ToastContainer />
+      </PageTransition>
+    </AdminAuthProvider>
   );
 }
