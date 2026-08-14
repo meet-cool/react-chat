@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -14,7 +14,7 @@ import {
   Heart,
   Settings,
 } from 'lucide-react';
-import { getToken } from '../lib/api';
+import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
 import titleImg from '../../public/title.png';
 
@@ -162,7 +162,7 @@ export function PortalPage() {
     }, 800);
 
     // 加载公开统计数据
-    fetch('/chat/public/stats')
+    fetch(`${getApiBaseUrl()}/chat/public/stats`)
       .then((res) => res.json())
       .then((data) => {
         if (data.code === 200) {
