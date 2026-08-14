@@ -294,6 +294,10 @@ export interface Confession {
   create_time: number;
   create_time_fmt: string;
   status?: number;
+  theme?: string;
+  bg_type?: string;
+  bg_color?: string;
+  bg_svg?: string;
 }
 
 export interface ConfessionComment {
@@ -337,4 +341,63 @@ export interface SystemInfo {
   build_time: string;
   php_version: string;
   uptime: number;
+}
+
+// ============ AI 广场 ============
+export interface AiChat {
+  id: number;
+  user_id: number;
+  title: string;
+  mode: string;
+  deep_thinking: number;
+  message_count: number;
+  create_time: number;
+  update_time: number;
+  create_time_fmt?: string;
+  update_time_fmt?: string;
+}
+
+export interface AiMsg {
+  id: number;
+  role: string;
+  content: string;
+  mode: string;
+  deep_thinking: number;
+  create_time: number;
+}
+
+export interface AiConfig {
+  model_name: string;
+  api_url: string;
+  temperature: number;
+  max_tokens: number;
+  has_api_key: boolean;
+}
+
+// ============ 管理后台 ============
+export interface AdminNotice {
+  content: string;
+}
+
+export interface AdminAiStats {
+  total_chats: number;
+  today_chats: number;
+  total_msgs: number;
+  today_msgs: number;
+  active_users: number;
+}
+
+export interface AdminAiChat {
+  id: number;
+  user_id: number;
+  title: string;
+  mode: string;
+  mode_label: string;
+  deep_thinking: number;
+  message_count: number;
+  create_time: number;
+  create_time_fmt: string;
+  update_time: number;
+  update_time_fmt: string;
+  username: string;
 }

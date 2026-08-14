@@ -25,6 +25,12 @@ import type {
   Bottle,
   BottleReply,
   SystemInfo,
+  AiChat,
+  AiMsg,
+  AiConfig,
+  AdminNotice,
+  AdminAiStats,
+  AdminAiChat,
 } from '../types';
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -294,7 +300,7 @@ export const confessionApi = {
     return get<PaginatedData<Confession>>(`/chat/confessions?${params.toString()}`);
   },
 
-  create: (data: { content: string; target_name: string; anonymous: boolean }) =>
+  create: (data: { content: string; target_name: string; anonymous: boolean; theme?: string; bg_type?: string; bg_color?: string; bg_svg?: string }) =>
     post<{ id: number }>('/chat/confessions', data),
 
   like: (slug: string) =>
@@ -327,6 +333,16 @@ export const confessionApi = {
 
   report: (slug: string, reason: string) =>
     post<{ id: number }>(`/chat/confessions/${encodeURIComponent(slug)}/report`, { reason }),
+
+  // 自定义墙
+  myWall: () => get<any[]>('/chat/confessions/wall/my'),
+  placeOnWall: (data: { confession_id: number; row: number; col: number; bg_type: string; bg_color: string; bg_svg: string }) =>
+    post<null>('/chat/confessions/wall/place', data),
+  emptyPositions: (rows: number = 5, cols: number = 5) =>
+    get<{ row: number; col: number }[]>(`/chat/confessions/wall/empty-positions?rows=${rows}&cols=${cols}`),
+
+  // QR码
+  qrCode: (slug: string) => `${getApiBaseUrl()}/chat/qrcode/confession/${encodeURIComponent(slug)}`,
 };
 
 // ============ 积分 / 签到 API ============
@@ -389,6 +405,52 @@ export const bottleApi = {
     del<null>(`/chat/bottles/${id}`),
 };
 
+// ============ AI 广场 API ============
+export const aiApi = {
+  // 获取 AI 配置
+  config: () => get<AiConfig>('/chat/ai/config'),
+
+  // 获取会话列表
+  listChats: () => get<AiChat[]>('/chat/ai/chats'),
+
+  // 获取会话详情（含消息）
+  getChat: (id: number) =>
+    get<{ title: string; mode: string; deep_thinking: number; messages: AiMsg[] }>(`/chat/ai/chats/${id}`),
+
+  // 删除会话
+  deleteChat: (id: number) => del<null>(`/chat/ai/chats/${id}`),
+
+  // 重命名会话
+  renameChat: (id: number, title: string) =>
+    put<null>(`/chat/ai/chats/${id}`, { title }),
+
+  // 流式聊天
+  streamChat: async (messages: AiMsg[], mode: string, deepThinking: boolean): Promise<ReadableStream<Uint8Array> | null> => {
+    const res = await fetch(`${getApiBaseUrl()}/chat/ai/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      },
+      body: JSON.stringify({ messages, mode, deep_thinking: deepThinking ? 1 : 0 }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.body || null;
+  },
+
+  // 非流式聊天（用于标题生成等）
+  chat: (data: { conv_id: number; messages: AiMsg[]; mode: string; deep_thinking: boolean }) =>
+    post<{ content: string; usage: unknown; conv_id: number }>('/chat/ai/chat', data),
+
+  // AI 私聊（融入私聊系统）
+  privateChats: () => get<any[]>('/chat/ai/private/chats'),
+  createPrivateChat: () => post<any>('/chat/ai/private/chats', {}),
+  getPrivateMessages: (id: number) =>
+    get<any[]>(`/chat/ai/private/chats/${id}/messages`),
+  sendPrivateMessage: (id: number, content: string) =>
+    post<any>(`/chat/ai/private/chats/${id}/messages`, { content }),
+};
+
 // ============ 管理后台 API ============
 
 function adminGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
@@ -441,4 +503,14 @@ export const adminApi = {
     adminGet<AdminPaginated<Omit<Confession, 'status'> & { username: string; user_avatar: string; status_label: string; content_short: string; status: number }>>('/confessions', p),
   updateConfession: (id: number, action: 'approve' | 'reject') =>
     adminPost<null>(`/confessions/${id}`, { action }),
+
+  // AI 广场管理
+  aiStats: () => adminGet<AdminAiStats>('/ai/stats'),
+  aiChats: (p: { page?: number; per_page?: number; keyword?: string; user_id?: number }) =>
+    adminGet<AdminPaginated<AdminAiChat>>('/ai/chats', p),
+  deleteAiChat: (id: number) => adminDelete<null>(`/ai/chats/${id}`),
+
+  // 公告（公开读取 / 管理员保存）
+  getNotice: () => get<AdminNotice>('/chat/notice'),
+  saveNotice: (content: string) => adminPost<null>('/notice', { content }),
 };

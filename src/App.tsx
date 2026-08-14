@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './lib/AppContext';
 import { AdminAuthProvider } from './lib/AdminContext';
@@ -14,6 +15,8 @@ import { AdminRoomsPage } from './pages/admin/AdminRoomsPage';
 import { AdminMessagesPage } from './pages/admin/AdminMessagesPage';
 import { AdminConfessionsPage } from './pages/admin/AdminConfessionsPage';
 import { AdminGuard } from './components/admin/AdminGuard';
+import { AdminAiPage } from './pages/admin/AdminAiPage';
+import { AdminNoticePage } from './pages/admin/AdminNoticePage';
 import { PortalPage } from './pages/PortalPage';
 import { ConfessionWall } from './pages/ConfessionWall';
 import { ConfessionPost } from './pages/ConfessionPost';
@@ -21,6 +24,8 @@ import { ConfessionRanking } from './pages/ConfessionRanking';
 import { ConfessionBookmarks } from './pages/ConfessionBookmarks';
 import { ConfessionDetail } from './pages/ConfessionDetail';
 import { ConfessionMine } from './pages/ConfessionMine';
+import { ConfessionWallBoard } from './pages/ConfessionWallBoard';
+import { AiPanelPage } from './pages/AiPanelPage';
 import { BottlePage } from './pages/BottlePage';
 import { PointsPage } from './pages/PointsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -31,6 +36,7 @@ import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
 export default function App() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -113,6 +119,10 @@ export default function App() {
               element={user ? <ConfessionMine /> : <Navigate to="/login" replace />}
             />
             <Route
+              path="/confessions/wall"
+              element={<ConfessionWallBoard />}
+            />
+            <Route
               path="/confessions/:slug"
               element={<ConfessionDetail />}
             />
@@ -164,6 +174,12 @@ export default function App() {
 
             {/* 开发者调试 */}
             <Route path="/debug" element={<DebugPage />} />
+
+            {/* AI 广场 */}
+            <Route
+              path="/ai"
+              element={user ? <AiPanelPage onBack={() => navigate('/chat')} /> : <Navigate to="/" replace />}
+            />
           </Routes>
         </PageTransition>
         <ToastContainer />

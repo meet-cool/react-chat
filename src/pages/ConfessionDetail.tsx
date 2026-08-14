@@ -10,6 +10,8 @@ import {
   Trash2,
   UserPlus,
   MoreVertical,
+  MapPin,
+  X,
 } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
@@ -17,6 +19,8 @@ import type { Confession, ConfessionComment } from '../types';
 import { Avatar } from '../components/Avatar';
 import { ReportDialog } from '../components/ReportDialog';
 import { type ThemeKey, THEMES } from '../lib/themes';
+import { CONFESSION_THEMES } from '../lib/confessionThemes';
+import type { ConfessionTheme } from '../lib/confessionThemes';
 
 interface DetailConfession extends Confession {
   comments: ConfessionComment[];
@@ -143,13 +147,17 @@ export function ConfessionDetail() {
     }
   }, [confession, addToast, navigate]);
 
+  const [showQrUrl, setShowQrUrl] = useState('');
+  const [showPlaceOnWall, setShowPlaceOnWall] = useState(false);
+
   const handleShare = useCallback(() => {
     if (!confession) return;
     const url = `${window.location.origin}/confessions/${confession.slug}`;
+    const qrUrl = `${window.location.origin}/chat/qrcode/confession/${encodeURIComponent(confession.slug)}`;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      addToast('链接已复制', 'success');
+      navigator.clipboard.writeText(url).then(() => addToast('链接已复制', 'success'));
     }
+    setShowQrUrl(qrUrl);
   }, [confession, addToast]);
 
   const handleReport = async (reason: string) => {
@@ -321,7 +329,7 @@ export function ConfessionDetail() {
                 收藏
               </button>
             </div>
-            {/* 右侧：分享 + 三点举报 */}
+            {/* 右侧：分享 + 贴墙 + 举报 */}
             <div className="flex items-center gap-1">
               <button
                 onClick={handleShare}
@@ -336,6 +344,21 @@ export function ConfessionDetail() {
               >
                 <Share2 size={14} /> 分享
               </button>
+              {isLogged && (
+                <button
+                  onClick={() => navigate('/confessions/wall')}
+                  className="flex items-center justify-center gap-1 transition-all duration-200 hover:opacity-80"
+                  style={{
+                    height: 32, padding: '0 12px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                    border: `1px solid ${T.primary}`,
+                    background: 'transparent',
+                    color: T.primary, cursor: 'pointer', borderRadius: 3,
+                    minHeight: 32,
+                  }}
+                >
+                  <MapPin size={14} /> 贴上墙
+                </button>
+              )}
               <button
                 onClick={() => setShowReport(true)}
                 className="flex items-center justify-center transition-all duration-200 hover:opacity-80"

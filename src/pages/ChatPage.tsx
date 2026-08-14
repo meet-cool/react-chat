@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Menu,
@@ -615,6 +615,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         navigate('/bottles');
       } else if (k === 'points') {
         navigate('/points');
+    } else if (k === 'extensions') {
+        navigate('/ai');
       } else {
         setCategory(k);
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -926,7 +928,25 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 </div>
               </div>
             ) : (
-              <ExtensionsView />
+              <div className="p-4">
+                <div className="relative overflow-hidden rounded-xl" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(168,85,247,0.5) 100%)' }}>
+                  <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
+                    <circle cx="100" cy="60" r="45" fill="none" stroke="white" strokeWidth="1.5" />
+                    <circle cx="100" cy="60" r="25" fill="none" stroke="white" strokeWidth="1" opacity="0.6" />
+                    <circle cx="170" cy="30" r="15" fill="white" />
+                    <circle cx="30" cy="90" r="10" fill="white" />
+                  </svg>
+                  <button
+                    onClick={() => navigate('/ai')}
+                    className="relative z-10 w-full flex items-center justify-center gap-2 py-4 font-medium text-white"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Sparkles size={18} fill="currentColor" />
+                    <span className="text-sm">弧光 AI 广场</span>
+                    <ArrowRight size={14} opacity={0.7} />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </aside>

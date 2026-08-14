@@ -11,8 +11,10 @@ import {
   Bookmark,
   MoreVertical,
   ArrowLeft,
+  MapPin,
 } from 'lucide-react';
-import { confessionApi } from '../lib/api';
+import { X } from 'lucide-react';
+import { confessionApi, getApiBaseUrl } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import { type ThemeKey, THEMES } from '../lib/themes';
 import type { Confession } from '../types';
@@ -36,6 +38,7 @@ function ConfessionCard({
   onClick,
   addToast,
   theme,
+  onShare,
 }: {
   c: Confession;
   onLike: (slug: string) => void;
@@ -46,6 +49,7 @@ function ConfessionCard({
   onClick: (id: number) => void;
   addToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   theme: ThemeKey;
+  onShare?: (slug: string) => void;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -175,15 +179,27 @@ function ConfessionCard({
             </button>
           )}
         </div>
-        {/* 右侧：更多（三个点） */}
-        <button
+        {/* 右侧：分享 + 举报 */}
+        <div className="flex items-center gap-1">
+          {isLogged && onShare && (
+            <button
+              onClick={() => onShare(c.slug)}
+              className="btn btn-sm"
+              style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted, background: 'transparent', border: 'none' }}
+              title="分享"
+            >
+              <Share2 size={13} />
+            </button>
+          )}
+          <button
             onClick={() => setShowReport(true)}
-            className="btn btn-sm ml-auto btn-ghost"
+            className="btn btn-sm btn-ghost"
             style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted }}
             title="举报"
           >
-          <MoreVertical size={13} />
-        </button>
+            <MoreVertical size={13} />
+          </button>
+        </div>
       </div>
 
       {/* 举报弹窗 */}
@@ -255,6 +271,10 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [viewMode] = useState<ViewMode>('card');
   const [isLogged, setIsLogged] = useState(false);
   const [bgImage, setBgImage] = useState('');
+  const [showQrSlug, setShowQrSlug] = useState<string | null>(null);
+  const handleShare = useCallback(async (slug: string) => {
+    setShowQrSlug(slug);
+  }, []);
   const [theme, setTheme] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem('confession_theme');
     return (saved === 'ocean' || saved === 'pink' || saved === 'default') ? saved : 'pink';
@@ -387,11 +407,19 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             <button
               onClick={() => navigate('/confessions/ranking')}
               className="btn btn-sm"
-              style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: T.textMuted }}
+              style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
             >
-              <Trophy size={14} />
-              排行榜
+              <Trophy size={14} /> 排行榜
             </button>
+            {isLogged && (
+              <button
+                onClick={() => navigate('/confessions/wall')}
+                className="btn btn-sm"
+                style={{ padding: '4px 12px', background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.textMuted }}
+              >
+                <MapPin size={14} /> 我的表白墙
+              </button>
+            )}
             {isLogged && (
               <>
                 <button
@@ -533,7 +561,8 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
                   if (target) navigate(`/confessions/${target.slug}`);
                 }}
                 addToast={addToast}
-                theme={theme}
+  theme={theme}
+  onShare={handleShare}
               />
             </div>
           ))
@@ -552,6 +581,22 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
           </div>
         )}
       </div>
+
+      {/* QR码弹窗 */}
+      {showQrSlug && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowQrSlug(null)}>
+          <div className="w-full max-w-xs" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 20 }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>
+              <button onClick={() => setShowQrSlug(null)} style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <img src={`${getApiBaseUrl()}/chat/qrcode/confession/${encodeURIComponent(showQrSlug)}`} alt="QR" className="w-full" />
+            <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看表白</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

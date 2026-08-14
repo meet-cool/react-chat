@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -13,6 +13,8 @@ import {
   Globe,
   Heart,
   Settings,
+  Megaphone,
+  X,
 } from 'lucide-react';
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
@@ -145,6 +147,8 @@ export function PortalPage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
 
   const navigatedRef = useRef(false);
 
@@ -172,14 +176,43 @@ export function PortalPage() {
       .catch(() => { })
       .finally(() => setLoading(false));
 
+    // 加载公告（登录用户可见）
+    const token = getToken();
+    fetch(`${getApiBaseUrl()}/chat/notice`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.code === 200 && data.data?.content) {
+          setNotice(data.data.content);
+        }
+      })
+      .catch(() => {});
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigate]);
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: 'var(--color-bg-page)', color: 'var(--color-text)' }}
-    >
+    <div className="min-h-screen" style={{ background: 'var(--color-bg-page)', color: 'var(--color-text)' }}>
+      {/* 公告栏 */}
+      {notice && !noticeDismissed && (
+        <div
+          className="flex items-center gap-3 px-4 py-2 border-b"
+          style={{ background: 'var(--color-primary-light)', borderColor: 'var(--color-primary)' }}
+        >
+          <Megaphone size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+          <p className="text-sm flex-1" style={{ color: 'var(--color-primary-dark)' }}>
+            {notice}
+          </p>
+          <button
+            onClick={() => setNoticeDismissed(true)}
+            className="p-1 rounded-full hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--color-primary)' }}
+            title="关闭公告"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* 顶部导航 */}
       <header
         className="sticky top-0 z-50 border-b"
