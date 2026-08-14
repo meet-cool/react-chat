@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Hash, User } from 'lucide-react';
+import { Hash } from 'lucide-react';
 import type { Room } from '../types';
 import type { Conversation } from '../types';
 import { Avatar } from './Avatar';
@@ -51,7 +51,7 @@ export function RecentChatsView({
       });
     }
 
-    // 私聊会话
+    //私聊会话
     for (const conv of conversations) {
       result.push({
         type: 'private',
@@ -83,18 +83,6 @@ export function RecentChatsView({
         style={{ color: 'var(--color-text-muted)' }}
       >
         加载中...
-      </div>
-    );
-  }
-
-  if (filtered.length === 0) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center h-full gap-2"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        <User size={32} />
-        <p className="text-sm">暂无最近聊天</p>
       </div>
     );
   }
@@ -133,93 +121,102 @@ export function RecentChatsView({
 
       {/* 列表 */}
       <div className="flex-1 overflow-y-auto">
-        {filtered.map((item) => {
-          const isActive =
-            (item.type === 'room' && item.id === activeRoomId) ||
-            (item.type === 'private' && item.id === activeConvId);
+        {filtered.length === 0 ? (
+          <div
+            className="flex flex-col items-center justify-center h-full gap-2"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <p className="text-sm">无匹配结果</p>
+          </div>
+        ) : (
+          filtered.map((item) => {
+            const isActive =
+              (item.type === 'room' && item.id === activeRoomId) ||
+              (item.type === 'private' && item.id === activeConvId);
 
-          return (
-            <button
-              key={`${item.type}-${item.id}`}
-              onClick={() => {
-                if (item.type === 'room') {
-                  const room = rooms.find((r) => r.id === item.id);
-                  if (room) onSelectRoom(room);
-                } else {
-                  const conv = conversations.find((c) => c.id === item.id);
-                  if (conv) onSelectConv(conv);
-                }
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-              style={{
-                background: isActive ? 'var(--color-primary-light)' : 'transparent',
-                borderLeft: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'var(--color-hover-bg)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
-              {/* 头像/图标 */}
-              {item.type === 'private' ? (
-                <Avatar username={item.name} avatar={item.avatar} size={40} />
-              ) : (
-                <div
-                  className="w-10 h-10 flex items-center justify-center"
-                  style={{ background: 'var(--color-primary-light)', borderRadius: '3px' }}
-                >
-                  <Hash size={18} style={{ color: 'var(--color-primary)' }} />
-                </div>
-              )}
-
-              {/* 内容 */}
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="font-medium truncate"
-                    style={{ color: 'var(--color-text)' }}
+            return (
+              <button
+                key={`${item.type}-${item.id}`}
+                onClick={() => {
+                  if (item.type === 'room') {
+                    const room = rooms.find((r) => r.id === item.id);
+                    if (room) onSelectRoom(room);
+                  } else {
+                    const conv = conversations.find((c) => c.id === item.id);
+                    if (conv) onSelectConv(conv);
+                  }
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+                style={{
+                  background: isActive ? 'var(--color-primary-light)' : 'transparent',
+                  borderLeft: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'var(--color-hover-bg)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                {/* 头像/图标 */}
+                {item.type === 'private' ? (
+                  <Avatar username={item.name} avatar={item.avatar} size={40} />
+                ) : (
+                  <div
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={{ background: 'var(--color-primary-light)', borderRadius: '3px' }}
                   >
-                    {item.name}
-                  </span>
-                  {item.type === 'private' && item.unread ? (
-                    <span
-                      className="text-xs px-1.5 py-0.5"
-                      style={{
-                        background: 'var(--color-primary)',
-                        color: '#fff',
-                        borderRadius: '3px',
-                      }}
-                    >
-                      {item.unread}
-                    </span>
-                  ) : null}
-                </div>
-                <p
-                  className="text-xs truncate mt-0.5"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
-                  {item.subtitle}
-                </p>
-              </div>
+                    <Hash size={18} style={{ color: 'var(--color-primary)' }} />
+                  </div>
+                )}
 
-              {/* 时间 */}
-              {item.lastTime > 0 && (
-                <span
-                  className="text-xs flex-shrink-0"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
-                  {formatTime(item.lastTime)}
-                </span>
-              )}
-            </button>
-          );
-        })}
+                {/* 内容 */}
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="font-medium truncate"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      {item.name}
+                    </span>
+                    {item.type === 'private' && item.unread ? (
+                      <span
+                        className="text-xs px-1.5 py-0.5"
+                        style={{
+                          background: 'var(--color-primary)',
+                          color: '#fff',
+                          borderRadius: '3px',
+                        }}
+                      >
+                        {item.unread}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p
+                    className="text-xs truncate mt-0.5"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {item.subtitle}
+                  </p>
+                </div>
+
+                {/* 时间 */}
+                {item.lastTime > 0 && (
+                  <span
+                    className="text-xs flex-shrink-0"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {formatTime(item.lastTime)}
+                  </span>
+                )}
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );
