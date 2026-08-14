@@ -384,7 +384,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-3">
             {!isMainPage && (
-              <button onClick={() => navigate('/chat')} className="btn btn-sm" style={{ minWidth: 36, background: 'transparent', border: 'none' }}>
+              <button onClick={() => navigate('/chat')} className="btn btn-sm btn-ghost" style={{ minWidth: 36 }}>
                 <ArrowLeft size={14} />
               </button>
             )}

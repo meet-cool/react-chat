@@ -87,8 +87,8 @@ export function ConfessionBookmarks() {
       >
         <button
           onClick={() => navigate('/confessions')}
-          className="btn btn-sm"
-          style={{ minWidth: 36, background: 'transparent', border: 'none' }}
+        className="btn btn-sm btn-ghost"
+        style={{ minWidth: 36 }}
         >
           <ArrowLeft size={14} />
         </button>

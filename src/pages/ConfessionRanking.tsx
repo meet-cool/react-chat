@@ -126,7 +126,7 @@ export function ConfessionRanking() {
     <div className="flex flex-col h-screen" style={{ background: T.cardBg, backgroundImage: `url(/${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       {/* 头部 */}
       <div className="px-4 py-3 border-b flex items-center gap-3" style={{ background: T.cardBg, borderColor: T.cardBorder }}>
-        <button onClick={() => navigate('/confessions')} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+        <button onClick={() => navigate('/confessions')} style={{ padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-primary)' }}>
           <ArrowLeft size={18} style={{ color: T.text }} />
         </button>
         <div className="flex-1">

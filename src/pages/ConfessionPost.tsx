@@ -76,7 +76,7 @@ export function ConfessionPost() {
     <div className="flex flex-col h-screen" style={{ background: T.cardBg, backgroundImage: bgImage ? `url(/${bgImage})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       {/* 头部 */}
       <div className="px-4 py-3 border-b flex items-center gap-3 flex-wrap" style={{ background: T.cardBg, borderColor: T.cardBorder }}>
-        <button onClick={() => navigate('/confessions')} className="btn btn-sm" style={{ minWidth: 36, background: 'transparent', border: 'none' }}>
+        <button onClick={() => navigate('/confessions')} className="btn btn-sm btn-ghost" style={{ minWidth: 36 }}>
           <ArrowLeft size={14} />
         </button>
         <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>写表白</h1>
