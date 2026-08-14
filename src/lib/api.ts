@@ -119,6 +119,14 @@ function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
 }
 
+/** PATCH 请求 */
+export function patch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'PATCH',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
 // ============ 系统信息 API（无需登录） ============
 export const systemApi = {
   health: () => get<SystemInfo>('/chat/health'),
@@ -340,6 +348,8 @@ export const confessionApi = {
     post<null>('/chat/confessions/wall/place', data),
   emptyPositions: (rows: number = 5, cols: number = 5) =>
     get<{ row: number; col: number }[]>(`/chat/confessions/wall/empty-positions?rows=${rows}&cols=${cols}`),
+  moveOnWall: (data: { from_row: number; from_col: number; to_row: number; to_col: number }) =>
+    patch<null>('/chat/confessions/wall/move', data),
 
   // QR码
   qrCode: (slug: string) => `${getApiBaseUrl()}/chat/qrcode/confession/${encodeURIComponent(slug)}`,

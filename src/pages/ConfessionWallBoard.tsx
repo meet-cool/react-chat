@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TouchEvent as ReactTouchEvent } from 'react';
+declare global {
+  interface Window { __lastTouch: Touch | null; }
+}
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -52,6 +56,9 @@ export function ConfessionWallBoard() {
   const [gridRows, setGridRows] = useState(6);
   const [gridCols, setGridCols] = useState(6);
   const gridRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef<{ active: boolean; fromRow: number; fromCol: number; ghostEl: HTMLElement | null; timer: ReturnType<typeof setTimeout> | null }>({ active: false, fromRow: -1, fromCol: -1, ghostEl: null, timer: null });
+  const [dragHover, setDragHover] = useState<{ r: number; c: number } | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const loadMyWall = useCallback(async () => {
     try {
@@ -75,6 +82,9 @@ export function ConfessionWallBoard() {
     loadMyWall();
     loadConfessions();
   }, [loadMyWall, loadConfessions]);
+
+  useEffect(() => {
+  }, []);
 
   const occupiedKeys = new Set(myWall.map((w) => `${w.row},${w.col}`));
 
@@ -132,6 +142,71 @@ export function ConfessionWallBoard() {
 
   const alreadyOnWall = new Set(myWall.map((w) => w.confession.slug));
 
+
+  // 长按拖动逻辑
+  const startDrag = useCallback((touch: Touch | null, r: number, c: number) => {
+    const ws = dragStateRef.current;
+    if (ws.active) return;
+    ws.timer = setTimeout(() => {
+      ws.active = true;
+      ws.fromRow = r;
+      ws.fromCol = c;
+      ws.ghostEl = null;
+    }, 500);
+  }, []);
+
+  const cancelDrag = useCallback(() => {
+    const ws = dragStateRef.current;
+    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
+    ws.active = false;
+    ws.ghostEl = null;
+    setDragHover(null);
+  }, []);
+
+  const findCellUnderTouch = useCallback((x: number, y: number) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const cell = el.closest('[data-wall-cell]');
+    if (!cell) return null;
+    const row = Number((cell as HTMLElement).dataset.row);
+    const col = Number((cell as HTMLElement).dataset.col);
+    return { r: row, c: col };
+  }, []);
+
+  const handleTouchMove = useCallback((e: ReactTouchEvent) => {
+    const ws = dragStateRef.current;
+    if (!ws.active) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const hit = findCellUnderTouch(touch.clientX, touch.clientY);
+    setDragHover(hit);
+  }, [findCellUnderTouch]);
+
+  const handleTouchEnd = useCallback(async (e: ReactTouchEvent) => {
+    const ws = dragStateRef.current;
+    if (!ws.active) return;
+    ws.active = false;
+    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
+    const hover = dragHover;
+    setDragHover(null);
+    if (!hover || (hover.r === ws.fromRow && hover.c === ws.fromCol)) return;
+
+    try {
+      await confessionApi.moveOnWall({
+        from_row: ws.fromRow,
+        from_col: ws.fromCol,
+        to_row: hover.r,
+        to_col: hover.c,
+      });
+      addToast('位置已调整', 'success');
+      loadMyWall();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '移动失败', 'error');
+    }
+  }, [dragHover, addToast, loadMyWall]);
+
+  const isDragging = dragStateRef.current.active;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
       {/* 顶部 */}
@@ -166,6 +241,8 @@ export function ConfessionWallBoard() {
         ) : (
           <div
             ref={gridRef}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             className="inline-grid gap-2"
             style={{
               gridTemplateColumns: `repeat(${gridCols}, minmax(160px, 1fr))`,
@@ -175,23 +252,33 @@ export function ConfessionWallBoard() {
             {Array.from({ length: gridRows }, (_, r) =>
               Array.from({ length: gridCols }, (_, c) => {
                 const wallPos = myWall.find((w) => w.row === r && w.col === c);
+                const isSource = dragStateRef.current.active && dragStateRef.current.fromRow === r && dragStateRef.current.fromCol === c;
+                const isHoverTarget = dragHover?.r === r && dragHover?.c === c;
                 return (
                   <div
                     key={`${r}-${c}`}
                     className="relative aspect-square"
+                    data-wall-cell
+                    data-row={r}
+                    data-col={c}
                     style={{ minWidth: 160 }}
                   >
                     {wallPos ? (
                       <WallCard
                         wallPos={wallPos}
                         onDetail={() => navigate(`/confessions/${wallPos.confession.slug}`)}
+                        onLongPress={(t) => startDrag(t, r, c)}
+                        isDragSource={isSource}
+                        isDragHoverTarget={isHoverTarget}
+                        isDragging={isDragging}
                       />
                     ) : (
                       <div
                         className="w-full h-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:opacity-80"
                         style={{
-                          borderColor: 'var(--color-border-light)',
+                          borderColor: isHoverTarget ? 'var(--color-primary)' : 'var(--color-border-light)',
                           borderRadius: '3px',
+                          opacity: isHoverTarget ? 1 : 0.5,
                         }}
                         onClick={() => {
                           setSelectedRow(r);
@@ -199,8 +286,9 @@ export function ConfessionWallBoard() {
                           loadConfessions();
                           setShowPlaceModal(true);
                         }}
+                        onTouchStart={(e) => { if (isDragging) e.preventDefault(); }}
                       >
-                        <Plus size={20} style={{ color: 'var(--color-text-muted)' }} />
+                        <Plus size={20} style={{ color: isHoverTarget ? 'var(--color-primary)' : 'var(--color-text-muted)' }} />
                       </div>
                     )}
                   </div>
@@ -358,7 +446,12 @@ export function ConfessionWallBoard() {
 function WallCard({ wallPos, onDetail }: {
   wallPos: WallPos;
   onDetail: () => void;
+  onLongPress?: (touch: Touch) => void;
+  isDragSource?: boolean;
+  isDragHoverTarget?: boolean;
+  isDragging?: boolean;
 }) {
+  const { onLongPress, isDragSource, isDragHoverTarget, isDragging } = { onLongPress: undefined as ((t: Touch) => void) | undefined, isDragSource: false as boolean | undefined, isDragHoverTarget: false as boolean | undefined, isDragging: false as boolean | undefined };
   const themeKey = (wallPos.confession.slug ? 'default' : 'default') as ConfessionTheme;
   const T = CONFESSION_THEMES[themeKey];
   const cardStyle: React.CSSProperties = wallPos.bg_type === 'svg' && wallPos.bg_svg
@@ -367,7 +460,7 @@ function WallCard({ wallPos, onDetail }: {
 
   return (
     <div
-      className="cursor-pointer transition-all hover:scale-105 hover:z-10"
+      className={`transition-all ${isDragSource ? 'opacity-30 scale-95' : 'hover:scale-105 hover:z-10'} ${isDragHoverTarget ? 'ring-2 ring-[var(--color-primary)] ring-offset-1' : ''}`}
       style={{
         ...cardStyle,
         border: `1px solid ${wallPos.bg_type === 'solid' ? T.cardBorder : 'transparent'}`,
@@ -379,7 +472,15 @@ function WallCard({ wallPos, onDetail }: {
         flexDirection: 'column',
         padding: '8px',
       }}
-      onClick={onDetail}
+      onClick={() => { if (!isDragging) onDetail(); }}
+      onTouchStart={(e) => {
+        const t = e.touches[0] as unknown as Touch;
+        window.__lastTouch = t;
+        if (onLongPress) onLongPress(t);
+      }}
+      onTouchMove={(e) => {
+        window.__lastTouch = e.touches[0] as unknown as Touch;
+      }}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
         <Heart size={11} style={{ color: T.accent }} />
