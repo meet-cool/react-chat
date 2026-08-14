@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Menu,
@@ -708,11 +708,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         {/* 左侧：分类导航条 + 内容区（桌面端展开时为 fixed 覆盖层） */}
         <aside
           className={`border-r flex transition-[width] duration-200 ease-out ${
-            leftCollapsed ? 'md:w-14' : 'md:w-72 md:fixed md:inset-y-0 md:left-0 md:z-50'
+            leftCollapsed ? 'md:w-14 md:relative md:z-0' : 'md:w-72 md:relative md:z-0'
           } ${
-            mobileSidebar !== null
-              ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:w-auto md:translate-x-0 md:static md:z-50'
-              : 'fixed inset-y-0 left-0 top-0 z-50 -translate-x-full w-full md:w-auto md:translate-x-0 md:static md:z-50'
+            mobileSidebar !== null ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:relative md:w-auto md:translate-x-0 md:z-0' : 'md:relative md:z-0'
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >

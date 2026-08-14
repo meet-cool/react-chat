@@ -1,20 +1,79 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ARCLE 在线聊天</title>
-    <meta name="description" content="Arcle 弧光，一个学生独立开发的社交平台，支持聊天、表白墙、漂流瓶、AI 助手。" />
-    <meta property="og:title" content="Arcle 弧光" />
-    <meta property="og:description" content="弧光所至，连接每一个有趣的灵魂！！！。" />
-    <meta property="og:image" content="https://img.lovepik.com/free-png/20210928/lovepik-star-png-image_401709523_wh1200.png" />
-    <meta property="og:url" content="https://huguang.pages.dev/" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>弧光-微光所至</title>
+  <meta name="description" content="Arcle 弧光，一个学生独立开发的社交平台，支持聊天、表白墙、漂流瓶、AI 助手。" />
+  <meta property="og:title" content="Arcle 弧光" />
+  <meta property="og:description" content="弧光所至，连接每一个有趣的灵魂。" />
+  <meta property="og:image"
+    content="https://img.lovepik.com/free-png/20210928/lovepik-star-png-image_401709523_wh1200.png" />
+  <meta property="og:url" content="https://huguang.pages.dev/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script>
+    (function () {
+      var host = window.location.hostname;
+
+      var domains = {
+        'arc.co.ink': {
+          title: 'Arcle 弧光 - 微光所至',
+          desc: '弧光所至，连接每一个有趣的灵魂。',
+          base: 'https://arc.co.ink'
+        },
+        'met.cc.cd': {
+          title: 'Arcle 弧光 - 微光所至',
+          desc: '弧光所至，连接每一个有趣的灵魂。',
+          base: 'https://met.cc.cd'
+        },
+        'huguang.pages.dev': {
+          title: 'Arcle 弧光 - 测试环境',
+          desc: 'Arcle 弧光测试环境，仅供开发测试使用。',
+          base: 'https://huguang.pages.dev'
+        },
+        'a.arc.co.ink': {
+          title: 'Arcle 区域节点 A',
+          desc: 'Arcle 弧光区域服务器。',
+          base: 'https://a.arc.co.ink'
+        }
+      };
+
+      var config = domains[host];
+
+      // 如果没匹配到，用默认配置
+      if (!config) {
+        config = {
+          title: 'Arcle 弧光 - 微光所至',
+          desc: '弧光所至，连接每一个有趣的灵魂。',
+          base: 'https://' + host
+        };
+      }
+
+      document.title = config.title;
+
+      function setMeta(selector, value) {
+        var tag = document.querySelector(selector);
+        if (tag) tag.setAttribute('content', value);
+      }
+
+      setMeta('[property="og:title"]', config.title);
+      setMeta('[property="og:description"]', config.desc);
+      setMeta('[property="og:url"]', config.base + '/');
+      setMeta('[name="twitter:title"]', config.title);
+      setMeta('[name="twitter:description"]', config.desc);
+
+      var canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.setAttribute('href', config.base + '/');
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
