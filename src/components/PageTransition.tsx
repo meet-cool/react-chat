@@ -1,15 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
+const ANIM_KEY = 'page-transition-styles';
+
+// 注入动画 CSS（只执行一次）
+if (typeof document !== 'undefined' && !document.getElementById(ANIM_KEY)) {
+  const s = document.createElement('style');
+  s.id = ANIM_KEY;
+  s.textContent = `
+    @keyframes arclePageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 /**
- * 页面切换淡入动画组件
- * 每次路由变化时淡出→淡入（200ms），首次加载立即显示
+ * 页面切换动画组件
+ * 每次路由变化时滑入+淡入（300ms ease-out），首次加载立即显示
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [opacity, setOpacity] = useState(1);
-  const [version, setVersion] = useState(0);
+  const [key, setKey] = useState(0);
   const mountedRef = useRef(false);
 
   useEffect(() => {
@@ -17,20 +31,15 @@ export function PageTransition({ children }: { children: ReactNode }) {
       mountedRef.current = true;
       return;
     }
-    setOpacity(0);
-    const timer = setTimeout(() => {
-      setVersion((v) => v + 1);
-      setOpacity(1);
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [location.pathname, location.key]);
+    // 路由变化时重置动画
+    setKey((k) => k + 1);
+  }, [location.key]);
 
   return (
     <div
-      key={version}
+      key={key}
       style={{
-        opacity,
-        transition: 'opacity 0.2s ease',
+        animation: 'arclePageIn 0.3s ease-out',
         minHeight: '100vh',
       }}
     >
