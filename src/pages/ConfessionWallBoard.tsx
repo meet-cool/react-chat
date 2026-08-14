@@ -120,6 +120,10 @@ export function ConfessionWallBoard() {
     setShowPlaceModal(true);
   };
 
+  const handleOpenPlaceModal = () => {
+    loadConfessions().then(() => setShowPlaceModal(true));
+  };
+
   const filteredConfessions = allConfessions.filter((c) =>
     searchKeyword === ''
       ? true
@@ -143,7 +147,7 @@ export function ConfessionWallBoard() {
         <div className="flex-1" />
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => { loadConfessions(); setShowPlaceModal(true); }}
+          onClick={handleOpenPlaceModal}
           style={{ borderRadius: '3px' }}
         >
           <Plus size={14} /> 贴一张
@@ -208,7 +212,7 @@ export function ConfessionWallBoard() {
       </div>
 
       {/* 贴墙弹窗 */}
-      {showPlaceModal && selectedConfession && (
+      {showPlaceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div
             className="w-full max-w-lg max-h-[85vh] overflow-y-auto"
@@ -223,7 +227,32 @@ export function ConfessionWallBoard() {
               </button>
             </div>
 
-            {/* 已选表白 */}
+            {/* 表白列表选择 */}
+            <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)', maxHeight: 200, overflowY: 'auto' }}>
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-text-light)' }}>选择表白</div>
+              {allConfessions.length === 0 ? (
+                <p className="text-xs text-center py-2" style={{ color: 'var(--color-text-muted)' }}>暂无表白</p>
+              ) : (
+                <div className="space-y-1">
+                  {allConfessions.map((c) => (
+                    <button
+                      key={c.id}
+                      className={`w-full text-left px-3 py-2 text-xs transition-all rounded-sm ${alreadyOnWall.has(c.slug) ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-80'}`}
+                      style={{ background: selectedConfession?.id === c.id ? 'var(--color-primary-light)' : 'transparent', borderRadius: '3px', color: 'var(--color-text)' }}
+                      disabled={alreadyOnWall.has(c.slug)}
+                      onClick={() => !alreadyOnWall.has(c.slug) && openPlaceModal(c)}
+                    >
+                      <span className="truncate block">{c.content}</span>
+                      <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                        {c.target_name && `→ ${c.target_name}`} · {c.like_count}喜欢{alreadyOnWall.has(c.slug) ? ' · 已上墙' : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedConfession && (
             <div className="px-4 py-3" style={{ background: 'var(--color-card-alt)', borderBottom: '1px solid var(--color-divider)' }}>
               <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>
                 {selectedConfession.content}
@@ -232,6 +261,7 @@ export function ConfessionWallBoard() {
                 {selectedConfession.target_name && `→ ${selectedConfession.target_name}`} · {selectedConfession.like_count} 喜欢
               </p>
             </div>
+            )}
 
             {/* 位置选择 */}
             <div className="p-4">
