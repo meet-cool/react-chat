@@ -230,7 +230,7 @@ export function ConfessionWallBoard() {
         className="flex items-center gap-3 px-4 py-3 border-b flex-shrink-0"
         style={{ borderColor: 'var(--color-border)', background: 'var(--color-card)' }}
       >
-        <button className="btn btn-sm" onClick={() => navigate('/confessions')} style={{ borderRadius: '3px' }}>
+        <button className="btn btn-sm btn-ghost" onClick={() => navigate('/confessions')} style={{ borderRadius: '3px' }}>
           <ArrowLeft size={14} /> 返回
         </button>
         <MapPin size={18} style={{ color: 'var(--color-primary)' }} />
@@ -446,7 +446,7 @@ export function ConfessionWallBoard() {
             </div>
 
             <div className="px-4 py-3 border-t flex justify-end gap-2" style={{ borderColor: 'var(--color-divider)' }}>
-              <button className="btn btn-sm" onClick={() => setShowPlaceModal(false)} style={{ borderRadius: '3px' }}>取消</button>
+              <button className="btn btn-sm btn-ghost" onClick={() => setShowPlaceModal(false)} style={{ borderRadius: '3px' }}>取消</button>
               <button
                 className="btn btn-primary btn-sm"
                 onClick={handlePlace}
