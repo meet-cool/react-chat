@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TouchEvent as ReactTouchEvent } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TouchEvent as ReactTouchEvent, Touch } from 'react';
 declare global {
   interface Window { __lastTouch: Touch | null; }
 }
@@ -56,9 +56,10 @@ export function ConfessionWallBoard() {
   const [gridRows, setGridRows] = useState(6);
   const [gridCols, setGridCols] = useState(6);
   const gridRef = useRef<HTMLDivElement>(null);
-  const dragStateRef = useRef<{ active: boolean; fromRow: number; fromCol: number; ghostEl: HTMLElement | null; timer: ReturnType<typeof setTimeout> | null }>({ active: false, fromRow: -1, fromCol: -1, ghostEl: null, timer: null });
+  const dragStateRef = useRef<{ active: boolean; fromRow: number; fromCol: number; timer: ReturnType<typeof setTimeout> | null; lastMoveX: number; lastMoveY: number }>({ active: false, fromRow: -1, fromCol: -1, timer: null, lastMoveX: 0, lastMoveY: 0 });
   const [dragHover, setDragHover] = useState<{ r: number; c: number } | null>(null);
-  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number; r: number; c: number } | null>(null);
+  const placedCellRef = useRef<{ r: number; c: number } | null>(null);
 
   const loadMyWall = useCallback(async () => {
     try {
@@ -101,10 +102,13 @@ export function ConfessionWallBoard() {
     if (!selectedConfession) return;
     setPlacing(true);
     try {
+      const useRow = placedCellRef.current ? placedCellRef.current.r : selectedRow;
+      const useCol = placedCellRef.current ? placedCellRef.current.c : selectedCol;
+      placedCellRef.current = null;
       await confessionApi.placeOnWall({
         confession_id: selectedConfession.id,
-        row: selectedRow,
-        col: selectedCol,
+        row: useRow,
+        col: useCol,
         bg_type: placeBgType,
         bg_color: placeBgColor,
         bg_svg: placeBgSvg,
@@ -134,6 +138,14 @@ export function ConfessionWallBoard() {
     loadConfessions().then(() => setShowPlaceModal(true));
   };
 
+  const handleClickEmptyCell = useCallback((r: number, c: number) => {
+    loadConfessions().catch(() => {});
+    setSelectedRow(r);
+    setSelectedCol(c);
+    placedCellRef.current = { r, c };
+    setShowPlaceModal(true);
+  }, [loadConfessions]);
+
   const filteredConfessions = allConfessions.filter((c) =>
     searchKeyword === ''
       ? true
@@ -142,24 +154,21 @@ export function ConfessionWallBoard() {
 
   const alreadyOnWall = new Set(myWall.map((w) => w.confession.slug));
 
-
   // 长按拖动逻辑
-  const startDrag = useCallback((touch: Touch | null, r: number, c: number) => {
+  const startDrag = useCallback((r: number, c: number) => {
     const ws = dragStateRef.current;
     if (ws.active) return;
     ws.timer = setTimeout(() => {
       ws.active = true;
       ws.fromRow = r;
       ws.fromCol = c;
-      ws.ghostEl = null;
-    }, 500);
+    }, 300);
   }, []);
 
   const cancelDrag = useCallback(() => {
     const ws = dragStateRef.current;
     if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
     ws.active = false;
-    ws.ghostEl = null;
     setDragHover(null);
   }, []);
 
@@ -173,11 +182,18 @@ export function ConfessionWallBoard() {
     return { r: row, c: col };
   }, []);
 
+  const handleTouchStart = useCallback((e: ReactTouchEvent, r: number, c: number) => {
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, r, c };
+  }, []);
+
   const handleTouchMove = useCallback((e: ReactTouchEvent) => {
     const ws = dragStateRef.current;
     if (!ws.active) return;
     e.preventDefault();
     const touch = e.touches[0];
+    ws.lastMoveX = touch.clientX;
+    ws.lastMoveY = touch.clientY;
     const hit = findCellUnderTouch(touch.clientX, touch.clientY);
     setDragHover(hit);
   }, [findCellUnderTouch]);
@@ -189,19 +205,19 @@ export function ConfessionWallBoard() {
     if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
     const hover = dragHover;
     setDragHover(null);
-    if (!hover || (hover.r === ws.fromRow && hover.c === ws.fromCol)) return;
-
-    try {
-      await confessionApi.moveOnWall({
-        from_row: ws.fromRow,
-        from_col: ws.fromCol,
-        to_row: hover.r,
-        to_col: hover.c,
-      });
-      addToast('位置已调整', 'success');
-      loadMyWall();
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : '移动失败', 'error');
+    if (hover && !(hover.r === ws.fromRow && hover.c === ws.fromCol)) {
+      try {
+        await confessionApi.moveOnWall({
+          from_row: ws.fromRow,
+          from_col: ws.fromCol,
+          to_row: hover.r,
+          to_col: hover.c,
+        });
+        addToast('已移动', 'success');
+        loadMyWall();
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : '移动失败', 'error');
+      }
     }
   }, [dragHover, addToast, loadMyWall]);
 
@@ -267,26 +283,29 @@ export function ConfessionWallBoard() {
                       <WallCard
                         wallPos={wallPos}
                         onDetail={() => navigate(`/confessions/${wallPos.confession.slug}`)}
-                        onLongPress={(t) => startDrag(t, r, c)}
+                        onLongPress={() => startDrag(r, c)}
                         isDragSource={isSource}
                         isDragHoverTarget={isHoverTarget}
                         isDragging={isDragging}
+                        onTouchStart={(e) => handleTouchStart(e, r, c)}
                       />
                     ) : (
                       <div
-                        className="w-full h-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:opacity-80"
+                        className="w-full h-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all active:scale-95"
                         style={{
                           borderColor: isHoverTarget ? 'var(--color-primary)' : 'var(--color-border-light)',
                           borderRadius: '3px',
                           opacity: isHoverTarget ? 1 : 0.5,
                         }}
-                        onClick={() => {
-                          setSelectedRow(r);
-                          setSelectedCol(c);
-                          loadConfessions();
-                          setShowPlaceModal(true);
+                        onClick={() => handleClickEmptyCell(r, c)}
+                        onTouchStart={(e) => {
+                          const t = e.touches[0];
+                          touchStartPosRef.current = { x: t.clientX, y: t.clientY, r, c };
                         }}
-                        onTouchStart={(e) => { if (isDragging) e.preventDefault(); }}
+                        onTouchEnd={(e) => {
+                          if (dragStateRef.current.active) return;
+                          handleClickEmptyCell(r, c);
+                        }}
                       >
                         <Plus size={20} style={{ color: isHoverTarget ? 'var(--color-primary)' : 'var(--color-text-muted)' }} />
                       </div>
@@ -347,6 +366,7 @@ export function ConfessionWallBoard() {
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
                 {selectedConfession.target_name && `→ ${selectedConfession.target_name}`} · {selectedConfession.like_count} 喜欢
+                {placedCellRef.current && <span style={{ color: 'var(--color-primary)', marginLeft: 8 }}>→ 第{placedCellRef.current.r + 1}行 第{placedCellRef.current.c + 1}列</span>}
               </p>
             </div>
             )}
@@ -443,15 +463,15 @@ export function ConfessionWallBoard() {
   );
 }
 
-function WallCard({ wallPos, onDetail }: {
+function WallCard({ wallPos, onDetail, onLongPress, isDragSource, isDragHoverTarget, isDragging, onTouchStart }: {
   wallPos: WallPos;
   onDetail: () => void;
-  onLongPress?: (touch: Touch) => void;
+  onLongPress?: () => void;
   isDragSource?: boolean;
   isDragHoverTarget?: boolean;
   isDragging?: boolean;
+  onTouchStart?: (e: ReactTouchEvent) => void;
 }) {
-  const { onLongPress, isDragSource, isDragHoverTarget, isDragging } = { onLongPress: undefined as ((t: Touch) => void) | undefined, isDragSource: false as boolean | undefined, isDragHoverTarget: false as boolean | undefined, isDragging: false as boolean | undefined };
   const themeKey = (wallPos.confession.slug ? 'default' : 'default') as ConfessionTheme;
   const T = CONFESSION_THEMES[themeKey];
   const cardStyle: React.CSSProperties = wallPos.bg_type === 'svg' && wallPos.bg_svg
@@ -460,7 +480,7 @@ function WallCard({ wallPos, onDetail }: {
 
   return (
     <div
-      className={`transition-all ${isDragSource ? 'opacity-30 scale-95' : 'hover:scale-105 hover:z-10'} ${isDragHoverTarget ? 'ring-2 ring-[var(--color-primary)] ring-offset-1' : ''}`}
+      className={`transition-all duration-150 ${isDragSource ? 'opacity-30 scale-95' : 'hover:scale-105 hover:z-10'} ${isDragHoverTarget ? 'ring-2 ring-[var(--color-primary)] ring-offset-1' : ''}`}
       style={{
         ...cardStyle,
         border: `1px solid ${wallPos.bg_type === 'solid' ? T.cardBorder : 'transparent'}`,
@@ -471,12 +491,14 @@ function WallCard({ wallPos, onDetail }: {
         display: 'flex',
         flexDirection: 'column',
         padding: '8px',
+        touchAction: 'none',
       }}
       onClick={() => { if (!isDragging) onDetail(); }}
       onTouchStart={(e) => {
-        const t = e.touches[0] as unknown as Touch;
+        const t = e.touches[0];
         window.__lastTouch = t;
-        if (onLongPress) onLongPress(t);
+        if (onTouchStart) onTouchStart(e);
+        if (onLongPress) onLongPress();
       }}
       onTouchMove={(e) => {
         window.__lastTouch = e.touches[0] as unknown as Touch;
