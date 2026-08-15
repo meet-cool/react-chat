@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TouchEvent as ReactTouchEvent, Touch } from 'react';
 declare global {
   interface Window { __lastTouch: Touch | null; }
@@ -6,13 +6,11 @@ declare global {
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Search,
   MapPin,
   Plus,
   X,
   Heart,
   MessageCircle,
-  Trophy,
 } from 'lucide-react';
 import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
@@ -45,7 +43,6 @@ export function ConfessionWallBoard() {
   const [loading, setLoading] = useState(true);
   const [showPlaceModal, setShowPlaceModal] = useState(false);
   const [allConfessions, setAllConfessions] = useState<Confession[]>([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedConfession, setSelectedConfession] = useState<Confession | null>(null);
   const [selectedRow, setSelectedRow] = useState(0);
   const [selectedCol, setSelectedCol] = useState(0);
@@ -84,19 +81,7 @@ export function ConfessionWallBoard() {
     loadConfessions();
   }, [loadMyWall, loadConfessions]);
 
-  useEffect(() => {
-  }, []);
-
   const occupiedKeys = new Set(myWall.map((w) => `${w.row},${w.col}`));
-
-  const getEmptyPositions = useCallback(async (rows: number, cols: number) => {
-    try {
-      const data = await confessionApi.emptyPositions(rows, cols);
-      return data;
-    } catch {
-      return [];
-    }
-  }, []);
 
   const handlePlace = async () => {
     if (!selectedConfession) return;
@@ -146,12 +131,6 @@ export function ConfessionWallBoard() {
     setShowPlaceModal(true);
   }, [loadConfessions]);
 
-  const filteredConfessions = allConfessions.filter((c) =>
-    searchKeyword === ''
-      ? true
-      : c.content.includes(searchKeyword) || c.target_name.includes(searchKeyword)
-  );
-
   const alreadyOnWall = new Set(myWall.map((w) => w.confession.slug));
 
   // 长按拖动逻辑
@@ -163,13 +142,6 @@ export function ConfessionWallBoard() {
       ws.fromRow = r;
       ws.fromCol = c;
     }, 300);
-  }, []);
-
-  const cancelDrag = useCallback(() => {
-    const ws = dragStateRef.current;
-    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
-    ws.active = false;
-    setDragHover(null);
   }, []);
 
   const findCellUnderTouch = useCallback((x: number, y: number) => {
@@ -371,26 +343,8 @@ export function ConfessionWallBoard() {
             </div>
             )}
 
-            {/* 位置选择 */}
+            {/* 背景样式 */}
             <div className="p-4">
-              <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-text-light)' }}>选择位置</div>
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>行:</span>
-                <select value={selectedRow} onChange={(e) => setSelectedRow(Number(e.target.value))}
-                  className="text-sm" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '3px', padding: '4px 8px', color: 'var(--color-text)' }}>
-                  {Array.from({ length: gridRows }, (_, i) => <option key={i} value={i}>第{i+1}行</option>)}
-                </select>
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>列:</span>
-                <select value={selectedCol} onChange={(e) => setSelectedCol(Number(e.target.value))}
-                  className="text-sm" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '3px', padding: '4px 8px', color: 'var(--color-text)' }}>
-                  {Array.from({ length: gridCols }, (_, i) => <option key={i} value={i}>第{i+1}列</option>)}
-                </select>
-                {(occupiedKeys.has(`${selectedRow},${selectedCol}`)) && (
-                  <span className="text-xs" style={{ color: 'var(--color-error)' }}>该位置已被占用</span>
-                )}
-              </div>
-
-              {/* 背景样式 */}
               <div className="text-xs font-medium mb-2" style={{ color: 'var(--color-text-light)' }}>背景样式</div>
               <div className="flex gap-2 mb-3">
                 <button
@@ -450,7 +404,7 @@ export function ConfessionWallBoard() {
               <button
                 className="btn btn-primary btn-sm"
                 onClick={handlePlace}
-                disabled={placing || occupiedKeys.has(`${selectedRow},${selectedCol}`)}
+                disabled={placing}
                 style={{ borderRadius: '3px' }}
               >
                 {placing ? '保存中...' : '确认贴上'}
