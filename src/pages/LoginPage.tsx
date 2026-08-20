@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { MessageSquare, LogIn, UserPlus, Loader2, ArrowLeft } from 'lucide-react';
 import { authApi, setToken } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
@@ -84,6 +84,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg-page)' }}>
+      {/* 返回按钮 */}
+      <button
+        onClick={() => navigate('/')}
+        className="fixed top-4 left-4 btn btn-sm flex items-center gap-1"
+        style={{ minWidth: 'auto', padding: '8px 14px' }}
+      >
+        <ArrowLeft size={16} /> 返回首页
+      </button>
       <div className="w-full max-w-md">
         {/* 顶部 Logo */}
         <div className="flex flex-col items-center mb-8">

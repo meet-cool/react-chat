@@ -355,6 +355,8 @@ export interface AiChat {
   update_time: number;
   create_time_fmt?: string;
   update_time_fmt?: string;
+  pinned?: number;
+  archived?: number;
 }
 
 export interface AiMsg {
@@ -400,4 +402,45 @@ export interface AdminAiChat {
   update_time: number;
   update_time_fmt: string;
   username: string;
+}
+
+// ============ 朋友圈 ============
+export interface MomentComment {
+  id: number;
+  moment_id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  content: string;
+  reply_to_id: number;
+  reply_to_username?: string;
+  create_time: number;
+  create_time_fmt: string;
+  time_ago: string;
+  is_self: boolean;
+  children?: MomentComment[];
+}
+
+export interface Moment {
+  id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  content: string;
+  images: string[];
+  image_count: number;
+  privacy: string;
+  like_count: number;
+  comment_count: number;
+  share_count: number;
+  create_time: number;
+  create_time_fmt: string;
+  time_ago: string;
+  is_self: boolean;
+  is_liked: boolean;
+  comments?: MomentComment[];
+}
+
+export interface MomentSaveResult extends Moment {
+  id: number;
 }

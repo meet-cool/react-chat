@@ -31,6 +31,9 @@ import type {
   AdminNotice,
   AdminAiStats,
   AdminAiChat,
+  Moment,
+  MomentComment,
+  MomentSaveResult,
 } from '../types';
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -420,6 +423,10 @@ export const aiApi = {
   // 获取 AI 配置
   config: () => get<AiConfig>('/chat/ai/config'),
 
+  // 创建新会话
+  createChat: (mode: 'fast' | 'professional') =>
+    post<{ id: number }>('/chat/ai/chats', { mode }),
+
   // 获取会话列表
   listChats: () => get<AiChat[]>('/chat/ai/chats'),
 
@@ -523,4 +530,115 @@ export const adminApi = {
   // 公告（公开读取 / 管理员保存）
   getNotice: () => get<AdminNotice>('/chat/notice'),
   saveNotice: (content: string) => adminPost<null>('/notice', { content }),
+};
+
+// ============================================================
+// 朋友圈 API
+// ============================================================
+export const momentApi = {
+  moments: (params?: { user_id?: number; last_id?: number; limit?: number }) => {
+    const qs = params ? Object.entries(params as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&') : '';
+    return get<Moment[]>(`/moments${qs ? '?' + qs : ''}`);
+  },
+  momentsDetail: (id: number) => get<Moment>(`/moments/${id}`),
+  momentsSave: (data: { content: string; images?: string[]; privacy?: string }) =>
+    post<MomentSaveResult>('/moments', data),
+  momentsLike: (id: number) => post<{ liked: boolean; like_count: number }>(`/moments/${id}/like`, {}),
+  momentsComment: (id: number, data: { content: string; reply_to_id?: number }) =>
+    post<MomentComment>(`/moments/${id}/comments`, data),
+  momentsDelete: (id: number) => del<null>(`/moments/${id}`),
+  momentsMine: (params?: { last_id?: number; limit?: number }) => {
+    const qs = params ? Object.entries(params as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&') : '';
+    return get<Moment[]>(`/moments/mine${qs ? '?' + qs : ''}`);
+  },
+};
+
+// ============================================================
+// 插件系统 API
+// ============================================================
+export interface PluginInfo {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  icon: string;
+  color: string;
+  route_path: string;
+  status: number;
+  sort_order: number;
+  config: Record<string, unknown>;
+}
+
+export const pluginApi = {
+  list: () => get<PluginInfo[]>('/chat/plugins'),
+  detail: (slug: string) => get<any>(`/chat/plugins/${slug}`),
+  saveConfig: (slug: string, config: Record<string, unknown>) =>
+    put<null>(`/chat/plugins/${slug}/config`, config),
+};
+
+// ============================================================
+// 游戏中心 API
+// ============================================================
+export interface GameInfo {
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  difficulty: string[];
+}
+
+export interface GameLeaderboardItem {
+  id: number;
+  user_id: number;
+  score: number;
+  level: number;
+  time_used: number;
+  username: string;
+  avatar: string;
+}
+
+export const gameApi = {
+  list: () => get<GameInfo[]>('/chat/plugins/games'),
+  leaderboard: (slug: string, params?: { page?: number; limit?: number }) => {
+    const qs = params ? Object.entries(params as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&') : '';
+    return get<{ items: GameLeaderboardItem[]; pagination: any }>(`/chat/plugins/games/${slug}/leaderboard${qs ? '?' + qs : ''}`);
+  },
+  submitScore: (slug: string, data: { score: number; level?: number; time_used?: number; metadata?: any }) =>
+    post<{ score: number; points_earned: number; rank: number }>(`/chat/plugins/games/${slug}/score`, data),
+  generateSudoku: (difficulty = 'medium') =>
+    get<{ puzzle: number[][]; difficulty: string }>(`/chat/plugins/games/sudoku/generate?difficulty=${difficulty}`),
+  memoryCardsState: (difficulty = 'easy') =>
+    get<{ cards: string[]; pairs: number; difficulty: string }>(`/chat/plugins/games/memory_cards/state?difficulty=${difficulty}`),
+  generateNumberGuess: () =>
+    get<{ code: string; max_attempts: number }>(`/chat/plugins/games/number_guess/generate`),
+};
+
+// ============================================================
+// 礼物系统 API
+// ============================================================
+export interface GiftInfo {
+  id: string;
+  name: string;
+  cost: number;
+  icon: string;
+  description: string;
+}
+
+export const giftApi = {
+  list: () => get<GiftInfo[]>('/chat/plugins/gifts'),
+  send: (data: { target_id: number; gift_id: string; quantity: number }) =>
+    post<{ gift_id: string; quantity: number; cost: number }>('/chat/plugins/gifts/send', data),
+  wall: (userId: number) => get<any[]>(`/chat/plugins/gifts/wall/${userId}`),
 };

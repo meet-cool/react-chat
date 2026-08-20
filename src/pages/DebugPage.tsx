@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Settings, Key, Globe, RefreshCw, Trash2,
+  ArrowLeft, Settings, Key, Globe, RefreshCw, Trash2, Copy, Check,
   Eye, EyeOff, CheckCircle, XCircle, Play,
 } from 'lucide-react';
 import {
@@ -238,6 +238,7 @@ function SessionTab() {
 function StorageTab() {
   const [items, setItems] = useState<Map<string, string>>(new Map());
   const [cleared, setCleared] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -246,6 +247,25 @@ function StorageTab() {
       setItems(new Map(Object.entries(localStorage)));
     }
   }, []);
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
+  };
 
   return (
     <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
@@ -265,13 +285,34 @@ function StorageTab() {
         <p className="text-xs text-center py-6" style={{ color: 'var(--color-text-muted)' }}>本地存储为空</p>
       ) : (
         <>
-          <div className="max-h-52 overflow-y-auto space-y-1">
+          <div className="max-h-64 overflow-y-auto space-y-1">
             {Array.from(items.entries()).map(([key, val]) => (
-              <div key={key} className="flex items-center justify-between px-3 py-2 rounded-lg text-xs" style={{ background: 'var(--color-input-bg)' }}>
-                <span className="font-mono truncate flex-1 mr-2" style={{ color: 'var(--color-text)' }}>{key}</span>
-                <span className="font-mono truncate flex-1" style={{ color: 'var(--color-text-muted)' }}>
-                  {val.length > 50 ? val.slice(0, 50) + '…' : val}
-                </span>
+              <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs group" style={{ background: 'var(--color-input-bg)' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-mono truncate" style={{ color: 'var(--color-text)' }}>{key}</span>
+                    <button
+                      onClick={() => copyToClipboard(`${key}=${val}`, key)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-1.5 py-0.5 rounded"
+                      style={{ background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      title="复制键值对"
+                    >
+                      {copiedKey === key ? <Check size={10} className="text-[var(--color-success)]" /> : <Copy size={10} />}
+                      <span className="text-[10px]">{copiedKey === key ? '已复制' : '复制'}</span>
+                    </button>
+                  </div>
+                  <span className="font-mono block truncate text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                    {val.length > 60 ? val.slice(0, 60) + '…' : val}
+                  </span>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(val, `${key}_value`)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded flex-shrink-0"
+                  style={{ background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                  title="复制值"
+                >
+                  {copiedKey === `${key}_value` ? <Check size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
+                </button>
               </div>
             ))}
           </div>

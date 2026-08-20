@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { userApi, systemApi } from '../lib/api';
 import { getApiBaseUrl, getToken, clearToken, setApiBaseUrl } from '../lib/api';
@@ -38,6 +38,8 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const DEBUG_CLICKS = 7;
   const DEBUG_STORAGE_KEY = 'arcle_debug_mode';
   const [debugClickCount, setDebugClickCount] = useState(0);
+  const [debugProgress, setDebugProgress] = useState(0);
+  const debugTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debugMode, setDebugMode] = useState(() => {
     try { return localStorage.getItem(DEBUG_STORAGE_KEY) === '1'; } catch { return false; }
   });
@@ -50,6 +52,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [customApiUrl, setCustomApiUrl] = useState('');
   const [storageItems, setStorageItems] = useState<Map<string, string>>(new Map());
   const storageInitialized = React.useRef(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const applyCustomUrl = async (url: string) => {
     if (!url.trim()) return;
@@ -64,6 +67,26 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   };
   const refreshStorage = () => setStorageItems(new Map(Object.entries(localStorage)));
   useEffect(() => { if (debugMode && !storageInitialized.current) { storageInitialized.current = true; refreshStorage(); } }, [debugMode]);
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
+  };
+
+
   const handleLogout = () => { clearToken(); window.location.reload(); };
 
   useEffect(() => {
@@ -75,8 +98,33 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     if (debugMode || debugAuth !== 'hidden') return;
     const next = debugClickCount + 1;
     setDebugClickCount(next);
-    if (next >= DEBUG_CLICKS) { setDebugAuth('needs-pwd'); setDebugClickCount(0); }
+    setDebugProgress((next / DEBUG_CLICKS) * 100);
+    
+    if (debugTimerRef.current) {
+      clearTimeout(debugTimerRef.current);
+    }
+    
+    if (next >= DEBUG_CLICKS) {
+      setDebugAuth('needs-pwd');
+      setDebugClickCount(0);
+      setDebugProgress(0);
+      return;
+    }
+    
+    debugTimerRef.current = setTimeout(() => {
+      setDebugClickCount(0);
+      setDebugProgress(0);
+    }, 2000);
   };
+  // 组件卸载时清除定时器
+  React.useEffect(() => {
+    return () => {
+      if (debugTimerRef.current) {
+        clearTimeout(debugTimerRef.current);
+      }
+    };
+  }, []);
+
   const submitDebugPassword = () => {
     if (debugPwd === DEBUG_PASSWORD) {
       setDebugMode(true);
@@ -112,6 +160,18 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
 
   if (!open) return null;
 
+  const handleClose = () => {
+    // 如果处于密码输入状态，重置为隐藏状态
+    if (debugAuth === 'needs-pwd') {
+      setDebugAuth('hidden');
+      setDebugPwd('');
+      setPwdError('');
+      setDebugClickCount(0);
+      setDebugProgress(0);
+    }
+    onClose();
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault(); setSavingProfile(true);
     try {
@@ -140,11 +200,11 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const fieldStyle: React.CSSProperties = { marginBottom: 12 };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={handleClose}>
       <div className="w-full max-w-xl flex flex-col shadow-[var(--shadow-lg)]" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
           <div className="flex items-center gap-2"><Settings size={18} style={{ color: 'var(--color-primary)' }} /><h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>设置</h3></div>
-          <button onClick={onClose} className="p-1" style={{ color: 'var(--color-text-muted)' }}><X size={18} /></button>
+          <button onClick={handleClose} className="p-1" style={{ color: 'var(--color-text-muted)' }}><X size={18} /></button>
         </div>
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <div className="w-36 flex-shrink-0 border-r p-2 flex flex-col gap-1" style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}>
@@ -269,11 +329,32 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                           <button onClick={refreshStorage} className="text-xs px-2 py-1 rounded flex items-center gap-1" style={{background:'var(--color-hover-bg)',color:'var(--color-text-muted)'}}><RefreshCw size={12}/>刷新</button>
                         </div>
                         {storageItems.size===0 ? <p className="text-xs text-center py-6" style={{color:'var(--color-text-muted)'}}>本地存储为空</p> : (
-                          <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+                          <div className="max-h-64 overflow-y-auto flex flex-col gap-1">
                             {Array.from(storageItems.entries()).map(([key,val]) => (
-                              <div key={key} className="flex items-center justify-between px-3 py-2 rounded text-xs" style={{background:'var(--color-bg-page)'}}>
-                                <span className="font-mono truncate flex-1 mr-2" style={{color:'var(--color-text)'}}>{key}</span>
-                                <span className="font-mono truncate flex-1" style={{color:'var(--color-text-muted)'}}>{val.length>40?val.slice(0,40)+'…':val}</span>
+                              <div key={key} className="flex items-center gap-2 px-3 py-2 rounded text-xs group" style={{background:'var(--color-bg-page)'}}>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className="font-mono truncate" style={{color:'var(--color-text)'}}>{key}</span>
+                                    <button
+                                      onClick={() => copyToClipboard(`${key}=${val}`, key)}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-1.5 py-0.5 rounded"
+                                      style={{background:'var(--color-hover-bg)',color:'var(--color-text-muted)'}}
+                                      title="复制键值对"
+                                    >
+                                      {copiedKey === key ? <Check size={10} className="text-[var(--color-success)]" /> : <Copy size={10} />}
+                                      <span className="text-[10px]">{copiedKey === key ? '已复制' : '复制'}</span>
+                                    </button>
+                                  </div>
+                                  <span className="font-mono block truncate text-[10px]" style={{color:'var(--color-text-muted)'}}>{val.length>60?val.slice(0,60)+'…':val}</span>
+                                </div>
+                                <button
+                                  onClick={() => copyToClipboard(val, `${key}_value`)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded flex-shrink-0"
+                                  style={{background:'var(--color-hover-bg)',color:'var(--color-text-muted)'}}
+                                  title="复制值"
+                                >
+                                  {copiedKey === `${key}_value` ? <Check size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -301,14 +382,22 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                       </div>
                     )}
                     {debugClickCount > 0 && debugAuth === 'hidden' && (
-                      <p className="text-xs text-center" style={{color:'var(--color-primary)'}}>再次点击{DEBUG_CLICKS-debugClickCount}次</p>
+                      <div className="mt-2">
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{background:'var(--color-border-light)'}}>
+                          <div 
+                            className="h-full transition-all duration-300 ease-out"
+                            style={{width: `${debugProgress}%`, background:'var(--color-primary)'}}
+                          />
+                        </div>
+                        <p className="text-xs text-center mt-1" style={{color:'var(--color-text-muted)'}}>已点击 {debugClickCount}/{DEBUG_CLICKS} 次</p>
+                      </div>
                     )}
                     {debugAuth === 'needs-pwd' && (
                       <div className="flex flex-col gap-2 mt-1">
                         <input type="password" value={debugPwd} onChange={(e)=>{setDebugPwd(e.target.value);setPwdError('');}} onKeyDown={(e)=>e.key==='Enter'&&submitDebugPassword()} placeholder="输入调试密码" className={inputCls} style={inputStyle} autoFocus />
                         <div className="flex gap-2">
                           <button onClick={submitDebugPassword} className="btn btn-sm flex-1 justify-center btn-primary">解锁</button>
-                          <button onClick={()=>{setDebugAuth('hidden');setDebugPwd('');setPwdError('');setDebugClickCount(0);}} className="btn btn-sm flex-1 justify-center">取消</button>
+                          <button onClick={()=>{setDebugAuth('hidden');setDebugPwd('');setPwdError('');setDebugClickCount(0); setDebugProgress(0);}} className="btn btn-sm flex-1 justify-center">取消</button>
                         </div>
                         {pwdError && <p className="text-xs text-center" style={{color:'var(--color-error)'}}>{pwdError}</p>}
                         <p className="text-xs text-center" style={{color:'var(--color-text-muted)'}}>提示：debug2024</p>

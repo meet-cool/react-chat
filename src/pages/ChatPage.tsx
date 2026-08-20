@@ -852,7 +852,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 }}
                 loading={roomsLoading}
               />
-            ) : showPrivate ? null : category === 'rooms' ? (
+            ) : category === 'rooms' ? (
               <RoomList
                 rooms={rooms}
                 activeRoomId={activeRoom?.id ?? null}

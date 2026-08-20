@@ -17,6 +17,7 @@ import { AdminConfessionsPage } from './pages/admin/AdminConfessionsPage';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { AdminAiPage } from './pages/admin/AdminAiPage';
 import { AdminNoticePage } from './pages/admin/AdminNoticePage';
+import { AdminPluginsPage } from './pages/admin/AdminPluginsPage';
 import { PortalPage } from './pages/PortalPage';
 import { ConfessionWall } from './pages/ConfessionWall';
 import { ConfessionPost } from './pages/ConfessionPost';
@@ -27,6 +28,11 @@ import { ConfessionMine } from './pages/ConfessionMine';
 import { ConfessionWallBoard } from './pages/ConfessionWallBoard';
 import { AiPanelPage } from './pages/AiPanelPage';
 import { BottlePage } from './pages/BottlePage';
+import { PluginMarketPage } from './pages/PluginMarketPage';
+import { SudokuPage } from './pages/games/SudokuPage';
+import { MemoryCardsPage } from './pages/games/MemoryCardsPage';
+import { NumberGuessPage } from './pages/games/NumberGuessPage';
+import MomentsPage from './pages/MomentsPage';
 import { PointsPage } from './pages/PointsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TermsPage } from './pages/TermsPage';
@@ -172,6 +178,7 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
             <Route path="confessions" element={<AdminConfessionsPage />} />
             <Route path="ai" element={<AdminAiPage />} />
             <Route path="notice" element={<AdminNoticePage />} />
+            <Route path="plugins" element={<AdminPluginsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -187,8 +194,22 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           {/* AI 广场 */}
           <Route
             path="/ai"
-            element={user ? <AiPanelPage onBack={() => navigate('/chat')} /> : <Navigate to="/" replace />}
+            element={user ? <AiPanelPage /> : <Navigate to="/" replace />}
           />
+          {/* 朋友圈 */}
+          <Route
+            path="/moments"
+            element={user ? <MomentsPage /> : <Navigate to="/" replace />}
+          />
+
+          {/* 插件市场 */}
+          <Route
+            path="/plugins"
+            element={user ? <PluginMarketPage onBack={() => navigate('/chat')} /> : <Navigate to="/" replace />}
+          />
+          <Route path="/plugins/games/sudoku" element={user ? <SudokuPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
+          <Route path="/plugins/games/memory-cards" element={user ? <MemoryCardsPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
+          <Route path="/plugins/games/number-guess" element={user ? <NumberGuessPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
         </Routes>
         <ToastContainer />
       </PageTransition>

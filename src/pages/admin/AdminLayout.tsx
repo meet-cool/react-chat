@@ -17,6 +17,7 @@ import {
   Heart,
   Bot,
   Megaphone,
+  Plug,
 } from 'lucide-react';
 import { useAdminAuth } from '../../lib/AdminContext';
 import { Avatar } from '../../components/Avatar';
@@ -29,6 +30,7 @@ const menuItems = [
   { k: 'confessions', label: '表白审核', path: '/admin/confessions', icon: Heart },
   { k: 'ai', label: 'AI广场管理', path: '/admin/ai', icon: Bot },
   { k: 'notice', label: '公告管理', path: '/admin/notice', icon: Megaphone },
+  { k: 'plugins', label: '插件管理', path: '/admin/plugins', icon: Plug },
 ];
 
 export function AdminLayout() {

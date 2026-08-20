@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Sparkles,
-  Clock,
-  Zap,
-  MessageSquare,
-  Trash2,
-  Pencil,
-  Settings,
-  ArrowLeft,
-  Bot,
-  CheckCircle,
-  AlertCircle,
+  Sparkles, Zap, MessageSquare, Trash2, Pencil,
+  ArrowLeft, Bot, CheckCircle, AlertCircle, Menu,
+  Plus, Search, X, ChevronDown, ChevronUp,
+  User, Settings, Share2, Copy, Download,
+  Edit3, Pin, Archive, RefreshCw, Star, Brain
 } from 'lucide-react';
 import { aiApi } from '../lib/api';
 import type { AiChat, AiMsg, AiConfig } from '../types';
@@ -18,11 +13,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../lib/AppContext';
 
-interface AiPanelPageProps {
-  onBack: () => void;
-}
+interface AiPanelPageProps {}
 
-export function AiPanelPage({ onBack }: AiPanelPageProps) {
+// 快捷提示列表
+const QUICK_PROMPTS = [
+  { label: '精炼表达', prompt: '请用更精炼、直接的方式回答，只保留结论、关键依据和必要步骤。' },
+  { label: '详细说明', prompt: '请补充背景、步骤、示例、边界条件和验证方法。' },
+  { label: '总结要点', prompt: '请总结当前内容的核心要点，并按重要性排序。' },
+  { label: '给出步骤', prompt: '请将解决方案整理为清晰、可执行的步骤。' },
+  { label: '补充示例', prompt: '请结合一个具体示例进一步说明。' },
+  { label: '检查问题', prompt: '请检查前面的结论是否存在遗漏、风险或不准确之处。' },
+];
+
+type SidebarFilter = 'all' | 'pinned' | 'archived';
+
+export function AiPanelPage({ }: AiPanelPageProps) {
+  const navigate = useNavigate();
   const { addToast } = useApp();
   const [chats, setChats] = useState<AiChat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,13 +36,16 @@ export function AiPanelPage({ onBack }: AiPanelPageProps) {
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filter, setFilter] = useState<SidebarFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
 
   const loadChats = useCallback(async () => {
     try {
       const list = await aiApi.listChats();
       setChats(list);
     } catch {
-      // 静默失败
     } finally {
       setLoading(false);
     }
@@ -47,7 +56,6 @@ export function AiPanelPage({ onBack }: AiPanelPageProps) {
       const cfg = await aiApi.config();
       setConfig(cfg);
     } catch {
-      // 静默失败
     }
   }, []);
 
@@ -60,9 +68,21 @@ export function AiPanelPage({ onBack }: AiPanelPageProps) {
     try {
       await aiApi.deleteChat(id);
       setChats((prev) => prev.filter((c) => c.id !== id));
+      if (activeChatId === id) setActiveChatId(null);
       addToast('会话已删除', 'success');
     } catch (err) {
       addToast(err instanceof Error ? err.message : '删除失败', 'error');
+    }
+  };
+
+  const handleCreateChat = async (chatMode: 'fast' | 'professional') => {
+    try {
+      const result = await aiApi.createChat(chatMode);
+      setActiveChatId(result.id);
+      setMobileMenuOpen(false);
+      loadChats();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '创建失败', 'error');
     }
   };
 
@@ -77,206 +97,372 @@ export function AiPanelPage({ onBack }: AiPanelPageProps) {
     }
   };
 
+  const filteredChats = chats.filter((chat) => {
+    const matchesSearch = chat.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === 'all' || 
+      (filter === 'pinned' && chat.pinned) ||
+      (filter === 'archived' && chat.archived);
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
-      {/* 顶部导航 */}
-      <header
-        className="flex items-center gap-3 px-5 py-3 border-b flex-shrink-0"
-        style={{ borderColor: 'var(--color-border)', background: 'var(--color-card)' }}
+      {/* 侧边栏遮罩 */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* 左侧边栏 - 对话历史 */}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-200 ease-out md:relative md:translate-x-0 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{ 
+          background: 'var(--color-card)', 
+          borderRight: '1px solid var(--color-divider)',
+        }}
       >
-        <button
-          className="btn btn-sm"
-          onClick={onBack}
-          style={{ borderRadius: '3px' }}
-        >
-          <ArrowLeft size={14} />
-          <span>返回</span>
-        </button>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-md flex items-center justify-center"
-            style={{ background: 'var(--color-primary)' }}
+        {/* 侧边栏头部 */}
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Bot size={18} color="#fff" />
+            </div>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>弧光 AI</div>
+              <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>智能对话</div>
+            </div>
+          </div>
+          <button 
+            className="md:hidden p-1" 
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ color: 'var(--color-text-muted)' }}
           >
-            <Bot size={15} color="#fff" />
-          </div>
-          <span className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
-            弧光 AI 广场
-          </span>
+            <X size={18} />
+          </button>
         </div>
-        <div className="flex-1" />
-        {config && (
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            {config.has_api_key ? (
-              <CheckCircle size={13} style={{ color: 'var(--color-success)' }} />
-            ) : (
-              <AlertCircle size={13} style={{ color: 'var(--color-warning)' }} />
-            )}
-            {config.model_name}
-          </div>
-        )}
-      </header>
 
-      {/* 主体内容 */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* 左侧：会话列表 */}
-        <div
-          className="w-72 flex-shrink-0 border-r overflow-y-auto"
-          style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
-        >
-          <div className="p-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
-            <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-              历史会话
-            </div>
-          </div>
+        {/* 新建对话按钮 */}
+        <div className="px-3 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+          <button 
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-150 hover:opacity-90 active:scale-95"
+            style={{ 
+              background: 'var(--color-primary)', 
+              color: '#fff',
+              borderRadius: 'var(--radius-sm, 3px)'
+            }}
+            onClick={() => handleCreateChat('fast')}
+          >
+            <Plus size={16} />
+            <span>新建对话</span>
+          </button>
+        </div>
 
+        {/* 搜索和筛选 */}
+        <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+          <div className="relative mb-2">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+            <input
+              type="search"
+              placeholder="搜索会话..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-sm"
+              style={{ 
+                background: 'var(--color-card-alt)', 
+                border: '1px solid var(--color-border)', 
+                color: 'var(--color-text)',
+                borderRadius: 'var(--radius-sm, 3px)'
+              }}
+            />
+          </div>
+          <div className="flex gap-1 text-xs">
+            {(['all', 'pinned', 'archived'] as SidebarFilter[]).map((f) => (
+              <button
+                key={f}
+                className={`flex-1 py-1 px-2 rounded transition-all duration-150 ${
+                  filter === f ? 'font-medium' : 'opacity-60 hover:opacity-100'
+                }`}
+                style={filter === f ? {
+                  background: 'var(--color-primary-light)',
+                  color: 'var(--color-primary)'
+                } : {
+                  background: 'transparent',
+                  color: 'var(--color-text-muted)'
+                }}
+                onClick={() => setFilter(f)}
+              >
+                {f === 'all' ? '全部' : f === 'pinned' ? '置顶' : '归档'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 会话列表 */}
+        <div className="flex-1 overflow-y-auto py-1">
           {loading ? (
-            <div className="p-6 flex flex-col items-center gap-3">
-              <div className="w-6 h-6 border-2 animate-spin rounded-full" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }} />
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>加载中…</span>
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div 
+                className="w-6 h-6 border-2 animate-spin rounded-full"
+                style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }}
+              />
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>加载中...</span>
             </div>
-          ) : chats.length === 0 ? (
-            <div className="p-6 text-center">
-              <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'var(--color-primary-light)' }}>
-                <MessageSquare size={18} style={{ color: 'var(--color-primary)' }} />
+          ) : filteredChats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3 px-4 text-center">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--color-primary-light)' }}
+              >
+                <MessageSquare size={22} style={{ color: 'var(--color-primary)' }} />
               </div>
-              <p className="text-sm mb-1" style={{ color: 'var(--color-text-secondary)' }}>暂无对话</p>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>开始与弧光 AI 对话</p>
+              <div>
+                <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                  {searchQuery ? '未找到会话' : '暂无对话'}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                  {searchQuery ? '尝试其他搜索词' : '开始与 AI 对话吧'}
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="py-2">
-              {chats.map((chat) => (
-                <div
-                  key={chat.id}
-                  className={`group px-3 py-2.5 cursor-pointer transition-all duration-150 ${
-                    activeChatId === chat.id ? 'active' : ''
-                  }`}
-                  style={
-                    activeChatId === chat.id
-                      ? { background: 'var(--color-primary-light)', borderLeft: '3px solid var(--color-primary)' }
-                      : { background: 'transparent' }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeChatId !== chat.id) e.currentTarget.style.background = 'var(--color-hover-bg)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeChatId !== chat.id) e.currentTarget.style.background = 'transparent';
-                  }}
-                  onClick={() => setActiveChatId(chat.id)}
-                >
-                  <div className="flex items-start gap-2">
-                    <Sparkles size={14} style={{ color: 'var(--color-primary)', marginTop: 2, flexShrink: 0 }} />
-                    <div className="flex-1 min-w-0">
-                      {editingTitle === chat.id ? (
-                        <input
-                          type="text"
-                          value={newTitle}
-                          onChange={(e) => setNewTitle(e.target.value)}
-                          onBlur={() => handleRename(chat.id, newTitle)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleRename(chat.id, newTitle);
-                            if (e.key === 'Escape') setEditingTitle(null);
-                          }}
-                          className="text-sm w-full p-0.5"
-                          style={{ background: 'var(--color-card)', border: '1px solid var(--color-primary)', color: 'var(--color-text)', fontSize: '13px' }}
-                          autoFocus
-                        />
-                      ) : (
-                        <div className="text-sm truncate" style={{ color: 'var(--color-text)' }}>
-                          {chat.title}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                          {chat.message_count} 条消息
-                        </span>
-                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>·</span>
-                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                          {chat.mode === 'professional' ? '专业' : '快速'}
-                        </span>
+            filteredChats.map((chat) => (
+              <div
+                key={chat.id}
+                className={`px-3 py-2.5 cursor-pointer transition-all duration-150 group ${
+                  activeChatId === chat.id ? 'active' : 'hover:bg-[var(--color-hover-bg)]'
+                }`}
+                style={activeChatId === chat.id ? {
+                  background: 'var(--color-primary-light)',
+                  borderLeft: '3px solid var(--color-primary)',
+                } : {}}
+                onClick={() => {
+                  setActiveChatId(chat.id);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  <Sparkles 
+                    size={14} 
+                    style={{ 
+                      color: 'var(--color-primary)', 
+                      marginTop: 2, 
+                      flexShrink: 0,
+                      opacity: activeChatId === chat.id ? 1 : 0.7
+                    }} 
+                  />
+                  <div className="flex-1 min-w-0">
+                    {editingTitle === chat.id ? (
+                      <input
+                        type="text"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        onBlur={() => handleRename(chat.id, newTitle)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRename(chat.id, newTitle);
+                          if (e.key === 'Escape') setEditingTitle(null);
+                        }}
+                        className="text-sm w-full p-0.5 px-1"
+                        style={{ 
+                          background: 'var(--color-card)', 
+                          border: '1px solid var(--color-primary)', 
+                          color: 'var(--color-text)', 
+                          fontSize: '13px',
+                          borderRadius: 'var(--radius-sm, 3px)'
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <div 
+                        className="text-sm truncate font-medium"
+                        style={{ color: 'var(--color-text)' }}
+                      >
+                        {chat.title || '未命名对话'}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        className="p-1 rounded"
-                        style={{ color: 'var(--color-text-muted)' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingTitle(chat.id);
-                          setNewTitle(chat.title);
-                        }}
-                        title="重命名"
-                      >
-                        <Pencil size={12} />
-                      </button>
-                      <button
-                        className="p-1 rounded"
-                        style={{ color: 'var(--color-error)' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(chat.id);
-                        }}
-                        title="删除"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        {chat.message_count} 条消息
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>·</span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        {chat.mode === 'professional' ? '专业' : '快速'}
+                      </span>
+                      {chat.pinned && (
+                        <span className="text-xs" style={{ color: 'var(--color-warning)' }}>置顶</span>
+                      )}
                     </div>
                   </div>
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      className="p-1 hover:bg-[var(--color-hover-bg)] transition-colors"
+                      style={{ color: 'var(--color-text-muted)' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTitle(chat.id);
+                        setNewTitle(chat.title);
+                      }}
+                      title="重命名"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      className="p-1 hover:bg-[var(--color-error-light)] transition-colors"
+                      style={{ color: 'var(--color-error)' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(chat.id);
+                      }}
+                      title="删除"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* 右侧：对话区域或欢迎页 */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {activeChatId ? (
-            <div className="flex-1 overflow-hidden">
-              <AiChatView chatId={activeChatId} onRefresh={() => loadChats()} />
+        {/* 侧边栏底部 */}
+        <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--color-divider)' }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            {config?.has_api_key ? (
+              <CheckCircle size={12} style={{ color: 'var(--color-success)' }} />
+            ) : (
+              <AlertCircle size={12} style={{ color: 'var(--color-warning)' }} />
+            )}
+            <span>{config?.model_name || 'AI 配置'}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* 主内容区 */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* 顶部导航栏 */}
+        <header 
+          className="flex items-center gap-3 px-4 py-2.5 border-b flex-shrink-0"
+          style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
+        >
+          <button
+            className="md:hidden p-1.5"
+            onClick={() => setMobileMenuOpen(true)}
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <Menu size={18} />
+          </button>
+          
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Bot size={15} color="#fff" />
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8">
-              <div className="text-center max-w-md">
-                <div
-                  className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'var(--color-primary-light)' }}
-                >
-                  <Bot size={36} style={{ color: 'var(--color-primary)' }} />
-                </div>
-                <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                  弧光 AI 广场
-                </h1>
-                <p className="text-sm mb-6" style={{ color: 'var(--color-text-light)' }}>
-                  与弧光 AI 对话，探索无限可能。支持快速和专业两种回答模式。
-                </p>
-                <div className="grid grid-cols-2 gap-3 text-left">
-                  <div
-                    className="p-4"
-                    style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-                  >
-                    <Zap size={18} style={{ color: 'var(--color-warning)', marginBottom: 8 }} />
-                    <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>快速模式</div>
-                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>直接给出结论和可执行答案</div>
-                  </div>
-                  <div
-                    className="p-4"
-                    style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-                  >
-                    <Sparkles size={18} style={{ color: 'var(--color-primary)', marginBottom: 8 }} />
-                    <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>专业模式</div>
-                    <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>结构化分析，补充风险和验证方法</div>
-                  </div>
-                </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-sm truncate" style={{ color: 'var(--color-text)' }}>
+                弧光 AI 广场
+              </div>
+              <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                {activeChatId ? '对话中' : '准备就绪'}
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button 
+              className="p-2 hover:bg-[var(--color-hover-bg)] transition-colors rounded"
+              style={{ color: 'var(--color-text-muted)' }}
+              title="设置"
+            >
+              <Settings size={16} />
+            </button>
+            <button 
+              className="p-2 hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)] transition-colors rounded"
+              style={{ color: 'var(--color-text-muted)' }}
+              onClick={() => handleCreateChat('fast')}
+              title="新建对话"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        </header>
+
+        {/* 内容区域 */}
+        <div className="flex-1 overflow-hidden">
+          {activeChatId ? (
+            <AiChatView 
+              chatId={activeChatId} 
+              onRefresh={() => loadChats()}
+              onLogout={() => navigate('/login')}
+            />
+          ) : (
+            <EmptyState onCreateChat={handleCreateChat} />
           )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// 空状态页面
+function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professional') => void }) {
+  return (
+    <div className="h-full flex flex-col items-center justify-center p-6">
+      <div className="text-center max-w-md">
+        <div 
+          className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+          style={{ background: 'var(--color-primary-light)' }}
+        >
+          <Bot size={36} style={{ color: 'var(--color-primary)' }} />
+        </div>
+        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+          弧光 AI 广场
+        </h1>
+        <p className="text-sm mb-8" style={{ color: 'var(--color-text-light)' }}>
+          与弧光 AI 对话，探索无限可能。支持快速和专业两种回答模式。
+        </p>
+        <div className="grid grid-cols-2 gap-3 text-left">
+          <button
+            className="p-4 transition-all duration-200 hover:scale-105 active:scale-95"
+            style={{ 
+              background: 'var(--color-card)', 
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md, 8px)'
+            }}
+            onClick={() => onCreateChat('fast')}
+          >
+            <Zap size={20} style={{ color: 'var(--color-warning)', marginBottom: 8 }} />
+            <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>快速模式</div>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>直接给出结论和可执行答案</div>
+          </button>
+          <button
+            className="p-4 transition-all duration-200 hover:scale-105 active:scale-95"
+            style={{ 
+              background: 'var(--color-card)', 
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md, 8px)'
+            }}
+            onClick={() => onCreateChat('professional')}
+          >
+            <Sparkles size={20} style={{ color: 'var(--color-primary)', marginBottom: 8 }} />
+            <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>专业模式</div>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>结构化分析，补充风险和验证方案</div>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// AI 对话视图组件
-function AiChatView({ chatId, onRefresh }: { chatId: number; onRefresh: () => void }) {
+// AI 聊天视图组件
+function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh: () => void; onLogout?: () => void }) {
   const { addToast } = useApp();
   const [messages, setMessages] = useState<AiMsg[]>([]);
   const [input, setInput] = useState('');
@@ -285,65 +471,73 @@ function AiChatView({ chatId, onRefresh }: { chatId: number; onRefresh: () => vo
   const [mode, setMode] = useState<'fast' | 'professional'>('fast');
   const [deepThinking, setDeepThinking] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
+  const [showResponseControls, setShowResponseControls] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const loadChat = useCallback(async () => {
     try {
       const data = await aiApi.getChat(chatId);
       setChatInfo(data);
       setMessages(data.messages || []);
+      if (data.mode) setMode(data.mode as 'fast' | 'professional');
+      if (data.deep_thinking) setDeepThinking(!!data.deep_thinking);
     } catch {
       addToast('加载失败', 'error');
     }
   }, [chatId, addToast]);
 
-  useEffect(() => {
-    loadChat();
-  }, [loadChat]);
-
+  useEffect(() => { loadChat(); }, [loadChat]);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
 
+  // 自动调整 textarea 高度
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+    }
+  }, [input]);
+
   const handleSend = async () => {
     if (!input.trim() || sending) return;
-
     const userMsg: AiMsg = {
       id: Date.now(),
       role: 'user',
       content: input.trim(),
       mode,
       deep_thinking: deepThinking ? 1 : 0,
-      create_time: Math.floor(Date.now() / 1000),
+      create_time: Math.floor(Date.now() / 1000)
     };
-
     setMessages((prev) => [...prev, userMsg]);
     const currentInput = input.trim();
     setInput('');
     setSending(true);
     setStreamingContent('');
-
     try {
       const events = await aiApi.streamChat(
-        [...messages, userMsg].map((m) => ({ id: m.id, role: m.role, content: m.content, mode: m.mode, deep_thinking: m.deep_thinking, create_time: m.create_time })),
+        [...messages, userMsg].map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          mode: m.mode,
+          deep_thinking: m.deep_thinking,
+          create_time: m.create_time
+        })),
         mode,
-        deepThinking,
+        deepThinking
       );
-
       if (!events) throw new Error('流式响应为空');
-
-      // 解析 SSE 流
       const reader = events.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunk = decoder.decode(value);
         const lines = chunk.split('\n');
-
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
@@ -352,19 +546,12 @@ function AiChatView({ chatId, onRefresh }: { chatId: number; onRefresh: () => vo
               if (parsed.content) {
                 assistantContent += parsed.content;
                 setStreamingContent(assistantContent);
-              } else if (parsed.done) {
-                // 流结束
-              } else if (parsed.error) {
-                throw new Error(parsed.error);
-              }
-            } catch {
-              // 忽略解析错误
-            }
+              } else if (parsed.done) { }
+              else if (parsed.error) { throw new Error(parsed.error); }
+            } catch { }
           }
         }
       }
-
-      // 保存 assistant 消息
       if (assistantContent) {
         const assistantMsg: AiMsg = {
           id: Date.now() + 1,
@@ -372,7 +559,7 @@ function AiChatView({ chatId, onRefresh }: { chatId: number; onRefresh: () => vo
           content: assistantContent,
           mode,
           deep_thinking: deepThinking ? 1 : 0,
-          create_time: Math.floor(Date.now() / 1000),
+          create_time: Math.floor(Date.now() / 1000)
         };
         setMessages((prev) => [...prev, assistantMsg]);
         setStreamingContent('');
@@ -386,140 +573,298 @@ function AiChatView({ chatId, onRefresh }: { chatId: number; onRefresh: () => vo
     }
   };
 
-  if (!chatInfo) return null;
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleQuickPrompt = (prompt: string) => {
+    setInput(prompt);
+    setShowQuickPrompts(false);
+    textareaRef.current?.focus();
+  };
 
   return (
     <div className="h-full flex flex-col">
-      {/* 顶部信息栏 */}
-      <div
-        className="flex items-center justify-between px-4 py-2 border-b flex-shrink-0"
+      {/* 聊天头部 */}
+      <div 
+        className="flex items-center justify-between px-4 py-2.5 border-b flex-shrink-0"
         style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Bot size={16} style={{ color: 'var(--color-primary)' }} />
-          <span className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>
-            弧光 AI
+          <span className="font-medium text-sm truncate" style={{ color: 'var(--color-text)' }}>
+            {chatInfo?.title || '弧光 AI'}
           </span>
-          <span
-            className="text-xs px-2 py-0.5"
-            style={{
+          <span 
+            className="text-xs px-2 py-0.5 flex-shrink-0"
+            style={{ 
               background: mode === 'professional' ? 'var(--color-primary-light)' : 'var(--color-warning-light)',
-              color: mode === 'professional' ? 'var(--color-primary)' : 'var(--color-warning)',
+              color: mode === 'professional' ? 'var(--color-primary)' : 'var(--color-warning)'
             }}
           >
             {mode === 'professional' ? '专业' : '快速'}
           </span>
           {deepThinking && (
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-              · 深度思考
+            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
+              <Brain size={10} />
+              深度思考
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="text-xs"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as 'fast' | 'professional')}
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontSize: '12px', padding: '4px 8px' }}
+        <div className="flex items-center gap-1">
+          <button 
+            className="p-1.5 hover:bg-[var(--color-hover-bg)] transition-colors rounded"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="复制对话"
           >
-            <option value="fast">快速模式</option>
-            <option value="professional">专业模式</option>
-          </select>
-          <label className="flex items-center gap-1 text-xs cursor-pointer" style={{ color: 'var(--color-text-muted)' }}>
-            <input
-              type="checkbox"
-              checked={deepThinking}
-              onChange={(e) => setDeepThinking(e.target.checked)}
-              className="mr-0.5"
-            />
-            深度思考
-          </label>
+            <Copy size={14} />
+          </button>
+          <button 
+            className="p-1.5 hover:bg-[var(--color-hover-bg)] transition-colors rounded"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="分享"
+          >
+            <Share2 size={14} />
+          </button>
         </div>
+      </div>
+
+      {/* 响应控制栏 */}
+      <div 
+        className="flex items-center gap-2 px-4 py-2 border-b flex-shrink-0 transition-all duration-200"
+        style={{ 
+          borderColor: 'var(--color-divider)', 
+          background: 'var(--color-card-alt)',
+          display: showResponseControls ? 'flex' : 'none'
+        }}
+      >
+        {/* 模式选择 */}
+        <div className="flex items-center gap-1 p-0.5 rounded" style={{ background: 'var(--color-card)' }}>
+          <button
+            className={`px-3 py-1 text-xs font-medium rounded transition-all duration-150 ${
+              mode === 'fast' ? 'active' : ''
+            }`}
+            style={mode === 'fast' ? {
+              background: 'var(--color-primary)',
+              color: '#fff'
+            } : {
+              background: 'transparent',
+              color: 'var(--color-text-muted)'
+            }}
+            onClick={() => setMode('fast')}
+          >
+            <Zap size={12} className="inline mr-1" />
+            快速
+          </button>
+          <button
+            className={`px-3 py-1 text-xs font-medium rounded transition-all duration-150 ${
+              mode === 'professional' ? 'active' : ''
+            }`}
+            style={mode === 'professional' ? {
+              background: 'var(--color-primary)',
+              color: '#fff'
+            } : {
+              background: 'transparent',
+              color: 'var(--color-text-muted)'
+            }}
+            onClick={() => setMode('professional')}
+          >
+            <Sparkles size={12} className="inline mr-1" />
+            专业
+          </button>
+        </div>
+
+        {/* 深度思考开关 */}
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-all duration-150 ${
+            deepThinking ? 'active' : ''
+          }`}
+          style={deepThinking ? {
+            background: 'var(--color-primary-light)',
+            color: 'var(--color-primary)',
+            border: '1px solid var(--color-primary)'
+          } : {
+            background: 'var(--color-card)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)'
+          }}
+          onClick={() => setDeepThinking(!deepThinking)}
+        >
+          <Brain size={12} />
+          深度思考
+        </button>
+
+        {/* 快捷提示 */}
+        <div className="relative">
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-all duration-150 hover:bg-[var(--color-hover-bg)]"
+            style={{ background: 'var(--color-card)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+            onClick={() => setShowQuickPrompts(!showQuickPrompts)}
+          >
+            <Sparkles size={12} />
+            优化
+            <ChevronDown size={10} className={`transition-transform duration-200 ${showQuickPrompts ? 'rotate-180' : ''}`} />
+          </button>
+          {showQuickPrompts && (
+            <div 
+              className="absolute top-full left-0 mt-1 py-1 w-48 z-10 shadow-lg"
+              style={{ 
+                background: 'var(--color-card)', 
+                border: '1px solid var(--color-divider)',
+                borderRadius: 'var(--radius-sm, 3px)'
+              }}
+            >
+              {QUICK_PROMPTS.map((qp, idx) => (
+                <button
+                  key={idx}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--color-hover-bg)] transition-colors"
+                  style={{ color: 'var(--color-text)' }}
+                  onClick={() => handleQuickPrompt(qp.prompt)}
+                >
+                  {qp.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        <button
+          className="p-1.5 hover:bg-[var(--color-hover-bg)] rounded transition-colors"
+          style={{ color: 'var(--color-text-muted)' }}
+          onClick={() => setShowResponseControls(false)}
+          title="收起设置"
+        >
+          <ChevronDown size={14} />
+        </button>
       </div>
 
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] p-3 ${
-                msg.role === 'user'
-                  ? 'rounded-tl-3xl rounded-tr-lg rounded-bl-lg'
-                  : 'rounded-tr-3xl rounded-tl-lg rounded-br-lg'
-              }`}
-              style={{
-                background: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-card-alt)',
-                color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
-                border: msg.role !== 'user' ? '1px solid var(--color-border)' : 'none',
-              }}
+        {messages.length === 0 && !streamingContent ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'var(--color-primary-light)' }}
             >
-              {msg.role === 'assistant' ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  className="markdown-body text-sm leading-relaxed"
-                >
-                  {msg.content}
-                </ReactMarkdown>
-              ) : (
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              )}
+              <Bot size={28} style={{ color: 'var(--color-primary)' }} />
+            </div>
+            <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
+              开始与 AI 对话
+            </div>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              输入消息，获取智能回答
             </div>
           </div>
-        ))}
-
-        {streamingContent && (
-          <div className="flex justify-start">
-            <div
-              className="max-w-[80%] p-3 rounded-tr-3xl rounded-tl-lg rounded-br-lg"
-              style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}
-            >
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                className="markdown-body text-sm leading-relaxed"
+        ) : (
+          <>
+            {messages.map((msg) => (
+              <div 
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {streamingContent}
-              </ReactMarkdown>
-              <span className="inline-block w-1.5 h-4 ml-0.5 animate-pulse" style={{ background: 'var(--color-primary)' }} />
-            </div>
-          </div>
+                <div 
+                  className={`max-w-[85%] p-3 text-sm leading-relaxed ${
+                    msg.role === 'user' 
+                      ? 'rounded-tl-xl rounded-tr-lg rounded-bl-lg' 
+                      : 'rounded-tr-xl rounded-tl-lg rounded-br-lg'
+                  }`}
+                  style={{ 
+                    background: msg.role === 'user' 
+                      ? 'var(--color-primary)' 
+                      : 'var(--color-card-alt)',
+                    color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
+                    border: msg.role !== 'user' ? '1px solid var(--color-divider)' : 'none'
+                  }}
+                >
+                  {msg.role === 'assistant' ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      className="markdown-body prose prose-sm max-w-none"
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {streamingContent && (
+              <div className="flex justify-start">
+                <div 
+                  className="max-w-[85%] p-3 rounded-tr-xl rounded-tl-lg rounded-br-lg"
+                  style={{ 
+                    background: 'var(--color-card-alt)',
+                    border: '1px solid var(--color-divider)'
+                  }}
+                >
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    className="markdown-body prose prose-sm max-w-none"
+                  >
+                    {streamingContent}
+                  </ReactMarkdown>
+                  <span 
+                    className="inline-block w-1.5 h-4 ml-0.5 animate-pulse"
+                    style={{ background: 'var(--color-primary)' }}
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 输入框 */}
-      <div
-        className="p-4 border-t flex-shrink-0"
+      {/* 输入区域 */}
+      <div 
+        className="px-4 py-3 border-t flex-shrink-0"
         style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
       >
-        <div className="flex gap-2">
-          <textarea
-            className="flex-1 resize-none"
-            rows={3}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="输入消息，Shift+Enter 换行…"
-            disabled={sending}
-            style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)', color: 'var(--color-text)', borderRadius: '3px' }}
-          />
+        <div className="flex gap-2 max-w-4xl mx-auto">
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              className="w-full resize-none px-3 py-2.5 text-sm"
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="输入消息，Shift+Enter 换行..."
+              disabled={sending}
+              style={{ 
+                background: 'var(--color-card-alt)', 
+                border: '1px solid var(--color-border)', 
+                color: 'var(--color-text)',
+                borderRadius: 'var(--radius-sm, 3px)',
+                maxHeight: '120px'
+              }}
+            />
+          </div>
           <button
-            className="btn btn-primary self-end"
+            className="btn btn-primary self-end px-4 py-2.5 flex items-center gap-2"
             onClick={handleSend}
             disabled={sending || !input.trim()}
-            style={{ borderRadius: '3px', padding: '8px 16px' }}
+            style={{ borderRadius: 'var(--radius-sm, 3px)' }}
           >
-            {sending ? <span className="animate-spin">⏳</span> : <Zap size={16} />}
-            发送
+            {sending ? (
+              <div 
+                className="w-4 h-4 border-2 animate-spin rounded-full"
+                style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }}
+              />
+            ) : (
+              <Zap size={16} />
+            )}
+            <span>发送</span>
           </button>
+        </div>
+        <div className="text-center mt-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          Enter 发送 · Shift + Enter 换行
         </div>
       </div>
     </div>
