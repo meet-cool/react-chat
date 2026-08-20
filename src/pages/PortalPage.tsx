@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
-import titleImg from '../../public/title.png';
+import titleImg from '../assets/title.png';
 
 interface PublicStats {
   total_users: number;
