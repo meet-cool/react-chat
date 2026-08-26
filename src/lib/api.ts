@@ -478,15 +478,20 @@ export const aiApi = {
   renameChat: (id: number, title: string) =>
     put<null>(`/chat/ai/chats/${id}`, { title }),
 
-  // 流式聊天
-  streamChat: async (messages: AiMsg[], mode: string, deepThinking: boolean): Promise<ReadableStream<Uint8Array> | null> => {
+  // 流式聊天（convId>0 时写入指定会话，否则后端新建会话）
+  streamChat: async (messages: AiMsg[], mode: string, deepThinking: boolean, convId?: number): Promise<ReadableStream<Uint8Array> | null> => {
     const res = await fetch(`${getApiBaseUrl()}/chat/ai/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
       },
-      body: JSON.stringify({ messages, mode, deep_thinking: deepThinking ? 1 : 0 }),
+      body: JSON.stringify({
+        messages,
+        mode,
+        deep_thinking: deepThinking ? 1 : 0,
+        conv_id: convId && convId > 0 ? convId : 0,
+      }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.body || null;

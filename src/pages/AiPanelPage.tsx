@@ -554,7 +554,8 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
           create_time: m.create_time
         })),
         mode,
-        deepThinking
+        deepThinking,
+        chatId
       );
       if (!events) throw new Error('流式响应为空');
       const reader = events.getReader();
