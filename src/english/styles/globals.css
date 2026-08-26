@@ -1,0 +1,55 @@
+/* 全局禁止选中 + 移除移动端遮罩 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+}
+
+/* 链接、按钮移除遮罩 */
+a, button, input, textarea, select, [role="button"] {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+}
+
+/* 输入框、文本域、代码块允许选中文字 */
+input, textarea, select, [contenteditable="true"],
+.code-block code, .code-block pre {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* 图片禁止拖拽 */
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 伪元素禁止选中 */
+::before, ::after {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Body 基础样式 */
+body {
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Inter', sans-serif;
+    background-color: var(--color-bg-page);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+}

@@ -43,15 +43,22 @@ export function AdminPluginsPage() {
   async function toggleStatus(plugin: Plugin) {
     try {
       const newStatus = plugin.status === 1 ? 0 : 1;
-      await fetch(`/chat/admin/plugins/${plugin.slug}/status`, {
+      const res = await fetch(`/chat/admin/plugins/${plugin.slug}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('arcle_token')}` },
         body: JSON.stringify({ status: newStatus }),
       });
-      setPlugins(plugins.map((p: Plugin) => p.slug === plugin.slug ? { ...p, status: newStatus } : p));
-      addToast(newStatus === 1 ? '已启用' : '已禁用', 'success');
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.code === 200) {
+        setPlugins(plugins.map((p: Plugin) => p.slug === plugin.slug ? { ...p, status: newStatus } : p));
+        addToast(newStatus === 1 ? '已启用' : '已禁用', 'success');
+      } else {
+        addToast(data?.message || '操作失败', 'error');
+        loadPlugins();
+      }
     } catch (e) {
       addToast('操作失败', 'error');
+      loadPlugins();
     }
   }
 

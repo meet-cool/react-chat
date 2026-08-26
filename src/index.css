@@ -542,3 +542,44 @@ div[style*="var(--color-primary)"] .markdown-body pre {
     background: rgba(0,0,0,0.2);
     border-color: rgba(255,255,255,0.2);
 }
+
+/* ============================================================
+ * 调试模式样式
+ * ============================================================ */
+@keyframes debugBadgePop {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes debugSlideIn {
+    0% { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.debug-badge {
+    position: fixed;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    animation: debugBadgePop 0.2s ease-out;
+}
+
+.debug-badge:hover .debug-badge-number {
+    background: var(--color-primary) !important;
+    color: #fff !important;
+}
+
+.debug-badge-number {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 10px;
+    font-weight: bold;
+    transition: all 0.15s ease;
+}
+
+.debug-toast-enter {
+    animation: debugSlideIn 0.25s ease-out forwards;
+}
+
+.debug-toast-exit {
+    animation: toastSlideOut 0.28s ease forwards;
+}

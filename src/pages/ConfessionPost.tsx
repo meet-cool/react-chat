@@ -99,7 +99,7 @@ export function ConfessionPost() {
         {/* 内容 */}
         <div>
           <label className="text-sm font-medium mb-1 block" style={{ color: T.text }}>表白内容 <span style={{ color: 'var(--color-error)' }}>*</span></label>
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="写下你想说的话..." rows={6} className="text-sm resize-none" style={{ background: T.inputBg, border: `1px solid ${T.cardBorder}`, color: T.text, borderRadius: '3px', padding: '10px 12px', outline: 'none', width: '100%', minHeight: 120 }} />
+          <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="写下你想说的话..." rows={6} maxLength={500} className="text-sm resize-none" style={{ background: T.inputBg, border: `1px solid ${T.cardBorder}`, color: T.text, borderRadius: '3px', padding: '10px 12px', outline: 'none', width: '100%', minHeight: 120 }} />
           <p className="text-xs mt-1" style={{ color: T.textMuted }}>{content.length}/500</p>
         </div>
 

@@ -23,6 +23,7 @@ export function AdminRoomsPage() {
   const [page, setPage] = useState(1);
   const [perPage] = useState(15);
   const [keyword, setKeyword] = useState('');
+  const [committedKeyword, setCommittedKeyword] = useState('');
   const [type, setType] = useState<string>('');
   const [items, setItems] = useState<AdminRoom[]>([]);
   const [total, setTotal] = useState(0);
@@ -30,10 +31,24 @@ export function AdminRoomsPage() {
 
   const [editing, setEditing] = useState<AdminRoom | null>(null);
 
+  // 搜索防抖：停止输入 300ms 后才提交关键字，避免逐字符发请求
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCommittedKeyword(keyword.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  const commitSearchNow = () => {
+    setCommittedKeyword(keyword.trim());
+    setPage(1);
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await adminApi.rooms({ page, per_page: perPage, keyword, type });
+      const r = await adminApi.rooms({ page, per_page: perPage, keyword: committedKeyword, type });
       setItems(r.items);
       setTotal(r.pagination.total);
       setLastPage(r.pagination.last_page);
@@ -42,7 +57,7 @@ export function AdminRoomsPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, page, perPage, keyword, type]);
+  }, [addToast, page, perPage, committedKeyword, type]);
 
   useEffect(() => {
     load();
@@ -104,9 +119,9 @@ export function AdminRoomsPage() {
           />
           <input
             value={keyword}
-            onChange={(e) => {
-              setKeyword(e.target.value);
-              setPage(1);
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitSearchNow();
             }}
             placeholder="搜索房间名/描述"
             style={{ paddingLeft: 32 }}

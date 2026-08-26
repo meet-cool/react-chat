@@ -1,11 +1,13 @@
-﻿import React from 'react';
+import React from 'react';
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle, Copy, ArrowRight } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { userApi, systemApi } from '../lib/api';
 import { getApiBaseUrl, getToken, clearToken, setApiBaseUrl } from '../lib/api';
 import { Avatar } from './Avatar';
 import type { ThemeName, UserInfo, SystemInfo } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { useDebug } from '../lib/DebugContext';
 
 interface SettingsModalProps {
   open: boolean;
@@ -30,6 +32,8 @@ const buildQqAvatar = (qq: string) => `${QQ_AVATAR_BASE}${qq}`;
 
 export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsModalProps) {
   const { theme, setTheme, addToast } = useApp();
+  const navigate = useNavigate();
+  const { debugMode, setDebugMode, debugInfo } = useDebug();
   const [tab, setTab] = useState<Tab>('profile');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [systemLoading, setSystemLoading] = useState(false);
@@ -40,9 +44,6 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [debugClickCount, setDebugClickCount] = useState(0);
   const [debugProgress, setDebugProgress] = useState(0);
   const debugTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [debugMode, setDebugMode] = useState(() => {
-    try { return localStorage.getItem(DEBUG_STORAGE_KEY) === '1'; } catch { return false; }
-  });
   const [debugAuth, setDebugAuth] = useState<DebugAuth>('hidden');
   const [debugPwd, setDebugPwd] = useState('');
   const [pwdError, setPwdError] = useState('');
@@ -128,10 +129,16 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const submitDebugPassword = () => {
     if (debugPwd === DEBUG_PASSWORD) {
       setDebugMode(true);
-      try { localStorage.setItem(DEBUG_STORAGE_KEY, '1'); } catch {}
       setDebugAuth('authenticated'); setDebugPwd(''); setPwdError('');
       addToast('调试模式已开启', 'success');
     } else { setPwdError('密码错误，请重试'); }
+  };
+
+  const closeDebugMode = () => {
+    setDebugMode(false);
+    setDebugAuth('hidden');
+    setDebugPanel('overview');
+    addToast('调试模式已关闭', 'info');
   };
 
   const [bio, setBio] = useState(user.bio || '');
@@ -142,7 +149,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [motto, setMotto] = useState(user.motto || '');
   const [birthday, setBirthday] = useState(user.birthday || '');
   const [age, setAge] = useState(user.age || 0);
-  const [profileVisible, setProfileVisible] = useState<boolean>(user.profile_visible !== false);
+  const [profileVisible, setProfileVisible] = useState<boolean>((user.profile_visible ?? 1) === 1);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -150,7 +157,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
     const m = /nk=(\d+)/.exec(user.avatar || ''); setQq(m ? m[1] : '');
     setGender(user.gender || ''); setCity(user.city || ''); setMotto(user.motto || '');
     setBirthday(user.birthday || ''); setAge(user.age || 0);
-    setProfileVisible(user.profile_visible !== false);
+    setProfileVisible((user.profile_visible ?? 1) === 1);
   }, [user.avatar, user.bio, user.gender, user.city, user.motto, user.birthday, user.age, user.profile_visible]);
 
   const [oldPwd, setOldPwd] = useState('');
@@ -285,7 +292,18 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                           </div>
                           <div className="flex items-center gap-2 text-xs" style={{color:'var(--color-success)'}}><span>●</span> 后端连接正常</div>
                         </> : <div className="py-4 text-sm" style={{color:'var(--color-text-muted)'}}>加载中…</div>}
-                        <button onClick={() => { try{localStorage.removeItem(DEBUG_STORAGE_KEY);}catch{} setDebugMode(false); setDebugAuth('hidden'); setDebugPanel('overview'); addToast('调试模式已关闭','info'); }} className="w-full py-2 rounded text-sm font-medium transition-colors" style={{background:'rgba(239,68,68,0.15)',color:'#ef4444'}}>关闭调试模式</button>
+                        <button onClick={closeDebugMode} className="w-full py-2 rounded text-sm font-medium transition-colors" style={{background:'rgba(239,68,68,0.15)',color:'#ef4444'}}>关闭调试模式</button>
+                        <button
+                          onClick={() => navigate('/debug')}
+                          className="w-full flex items-center justify-center gap-2 py-2 rounded text-sm font-medium transition-colors mt-2"
+                          style={{background:'var(--color-primary)',color:'#fff',border:'none'}}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-primary-hover)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-primary)')}
+                        >
+                          <Settings size={14} />
+                          开发者选项
+                          <ArrowRight size={14} />
+                        </button>
                       </div>
                     )}
                     {debugPanel === 'api' && (

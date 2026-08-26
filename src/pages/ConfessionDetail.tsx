@@ -13,7 +13,7 @@ import {
   MapPin,
   X,
 } from 'lucide-react';
-import { confessionApi } from '../lib/api';
+import { confessionApi, authApi, getApiBaseUrl } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession, ConfessionComment } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -38,7 +38,11 @@ export function ConfessionDetail() {
   const [commenting, setCommenting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const [theme, setTheme] = useState<ThemeKey>(() => (localStorage.getItem('confession_theme') as ThemeKey) || 'pink');
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem('confession_theme');
+    // 白名单校验，脏值回退默认主题
+    return saved && saved in THEMES ? (saved as ThemeKey) : 'pink';
+  });
   const [bgImage, setBgImage] = useState<'mbbqbg.svg' | 'bbqbg.svg' | 'mbbqbg-dark.svg' | 'bbqbg-dark.svg'>(() => {
     const isOcean = theme === 'ocean';
     return window.innerWidth < 768
@@ -84,14 +88,17 @@ export function ConfessionDetail() {
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');
     setIsLogged(!!token);
-    const saved = localStorage.getItem('arcle_user');
-    if (saved) {
-      try {
-        setCurrentUser(JSON.parse(saved));
-      } catch {}
-    }
     loadDetail();
   }, [loadDetail]);
+
+  // 当前用户以服务端 profile 为准（localStorage 'arcle_user' 从未被写入）
+  useEffect(() => {
+    let cancelled = false;
+    authApi.profile()
+      .then((u) => { if (!cancelled) setCurrentUser(u); })
+      .catch(() => { if (!cancelled) setCurrentUser(null); });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleLike = useCallback(() => {
     if (!isLogged) {
@@ -104,6 +111,8 @@ export function ConfessionDetail() {
       setConfession((prev) =>
         prev ? { ...prev, liked: res.liked, like_count: res.like_count } : null
       );
+    }).catch((err) => {
+      addToast(err instanceof Error ? err.message : '点赞失败', 'error');
     });
   }, [isLogged, confession, addToast, navigate]);
 
@@ -118,6 +127,8 @@ export function ConfessionDetail() {
       setConfession((prev) =>
         prev ? { ...prev, bookmarked: res.bookmarked } : null
       );
+    }).catch((err) => {
+      addToast(err instanceof Error ? err.message : '收藏失败', 'error');
     });
   }, [isLogged, confession, addToast, navigate]);
 
@@ -153,11 +164,10 @@ export function ConfessionDetail() {
   const handleShare = useCallback(() => {
     if (!confession) return;
     const url = `${window.location.origin}/confessions/${confession.slug}`;
-    const qrUrl = `${window.location.origin}/chat/qrcode/confession/${encodeURIComponent(confession.slug)}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => addToast('链接已复制', 'success'));
     }
-    setShowQrUrl(qrUrl);
+    setShowQrUrl(url);
   }, [confession, addToast]);
 
   const handleReport = async (reason: string) => {
@@ -535,6 +545,22 @@ export function ConfessionDetail() {
         onConfirm={handleReport}
         theme={theme}
       />
+
+      {/* 分享二维码弹窗 */}
+      {showQrUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowQrUrl('')}>
+          <div className="w-full max-w-xs" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 20 }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>
+              <button onClick={() => setShowQrUrl('')} style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <img src={`${getApiBaseUrl()}/chat/qrcode/url?url=${encodeURIComponent(showQrUrl)}`} alt="QR" className="w-full" />
+            <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看表白</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

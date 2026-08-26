@@ -39,7 +39,7 @@ export interface UserInfo {
   city: string;
   motto: string;
   age: number;
-  profile_visible?: boolean;
+  profile_visible?: number;
 }
 
 // 登录/注册响应
@@ -443,4 +443,47 @@ export interface Moment {
 
 export interface MomentSaveResult extends Moment {
   id: number;
+}
+
+/* ==================== 群聊（严格管理） ==================== */
+
+export interface GroupInfo {
+  id: number;
+  name: string;
+  description: string;
+  avatar: string;
+  owner_id: number;
+  announcement?: string;
+  join_approval: number;
+  member_count: number;
+  max_members: number;
+  status?: number;
+  create_time: number;
+  update_time?: number;
+  my_role?: string;
+  my_muted?: boolean;
+  is_owner?: boolean;
+  is_member?: boolean;
+  pending_count?: number;
+  my_request_status?: string;
+  avatar_seed: string;
+}
+
+export interface GroupMember {
+  user_id: number;
+  username: string;
+  avatar: string;
+  role: 'owner' | 'admin' | 'member';
+  muted: boolean;
+  join_time: number;
+  online: boolean;
+}
+
+export interface GroupRequest {
+  id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  message: string;
+  create_time: number;
 }

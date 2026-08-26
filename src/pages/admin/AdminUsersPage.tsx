@@ -20,12 +20,13 @@ import { Avatar } from '../../components/Avatar';
 import type { AdminUser, AdminUserRole } from '../../types';
 
 export function AdminUsersPage() {
-  const { addToast } = useApp();
+  const { addToast, confirm } = useApp();
   const { admin: me } = useAdminAuth();
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [perPage] = useState(15);
   const [keyword, setKeyword] = useState('');
+  const [committedKeyword, setCommittedKeyword] = useState('');
   const [status, setStatus] = useState<string>('');
   const [items, setItems] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -34,13 +35,27 @@ export function AdminUsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);
 
+  // 搜索防抖：停止输入 300ms 后才提交关键字，避免逐字符发请求
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCommittedKeyword(keyword.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  const commitSearchNow = () => {
+    setCommittedKeyword(keyword.trim());
+    setPage(1);
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await adminApi.users({
         page,
         per_page: perPage,
-        keyword,
+        keyword: committedKeyword,
         status,
       });
       setItems(r.items);
@@ -51,7 +66,7 @@ export function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, page, perPage, keyword, status]);
+  }, [addToast, page, perPage, committedKeyword, status]);
 
   useEffect(() => {
     load();
@@ -89,6 +104,21 @@ export function AdminUsersPage() {
     } catch (err) {
       addToast(err instanceof Error ? err.message : '操作失败', 'error');
     }
+  };
+
+  // 设为超管 / 取消超管：降级 super_admin 前需二次确认
+  const toggleSuperAdmin = async (u: AdminUser) => {
+    if (u.role !== 'super_admin') {
+      await setRoleOf(u, 'super_admin');
+      return;
+    }
+    if (u.id === me?.id) {
+      addToast('不能降级自己的超级管理员角色', 'warning');
+      return;
+    }
+    const ok = await confirm('确定降级该超级管理员？');
+    if (!ok) return;
+    await setRoleOf(u, 'admin');
   };
 
   const roleLabel = (r: AdminUserRole) =>
@@ -144,12 +174,9 @@ export function AdminUsersPage() {
           />
           <input
             value={keyword}
-            onChange={(e) => {
-              setKeyword(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') load();
+              if (e.key === 'Enter') commitSearchNow();
             }}
             placeholder="搜索用户名 / 邮箱 / 简介"
             style={{ paddingLeft: 32 }}
@@ -321,9 +348,8 @@ export function AdminUsersPage() {
                         <button
                           className="btn btn-sm"
                           title={u.role === 'super_admin' ? '取消超管' : '设为超管'}
-                          onClick={() =>
-                            setRoleOf(u, u.role === 'super_admin' ? 'admin' : 'super_admin')
-                          }
+                          disabled={u.role === 'super_admin' && u.id === me?.id}
+                          onClick={() => toggleSuperAdmin(u)}
                         >
                           <Crown
                             size={13}
@@ -444,9 +470,15 @@ function CreateUserModal({
   const { addToast } = useApp();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState<AdminUserRole>('member');
   const [saving, setSaving] = useState(false);
+
+  // bin2hex 风格随机 8 位（等价 PHP bin2hex(random_bytes(4))）
+  const generatePassword = () =>
+    Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
 
   const submit = async () => {
     if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
@@ -457,13 +489,18 @@ function CreateUserModal({
       addToast('邮箱格式不正确', 'warning');
       return;
     }
-    if (password.length < 6 || password.length > 32) {
+    let finalPassword = password;
+    if (!finalPassword) {
+      finalPassword = generatePassword();
+      setPassword(finalPassword);
+      addToast(`已自动生成初始密码：${finalPassword}`, 'success');
+    } else if (finalPassword.length < 6 || finalPassword.length > 32) {
       addToast('密码长度 6-32', 'warning');
       return;
     }
     setSaving(true);
     try {
-      await adminApi.createUser({ username, email, password, role });
+      await adminApi.createUser({ username, email, password: finalPassword, role });
       addToast('用户已创建', 'success');
       onDone();
     } catch (err) {
@@ -497,7 +534,7 @@ function CreateUserModal({
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="6-32 位"
+            placeholder="留空则自动生成随机密码"
           />
         </div>
         <div>

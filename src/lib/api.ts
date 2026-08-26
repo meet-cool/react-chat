@@ -62,29 +62,64 @@ export function clearToken(): void {
   localStorage.removeItem('arcle_token');
 }
 
+/** 管理员 token 独立存储键（与用户 token 彻底隔离） */
+export const ADMIN_STORAGE_KEY = 'arcle_admin_token';
+
+/** 获取本地存储的管理员 token */
+export function getAdminToken(): string {
+  return localStorage.getItem(ADMIN_STORAGE_KEY) || '';
+}
+
 /** 统一请求封装 */
+interface RequestOptions extends RequestInit {
+  /** 超时毫秒数，默认 15000；长轮询类请求应传更大值 */
+  timeoutMs?: number;
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit = {},
+  options: RequestOptions = {},
 ): Promise<T> {
-  const token = getToken();
+  const { timeoutMs = 15000, ...init } = options;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+    ...(init.headers as Record<string, string>),
   };
-  if (token) {
+  // 尊重调用方显式传入的 Authorization（如管理员 token）：仅当未提供时才附加用户 token
+  const token = getToken();
+  if (token && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...options,
-    headers,
-  });
+  // 超时控制
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  // 401 未认证，清除 token
+  let res: Response;
+  try {
+    res = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers, signal: controller.signal });
+  } catch (e) {
+    clearTimeout(timer);
+    if (controller.signal.aborted) throw new Error('请求超时');
+    throw e;
+  }
+  clearTimeout(timer);
+
+  // 401 未认证：清除用户 token 并广播事件（App 层监听 'arcle:unauthorized'）
   if (res.status === 401) {
     clearToken();
+    window.dispatchEvent(new CustomEvent('arcle:unauthorized'));
     throw new Error('未登录或登录已过期');
+  }
+
+  if (!res.ok) {
+    let json: ApiResponse<T> | undefined;
+    try {
+      json = await res.json();
+    } catch {
+      json = undefined; // 非 JSON 响应
+    }
+    throw new Error(json?.msg || `服务器错误(HTTP ${res.status})`);
   }
 
   const json: ApiResponse<T> = await res.json();
@@ -105,8 +140,8 @@ function post<T>(path: string, body?: unknown): Promise<T> {
 }
 
 /** GET 请求 */
-function get<T>(path: string): Promise<T> {
-  return request<T>(path, { method: 'GET' });
+function get<T>(path: string, options?: { timeoutMs?: number }): Promise<T> {
+  return request<T>(path, { method: 'GET', ...options });
 }
 
 /** PUT 请求 */
@@ -218,7 +253,8 @@ export const messageApi = {
     if (params.before_id) query.set('before_id', String(params.before_id));
     if (params.limit) query.set('limit', String(params.limit));
     const qs = query.toString();
-    return get<ChatMessage[]>(`/chat/rooms/${roomId}/messages${qs ? `?${qs}` : ''}`);
+    // 房间消息兼作长轮询（after_id 增量拉取），放宽超时
+    return get<ChatMessage[]>(`/chat/rooms/${roomId}/messages${qs ? `?${qs}` : ''}`, { timeoutMs: 40000 });
   },
 
   send: (roomId: number, data: { content: string; type: string; reply_to?: number }) =>
@@ -285,7 +321,8 @@ export const conversationApi = {
     if (params.before_id) query.set('before_id', String(params.before_id));
     if (params.limit) query.set('limit', String(params.limit));
     const qs = query.toString();
-    return get<PrivateMessage[]>(`/chat/conversations/${convId}/messages${qs ? `?${qs}` : ''}`);
+    // 私聊消息兼作长轮询（after_id 增量拉取），放宽超时
+    return get<PrivateMessage[]>(`/chat/conversations/${convId}/messages${qs ? `?${qs}` : ''}`, { timeoutMs: 40000 });
   },
 
   send: (convId: number, data: { content: string; type: string; reply_to?: number }) =>
@@ -470,6 +507,12 @@ export const aiApi = {
 
 // ============ 管理后台 API ============
 
+/** 管理员请求头：显式注入管理员 Authorization（request() 会尊重调用方传入的头） */
+function adminHeaders(): Record<string, string> {
+  const t = getAdminToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 function adminGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
   const qs = params
     ? Object.entries(params)
@@ -480,13 +523,23 @@ function adminGet<T>(path: string, params?: Record<string, unknown>): Promise<T>
         )
         .join('&')
     : '';
-  return get<T>(`/chat/admin${path}${qs ? `?${qs}` : ''}`);
+  return request<T>(`/chat/admin${path}${qs ? `?${qs}` : ''}`, {
+    method: 'GET',
+    headers: adminHeaders(),
+  });
 }
 function adminPost<T>(path: string, body?: unknown): Promise<T> {
-  return post<T>(`/chat/admin${path}`, body);
+  return request<T>(`/chat/admin${path}`, {
+    method: 'POST',
+    body: body ? JSON.stringify(body) : undefined,
+    headers: adminHeaders(),
+  });
 }
 function adminDelete<T>(path: string): Promise<T> {
-  return del<T>(`/chat/admin${path}`);
+  return request<T>(`/chat/admin${path}`, {
+    method: 'DELETE',
+    headers: adminHeaders(),
+  });
 }
 
 export const adminApi = {
@@ -641,4 +694,43 @@ export const giftApi = {
   send: (data: { target_id: number; gift_id: string; quantity: number }) =>
     post<{ gift_id: string; quantity: number; cost: number }>('/chat/plugins/gifts/send', data),
   wall: (userId: number) => get<any[]>(`/chat/plugins/gifts/wall/${userId}`),
+};
+
+// ============================================================
+// 群聊 API（严格管理：审批入群 / 角色 / 禁言 / 转让 / 解散）
+// ============================================================
+import type { GroupInfo, GroupMember, GroupRequest } from '../types';
+
+export const groupApi = {
+  list: () => get<{ my: GroupInfo[]; discover: GroupInfo[] }>('/chat/groups'),
+  create: (data: { name: string; description?: string }) =>
+    post<{ id: number }>('/chat/groups', data),
+  detail: (id: number) => get<GroupInfo>(`/chat/groups/${id}`),
+  members: (id: number) => get<GroupMember[]>(`/chat/groups/${id}/members`),
+  join: (id: number, message = '') =>
+    post<{ pending?: boolean; joined?: boolean }>(`/chat/groups/${id}/join`, { message }),
+  quit: (id: number) => post<null>(`/chat/groups/${id}/quit`),
+  requests: (id: number) => get<GroupRequest[]>(`/chat/groups/${id}/requests`),
+  review: (id: number, requestId: number, action: 'approve' | 'reject') =>
+    post<null>(`/chat/groups/${id}/requests/${requestId}/review`, { action }),
+  mute: (id: number, userId: number, muted: boolean) =>
+    post<null>(`/chat/groups/${id}/mute`, { user_id: userId, muted }),
+  kick: (id: number, userId: number) =>
+    post<null>(`/chat/groups/${id}/kick`, { user_id: userId }),
+  transfer: (id: number, userId: number) =>
+    post<null>(`/chat/groups/${id}/transfer`, { user_id: userId }),
+  dissolve: (id: number) => post<null>(`/chat/groups/${id}/dissolve`),
+  setAnnouncement: (id: number, content: string) =>
+    post<null>(`/chat/groups/${id}/announcement`, { content }),
+  messages: (id: number, params: { before_id?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.before_id) qs.set('before_id', String(params.before_id));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const q = qs.toString();
+    return get<ChatMessage[]>(`/chat/groups/${id}/messages${q ? '?' + q : ''}`);
+  },
+  send: (id: number, data: { content: string; type?: string; reply_to?: number }) =>
+    post<ChatMessage>(`/chat/groups/${id}/messages`, data),
+  poll: (id: number, afterId: number) =>
+    get<{ messages: ChatMessage[] }>(`/chat/groups/${id}/poll?after_id=${afterId}`, { timeoutMs: 40000 }),
 };

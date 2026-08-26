@@ -65,7 +65,7 @@ export function PluginMarketPage({ onBack }: Props) {
             {games.map(game => (
               <button
                 key={game.slug}
-                onClick={() => navigate(`/plugins/games/${game.slug}`)}
+                onClick={() => navigate(`/plugins/games/${game.slug.replace(/_/g, '-')}`)}
                 className="p-4 text-left transition-all duration-200 hover:scale-105 border"
                 style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
               >

@@ -35,6 +35,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const confirm = useCallback((message: string, title = '确认操作'): Promise<boolean> => {
     return new Promise((resolve) => {
+      // 新弹窗覆盖旧槽位前，先以“取消”结束旧的 Promise，避免其永久挂起
+      confirmRef.current.resolve?.(false);
       confirmRef.current = { open: true, title, message, resolve };
       // 触发重新渲染
       setTick((t) => t + 1);
@@ -48,11 +50,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     r?.(ok);
   }, []);
 
-  // 初始化主题
+  // 初始化主题（白名单校验，脏值回退 light）
   useEffect(() => {
-    const saved = (localStorage.getItem(THEME_KEY) as ThemeName) || 'light';
-    setThemeState(saved);
-    applyTheme(saved);
+    const saved = localStorage.getItem(THEME_KEY);
+    const initial = saved === 'dark' || saved === 'high1' || saved === 'high2' || saved === 'light' ? saved : 'light';
+    setThemeState(initial);
+    applyTheme(initial);
   }, []);
 
   const applyTheme = (t: ThemeName) => {

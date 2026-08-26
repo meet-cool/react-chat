@@ -308,7 +308,8 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
           search: searchVal ?? search,
           sort: sortVal ?? sort,
         });
-        setConfessions(res.items);
+        // 第 1 页整体替换，加载更多（p>1）追加
+        setConfessions((prev) => (p > 1 ? [...prev, ...res.items] : res.items));
         setTotal(res.pagination.total);
         setPage(p);
       } catch (err) {
@@ -323,8 +324,14 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   useEffect(() => {
     const token = localStorage.getItem('arcle_token');
     setIsLogged(!!token);
-    loadConfessions(1);
   }, []);
+
+  // 首次加载 + 排序变化时重置到第一页重新加载（replace 语义）
+  useEffect(() => {
+    loadConfessions(1);
+    // 仅随 sort 变化触发；search 通过手动搜索触发
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort]);
 
   const handleLike = useCallback((slug: string) => {
     if (!isLogged) {

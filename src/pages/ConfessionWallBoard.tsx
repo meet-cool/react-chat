@@ -110,6 +110,7 @@ export function ConfessionWallBoard() {
   };
 
   const openPlaceModal = (confession: Confession) => {
+    placedCellRef.current = null;
     setSelectedConfession(confession);
     setSelectedRow(0);
     setSelectedCol(0);
@@ -120,6 +121,7 @@ export function ConfessionWallBoard() {
   };
 
   const handleOpenPlaceModal = () => {
+    placedCellRef.current = null;
     loadConfessions().then(() => setShowPlaceModal(true));
   };
 
@@ -134,10 +136,22 @@ export function ConfessionWallBoard() {
   const alreadyOnWall = new Set(myWall.map((w) => w.confession.slug));
 
   // 长按拖动逻辑
+  // 复位拖拽状态（含未触发的长按 timer）
+  const resetDragState = useCallback(() => {
+    const ws = dragStateRef.current;
+    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
+    ws.active = false;
+    ws.fromRow = -1;
+    ws.fromCol = -1;
+    setDragHover(null);
+  }, []);
+
   const startDrag = useCallback((r: number, c: number) => {
     const ws = dragStateRef.current;
     if (ws.active) return;
+    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
     ws.timer = setTimeout(() => {
+      ws.timer = null;
       ws.active = true;
       ws.fromRow = r;
       ws.fromCol = c;
@@ -170,18 +184,23 @@ export function ConfessionWallBoard() {
     setDragHover(hit);
   }, [findCellUnderTouch]);
 
-  const handleTouchEnd = useCallback(async (e: ReactTouchEvent) => {
+  const handleTouchEnd = useCallback(async () => {
     const ws = dragStateRef.current;
+    // 无条件清理挂起的 timer；仅在已进入拖拽态时处理移动
+    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
     if (!ws.active) return;
     ws.active = false;
-    if (ws.timer) { clearTimeout(ws.timer); ws.timer = null; }
+    const fromRow = ws.fromRow;
+    const fromCol = ws.fromCol;
+    ws.fromRow = -1;
+    ws.fromCol = -1;
     const hover = dragHover;
     setDragHover(null);
-    if (hover && !(hover.r === ws.fromRow && hover.c === ws.fromCol)) {
+    if (hover && !(hover.r === fromRow && hover.c === fromCol)) {
       try {
         await confessionApi.moveOnWall({
-          from_row: ws.fromRow,
-          from_col: ws.fromCol,
+          from_row: fromRow,
+          from_col: fromCol,
           to_row: hover.r,
           to_col: hover.c,
         });
@@ -192,6 +211,10 @@ export function ConfessionWallBoard() {
       }
     }
   }, [dragHover, addToast, loadMyWall]);
+
+  const handleTouchCancel = useCallback(() => {
+    resetDragState();
+  }, [resetDragState]);
 
   const isDragging = dragStateRef.current.active;
 
@@ -231,6 +254,7 @@ export function ConfessionWallBoard() {
             ref={gridRef}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
             className="inline-grid gap-2"
             style={{
               gridTemplateColumns: `repeat(${gridCols}, minmax(160px, 1fr))`,

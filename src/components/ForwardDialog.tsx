@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Forward, Search, X, Loader2, Check } from 'lucide-react';
 import type { Room, Conversation } from '../types';
 import { Avatar } from './Avatar';
@@ -26,6 +26,14 @@ export function ForwardDialog({
     id: number;
     name: string;
   } | null>(null);
+
+  // 关闭时重置选中态与搜索词，避免下次打开残留上一次的选择
+  useEffect(() => {
+    if (!open) {
+      setSelected(null);
+      setKeyword('');
+    }
+  }, [open]);
 
   if (!open) return null;
 

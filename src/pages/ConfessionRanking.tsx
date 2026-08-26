@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Trophy,
@@ -28,12 +28,17 @@ export function ConfessionRanking() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<RankType>('fire');
   const [isLogged, setIsLogged] = useState(false);
-  const [theme, setTheme] = useState<ThemeKey>(() => (localStorage.getItem('confession_theme') as ThemeKey) || 'pink');
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    const saved = localStorage.getItem('confession_theme');
+    // 白名单校验，脏值回退默认主题
+    return saved && saved in THEMES ? (saved as ThemeKey) : 'pink';
+  });
+  const loadSeqRef = useRef(0);
   const [bgImage, setBgImage] = useState<'mbbqbg-dark.svg' | 'bbqbg.svg' | 'bbqbg-dark.svg'>(() => {
     const isOcean = theme === 'ocean';
     return window.innerWidth < 768
       ? (isOcean ? 'mbbqbg-dark.svg' : 'bbqbg.svg')
-      : (isOcean ? 'bbqbg-dark.svg' : 'mbbqbg-dark.svg');
+      : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg');
   });
   const T = THEMES[theme];
 
@@ -42,7 +47,7 @@ export function ConfessionRanking() {
     const h = () => {
       const w = window.innerWidth;
       const isOcean = theme === 'ocean';
-      setBgImage(w < 768 ? (isOcean ? 'mbbqbg-dark.svg' : 'bbqbg.svg') : (isOcean ? 'bbqbg-dark.svg' : 'mbbqbg-dark.svg'));
+      setBgImage(w < 768 ? (isOcean ? 'mbbqbg-dark.svg' : 'bbqbg.svg') : (isOcean ? 'bbqbg-dark.svg' : 'bbqbg.svg'));
     };
     h();
     window.addEventListener('resize', h);
@@ -50,12 +55,15 @@ export function ConfessionRanking() {
   }, [theme]);
 
   const loadRanking = useCallback(async (type: RankType) => {
+    // 请求序号守卫：快速切 tab 时丢弃过期响应
+    const seq = ++loadSeqRef.current;
     setLoading(true);
     try {
       const res = await confessionApi.ranking(type, 20);
+      if (seq !== loadSeqRef.current) return;
       setRankings(res);
     } catch {} finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, []);
 
@@ -66,8 +74,11 @@ export function ConfessionRanking() {
 
   const handleBookmark = useCallback((slug: string) => {
     if (!isLogged) { addToast('请先登录', 'warning'); navigate('/login'); return; }
-    confessionApi.bookmark(slug).then(() => {
-      setRankings((prev) => prev.map((c) => (c.slug === slug ? { ...c, bookmarked: !c.bookmarked } : c)));
+    confessionApi.bookmark(slug).then((res) => {
+      // 使用服务端返回值更新，避免本地取反与服务端状态漂移
+      setRankings((prev) =>
+        prev.map((c) => (c.slug === slug ? { ...c, bookmarked: res.bookmarked, bookmark_count: res.bookmark_count } : c))
+      );
     });
   }, [isLogged, addToast, navigate]);
 

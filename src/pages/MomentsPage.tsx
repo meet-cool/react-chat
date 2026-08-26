@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getToken } from '../lib/api';
+import { authApi } from '../lib/api';
 import { momentApi as api } from '../lib/api';
 import type { Moment as MomentType, MomentComment, MomentSaveResult, UserInfo } from '../types';
 import { Heart, MessageCircle, Share2, Image as ImageIcon, Send, Trash2, Globe, Lock, Users } from 'lucide-react';
@@ -21,28 +21,19 @@ function mockUploadImage(file: File): Promise<string> {
   });
 }
 
-function getCurrentUser(): UserInfo | null {
-  const token = getToken();
-  if (!token) return null;
-  const saved = localStorage.getItem('arcle_user');
-  if (saved) {
-    try { return JSON.parse(saved) as UserInfo; } catch { return null; }
-  }
-  return null;
-}
-
 export default function MomentsPage() {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<UserInfo | null>(getCurrentUser());
-  
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // 登录态以服务端 profile 为准（localStorage 'arcle_user' 从未被写入，不可作为依据）
   useEffect(() => {
-    const checkLogin = () => {
-      const u = getCurrentUser();
-      setCurrentUser(u);
-    };
-    checkLogin();
-    window.addEventListener('storage', checkLogin);
-    return () => window.removeEventListener('storage', checkLogin);
+    let cancelled = false;
+    authApi.profile()
+      .then((u) => { if (!cancelled) setCurrentUser(u); })
+      .catch(() => { if (!cancelled) setCurrentUser(null); })
+      .finally(() => { if (!cancelled) setAuthLoading(false); });
+    return () => { cancelled = true; };
   }, []);
   
   const [moments, setMoments] = useState<MomentType[]>([]);
@@ -61,10 +52,16 @@ export default function MomentsPage() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const loadMoments = useCallback(async (lastId = 0) => {
-    if (loading || !hasMore) return;
+  const loadMoments = useCallback(async (options?: { lastId?: number; force?: boolean }) => {
+    const force = options?.force ?? false;
+    if (!force && (loading || !hasMore)) return;
     setLoading(true);
+    if (force) {
+      setHasMore(true);
+      setMoments([]);
+    }
     try {
+      const lastId = force ? 0 : (options?.lastId ?? 0);
       const data = await api.moments({ last_id: lastId, limit: 20 });
       if (data.length < 20) setHasMore(false);
       setMoments(prev => lastId === 0 ? data : [...prev, ...data]);
@@ -83,7 +80,7 @@ export default function MomentsPage() {
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasMore && !loading) {
         const lastId = moments[moments.length - 1]?.id || 0;
-        loadMoments(lastId);
+        loadMoments({ lastId });
       }
     }, { threshold: 0.1 });
     observer.observe(el);
@@ -107,7 +104,7 @@ export default function MomentsPage() {
       setImages([]);
       setPrivacy('public');
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { msg?: string } } })?.response?.data?.msg ?? '发布失败';
+      const msg = e instanceof Error ? e.message : '发布失败';
       alert(msg);
     } finally {
       setWriting(false);
@@ -148,22 +145,20 @@ export default function MomentsPage() {
       });
       setSelectedMoment(prev => {
         if (!prev) return null;
-        const newComments = [...(prev.comments || [])];
-        if (replyToComment) {
-          const findAndAdd = (comments: MomentComment[], targetId: number): boolean => {
-            for (const c of comments) {
-              if (c.id === targetId) {
-                c.children = [...(c.children || []), comment];
-                return true;
-              }
-              if (c.children && findAndAdd(c.children, targetId)) return true;
+        // 沿路径不可变更新：map 生成新树，替换目标评论对象
+        const addReply = (comments: MomentComment[], targetId: number): MomentComment[] =>
+          comments.map(c => {
+            if (c.id === targetId) {
+              return { ...c, children: [...(c.children || []), comment] };
             }
-            return false;
-          };
-          findAndAdd(newComments, replyToComment.id);
-        } else {
-          newComments.push(comment);
-        }
+            if (c.children && c.children.length > 0) {
+              return { ...c, children: addReply(c.children, targetId) };
+            }
+            return c;
+          });
+        const newComments = replyToComment
+          ? addReply(prev.comments || [], replyToComment.id)
+          : [...(prev.comments || []), comment];
         return { ...prev, comments: newComments, comment_count: prev.comment_count + 1 };
       });
     } catch { /* silent */ }
@@ -179,6 +174,14 @@ export default function MomentsPage() {
       setLoadingDetail(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-[var(--color-text-muted)]">
+        <p>加载中...</p>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return (
@@ -198,7 +201,7 @@ export default function MomentsPage() {
         <div className="flex gap-2">
           <button
             className={`btn btn-sm ${viewMode === 'feed' ? 'btn-primary' : ''}`}
-            onClick={() => { setViewMode('feed'); setMoments([]); setHasMore(true); loadMoments(); }}
+            onClick={() => { setViewMode('feed'); loadMoments({ force: true }); }}
           >
             动态
           </button>

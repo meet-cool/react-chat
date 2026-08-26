@@ -67,6 +67,8 @@ export function ConfessionBookmarks() {
   const handleRemove = useCallback((slug: string) => {
     confessionApi.bookmark(slug).then(() => {
       setBookmarks((prev) => prev.filter((c) => c.slug !== slug));
+    }).catch(() => {
+      // 取消收藏失败时保留列表
     });
   }, []);
 

@@ -397,8 +397,9 @@ export function AiPanelPage({ }: AiPanelPageProps) {
         {/* 内容区域 */}
         <div className="flex-1 overflow-hidden">
           {activeChatId ? (
-            <AiChatView 
-              chatId={activeChatId} 
+            <AiChatView
+              key={activeChatId}
+              chatId={activeChatId}
               onRefresh={() => loadChats()}
               onLogout={() => navigate('/login')}
             />
@@ -475,20 +476,36 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
   const [showResponseControls, setShowResponseControls] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 进行中的流式读取器（卸载/切换会话时中止）
+  const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  const loadChatSeqRef = useRef(0);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const loadChat = useCallback(async () => {
+    const seq = ++loadChatSeqRef.current;
     try {
       const data = await aiApi.getChat(chatId);
+      if (seq !== loadChatSeqRef.current) return;
+      setSendError(null);
       setChatInfo(data);
       setMessages(data.messages || []);
       if (data.mode) setMode(data.mode as 'fast' | 'professional');
       if (data.deep_thinking) setDeepThinking(!!data.deep_thinking);
     } catch {
+      if (seq !== loadChatSeqRef.current) return;
       addToast('加载失败', 'error');
     }
   }, [chatId, addToast]);
 
   useEffect(() => { loadChat(); }, [loadChat]);
+
+  // 卸载时中止进行中的流式读取，避免串台写入其他会话
+  useEffect(() => {
+    return () => {
+      streamReaderRef.current?.cancel().catch(() => {});
+      streamReaderRef.current = null;
+    };
+  }, []);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
@@ -516,6 +533,7 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
     setInput('');
     setSending(true);
     setStreamingContent('');
+    setSendError(null);
     try {
       const events = await aiApi.streamChat(
         [...messages, userMsg].map((m) => ({
@@ -531,26 +549,50 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
       );
       if (!events) throw new Error('流式响应为空');
       const reader = events.getReader();
+      streamReaderRef.current = reader;
       const decoder = new TextDecoder();
       let assistantContent = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                assistantContent += parsed.content;
-                setStreamingContent(assistantContent);
-              } else if (parsed.done) { }
-              else if (parsed.error) { throw new Error(parsed.error); }
-            } catch { }
-          }
+      let buffer = '';
+      let streamErrorMsg: string | null = null;
+      // 解析单行 SSE 数据；JSON 坏行静默跳过；服务端错误行记录后终止
+      const processLine = (rawLine: string) => {
+        const line = rawLine.trim();
+        if (!line.startsWith('data: ')) return;
+        let parsed: { content?: string; done?: boolean; error?: string };
+        try {
+          parsed = JSON.parse(line.slice(6));
+        } catch {
+          return;
         }
+        if (parsed.error) {
+          streamErrorMsg = parsed.error;
+          return;
+        }
+        if (parsed.content) {
+          assistantContent += parsed.content;
+          setStreamingContent(assistantContent);
+        }
+      };
+      try {
+        while (!streamErrorMsg) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          // chunk 追加进缓冲区，按 \n 切分，最后一段留作残行
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) processLine(line);
+        }
+        // 流结束后处理缓冲区中剩余的无换行尾行
+        if (!streamErrorMsg && buffer.trim()) processLine(buffer);
+        void decoder.decode();
+      } finally {
+        streamReaderRef.current = null;
+      }
+      if (streamErrorMsg) {
+        try { await reader.cancel(); } catch { /* 流已结束则忽略 */ }
+        setSendError(streamErrorMsg);
+        throw new Error(streamErrorMsg);
       }
       if (assistantContent) {
         const assistantMsg: AiMsg = {
@@ -745,6 +787,18 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
 
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {sendError && (
+          <div
+            className="flex items-center gap-2 px-3 py-2 text-sm"
+            style={{ background: 'var(--color-error-bg)', border: '1px solid var(--color-error)', color: 'var(--color-error)' }}
+          >
+            <AlertCircle size={16} />
+            <span className="flex-1">{sendError}</span>
+            <button onClick={() => setSendError(null)} title="关闭" style={{ color: 'inherit' }}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
         {messages.length === 0 && !streamingContent ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div 

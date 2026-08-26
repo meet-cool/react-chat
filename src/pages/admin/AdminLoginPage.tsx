@@ -32,11 +32,6 @@ export function AdminLoginPage() {
     }
   };
 
-  const fillDemo = () => {
-    setAccount('admin');
-    setPassword('123456');
-  };
-
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
@@ -99,9 +94,6 @@ export function AdminLoginPage() {
                 type={show ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submit();
-                }}
                 autoComplete="current-password"
                 placeholder="输入密码"
                 style={{ paddingRight: 44 }}
@@ -115,25 +107,6 @@ export function AdminLoginPage() {
                 {show ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-          </div>
-
-          <div
-            className="p-3 text-xs"
-            style={{
-              background: 'var(--color-info-bg)',
-              border: '1px solid var(--color-info-light)',
-              borderLeft: '4px solid var(--color-info)',
-              color: 'var(--color-info)',
-            }}
-          >
-            默认超级管理员：
-            <button
-              type="button"
-              className="ml-2 underline underline-offset-2 font-medium"
-              onClick={fillDemo}
-            >
-              admin / 123456
-            </button>
           </div>
 
           <button

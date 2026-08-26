@@ -7,7 +7,7 @@ import {
   RotateCcw,
   ArrowLeft,
 } from 'lucide-react';
-import { bottleApi } from '../lib/api';
+import { bottleApi, authApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Bottle as BottleType, BottleReply } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -35,7 +35,7 @@ export function BottlePage() {
   const [replyingId, setReplyingId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replying, setReplying] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: number } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: number; username?: string; avatar?: string } | null>(null);
   const [isLogged, setIsLogged] = useState(false);
 
   // 登录检查
@@ -64,13 +64,10 @@ export function BottlePage() {
     setIsLogged(!!token);
     if (token) {
       loadMyBottles();
-      // 获取当前用户
-      const saved = localStorage.getItem('arcle_user');
-      if (saved) {
-        try {
-          setCurrentUser(JSON.parse(saved));
-        } catch {}
-      }
+      // 当前用户以服务端 profile 为准（localStorage 'arcle_user' 从未被写入）
+      authApi.profile()
+        .then((u) => setCurrentUser({ id: u.id, username: u.username, avatar: u.avatar }))
+        .catch(() => {});
     }
   }, []);
 
@@ -123,12 +120,25 @@ export function BottlePage() {
     setReplying(true);
     try {
       await bottleApi.reply(bottleId, replyText);
+      const content = replyText.trim();
       setReplyText('');
       setReplyingId(null);
-      // 刷新已捡到的瓶子
+      // 本地追加新回复（服务端仅返回 create_time），不得重新 pick 以免随机换成别的瓶子
       if (picked && picked.id === bottleId) {
-        const res = await bottleApi.pick();
-        setPicked(res);
+        const now = Math.floor(Date.now() / 1000);
+        const newReply: BottleReply = {
+          id: Date.now(),
+          bottle_id: bottleId,
+          user_id: currentUser?.id ?? 0,
+          content,
+          username: currentUser?.username || '我',
+          avatar: currentUser?.avatar || '',
+          create_time: now,
+          create_time_fmt: '刚刚',
+        };
+        setPicked((prev) =>
+          prev && prev.id === bottleId ? { ...prev, replies: [...prev.replies, newReply] } : prev
+        );
       }
       loadMyBottles();
     } catch (err) {

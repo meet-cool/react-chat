@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Settings, Key, Globe, RefreshCw, Trash2, Copy, Check,
   Eye, EyeOff, CheckCircle, XCircle, Play,
+  Hash, ToggleRight, ToggleLeft,
 } from 'lucide-react';
 import {
   getApiBaseUrl, setApiBaseUrl, getToken, clearToken,
 } from '../lib/api';
+import { useDebug } from '../lib/DebugContext';
 
 const PRESET_URLS = [
   { label: '本地开发（localhost:8000）', url: 'http://localhost:8000' },
@@ -14,7 +16,7 @@ const PRESET_URLS = [
 ];
 
 const DEBUG_PASSWORD = 'debug2024';
-type Tab = 'api' | 'storage' | 'session';
+type Tab = 'api' | 'storage' | 'session' | 'layout';
 
 /* ─── Password screen ─── */
 function PasswordScreen({
@@ -72,7 +74,6 @@ function PasswordScreen({
           </button>
         </div>
         {error && <p className="text-xs mt-2 text-center" style={{ color: 'var(--color-error)' }}>{error}</p>}
-        <p className="text-xs text-center mt-4" style={{ color: 'var(--color-text-muted)' }}>提示：debug2024</p>
       </div>
     </div>
   );
@@ -90,8 +91,9 @@ function ApiTab() {
     setApiMsg('');
     setLastResult('');
     try {
-      setApiBaseUrl(url);
+      // 先测试连接，成功才持久化，避免把不可用地址写入 localStorage
       await testConnection(url);
+      setApiBaseUrl(url);
       setApiStatus('ok');
       setApiMsg('连接成功');
       setLastResult('✅');
@@ -339,6 +341,7 @@ export function DebugPage() {
   const navigate = useNavigate();
   const [unlocked, setUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('api');
+  const { debugMode, toggleDebugMode, debugInfo, elementCount } = useDebug();
 
   if (!unlocked) {
     return <PasswordScreen onUnlock={() => setUnlocked(true)} onBack={() => navigate(-1)} />;
@@ -368,6 +371,7 @@ export function DebugPage() {
           { key: 'api' as Tab, label: 'API 配置', icon: Globe },
           { key: 'session' as Tab, label: '会话管理', icon: Key },
           { key: 'storage' as Tab, label: '本地存储', icon: Trash2 },
+          { key: 'layout' as Tab, label: '布局调试', icon: Hash },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -389,6 +393,110 @@ export function DebugPage() {
         {activeTab === 'api' && <ApiTab />}
         {activeTab === 'session' && <SessionTab />}
         {activeTab === 'storage' && <StorageTab />}
+        {activeTab === 'layout' && (
+          <LayoutDebugTab
+            debugMode={debugMode}
+            toggleDebugMode={toggleDebugMode}
+            debugInfo={debugInfo}
+            elementCount={elementCount}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Layout Debug Tab ─── */
+function LayoutDebugTab({
+  debugMode,
+  toggleDebugMode,
+  debugInfo,
+  elementCount,
+}: {
+  debugMode: boolean;
+  toggleDebugMode: () => void;
+  debugInfo: { path: string; tag: string; className: string; id: string; index: number; timestamp: number } | null;
+  elementCount: number;
+}) {
+  const { setDebugInfo } = useDebug();
+
+  return (
+    <div className="space-y-4">
+      {/* 调试模式开关 */}
+      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+            <Hash size={14} style={{ color: 'var(--color-warning)' }} /> 布局调试模式
+          </h3>
+          <button
+            onClick={toggleDebugMode}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all"
+            style={{
+              background: debugMode ? 'var(--color-warning-light)' : 'var(--color-hover-bg)',
+              color: debugMode ? 'var(--color-warning)' : 'var(--color-text-muted)',
+              border: `1px solid ${debugMode ? 'var(--color-warning)' : 'var(--color-border)'}`,
+            }}
+          >
+            {debugMode ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+            {debugMode ? '已开启' : '已关闭'}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="p-3 rounded-lg" style={{ background: 'var(--color-input-bg)' }}>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>交互元素</div>
+            <div className="text-lg font-bold mt-1" style={{ color: 'var(--color-text)' }}>{elementCount}</div>
+          </div>
+          <div className="p-3 rounded-lg" style={{ background: 'var(--color-input-bg)' }}>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>快捷键</div>
+            <div className="text-sm font-bold mt-1" style={{ color: 'var(--color-text)' }}>Shift+Click</div>
+          </div>
+        </div>
+        {debugMode && (
+          <p className="mt-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            开启后页面上每个按钮会显示编号，按住 Shift 点击可复制元素路径。
+          </p>
+        )}
+      </div>
+
+      {/* 最后复制的信息 */}
+      {debugInfo && (
+        <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-success-light)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle size={14} style={{ color: 'var(--color-success)' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>最后复制的元素</span>
+          </div>
+          <div className="p-2 rounded-lg font-mono text-xs break-all" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text)' }}>
+            {debugInfo.path}
+          </div>
+          <div className="mt-2 flex gap-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            <span>标签: &lt;{debugInfo.tag}&gt;</span>
+            {debugInfo.id && <span>ID: {debugInfo.id}</span>}
+            {debugInfo.className && <span>Class: {debugInfo.className}</span>}
+            <span>索引: #{debugInfo.index}</span>
+          </div>
+          <button
+            onClick={() => setDebugInfo(null)}
+            className="mt-3 text-xs px-2 py-1 rounded"
+            style={{ background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+          >
+            清除
+          </button>
+        </div>
+      )}
+
+      {/* AI 使用说明 */}
+      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+          <Settings size={14} style={{ color: 'var(--color-primary)' }} /> AI 使用指南
+        </h3>
+        <div className="space-y-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <p>• 开启布局调试模式后，页面上每个按钮会显示黄色编号</p>
+          <p>• 按住 <code className="px-1 py-0.5 rounded" style={{ background: 'var(--color-input-bg)' }}>Shift</code> 并点击页面元素，路径自动复制到剪贴板</p>
+          <p>• 将路径提供给 AI，例如：</p>
+          <div className="p-2 rounded-lg font-mono text-xs" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
+            {`修改 #header > button.nav-btn 的样式`}
+          </div>
+        </div>
       </div>
     </div>
   );

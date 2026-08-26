@@ -20,21 +20,29 @@ export function NumberGuessPage({ onBack }: Props) {
   const [secretCode, setSecretCode] = useState('');
   const [guesses, setGuesses] = useState<GuessResult[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
-  const [maxAttempts] = useState(10);
+  const [maxAttempts, setMaxAttempts] = useState(10);
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     generateNewGame();
   }, []);
 
   async function generateNewGame() {
-    const code = await gameApi.generateNumberGuess();
-    setSecretCode(code.code);
-    setGuesses([]);
-    setCurrentGuess('');
-    setWon(false);
-    setLost(false);
+    setError('');
+    try {
+      const code = await gameApi.generateNumberGuess();
+      setSecretCode(code.code);
+      // 使用服务端下发的最大尝试次数，替代硬编码
+      setMaxAttempts(code.max_attempts || 10);
+      setGuesses([]);
+      setCurrentGuess('');
+      setWon(false);
+      setLost(false);
+    } catch {
+      setError('加载题目失败，请重试');
+    }
   }
 
   function handleSubmit() {
@@ -44,15 +52,30 @@ export function NumberGuessPage({ onBack }: Props) {
     }
 
     const digits = currentGuess.split('').map(Number);
-    let bulls = 0, cows = 0;
+    const secretDigits = secretCode.split('').map(Number);
 
-    digits.forEach((d, i) => {
-      if (d === parseInt(secretCode[i])) {
+    // 正确算法：先数 bulls（同位相同），再对双方剩余数字做多重集合计数得 cows
+    // 例：secret='1234' vs guess='1111' → 1A0B
+    let bulls = 0;
+    const secretRest: number[] = [];
+    const guessRest: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      if (digits[i] === secretDigits[i]) {
         bulls++;
-      } else if (secretCode.includes(d.toString())) {
-        cows++;
+      } else {
+        secretRest.push(secretDigits[i]);
+        guessRest.push(digits[i]);
       }
-    });
+    }
+    let cows = 0;
+    const remaining = [...secretRest];
+    for (const d of guessRest) {
+      const idx = remaining.indexOf(d);
+      if (idx !== -1) {
+        cows++;
+        remaining.splice(idx, 1);
+      }
+    }
 
     const newGuesses = [{ digits, bulls, cows }, ...guesses];
     setGuesses(newGuesses);
@@ -119,6 +142,11 @@ export function NumberGuessPage({ onBack }: Props) {
             <p className="mb-2" style={{ color: 'var(--color-text-secondary)' }}>正确答案是：</p>
             <p className="text-3xl font-mono font-bold mb-4" style={{ color: 'var(--color-primary)' }}>{secretCode}</p>
             <button onClick={generateNewGame} className="btn btn-primary" style={{ minHeight: 44 }}>再来一局</button>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-sm mb-4" style={{ color: 'var(--color-error)' }}>{error}</p>
+            <button onClick={generateNewGame} className="btn btn-primary" style={{ minHeight: 44 }}>重试</button>
           </div>
         ) : (
           <>

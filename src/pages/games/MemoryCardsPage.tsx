@@ -19,22 +19,33 @@ export function MemoryCardsPage({ onBack }: Props) {
   const [timer, setTimer] = useState(0);
   const [won, setWon] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     initGame();
-    const interval = setInterval(() => setTimer(t => t + 1), 1000);
-    return () => clearInterval(interval);
   }, [difficulty]);
 
+  // 计时器：胜利后停止
+  useEffect(() => {
+    if (won) return;
+    const interval = setInterval(() => setTimer(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [won]);
+
   async function initGame() {
-    const data = await gameApi.memoryCardsState(difficulty);
-    setCards(data.cards);
-    setFlipped(new Array(data.cards.length).fill(false));
-    setMatched(new Array(data.cards.length).fill(false));
-    setMoves(0);
-    setTimer(0);
-    setWon(false);
-    setLocked(false);
+    setError('');
+    try {
+      const data = await gameApi.memoryCardsState(difficulty);
+      setCards(data.cards);
+      setFlipped(new Array(data.cards.length).fill(false));
+      setMatched(new Array(data.cards.length).fill(false));
+      setMoves(0);
+      setTimer(0);
+      setWon(false);
+      setLocked(false);
+    } catch {
+      setError('加载游戏失败，请重试');
+    }
   }
 
   function handleCardClick(index: number) {
@@ -117,6 +128,11 @@ export function MemoryCardsPage({ onBack }: Props) {
             <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>恭喜通关！</h2>
             <p className="mb-4" style={{ color: 'var(--color-text-secondary)' }}>用了 {moves} 步，耗时 {formatTime(timer)}</p>
             <button onClick={initGame} className="btn btn-primary" style={{ minHeight: 44 }}>再来一局</button>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-sm mb-4" style={{ color: 'var(--color-error)' }}>{error}</p>
+            <button onClick={initGame} className="btn btn-primary" style={{ minHeight: 44 }}>重试</button>
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-2" style={{ aspectRatio: '1' }}>

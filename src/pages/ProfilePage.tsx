@@ -67,7 +67,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
     setUpdatingVisible(true);
     try {
       const result = await userApi.updateProfileVisible(!info.profile_visible);
-      setInfo((prev) => prev ? { ...prev, profile_visible: result.profile_visible === 1 } : prev);
+      setInfo((prev) => prev ? { ...prev, profile_visible: result.profile_visible === 1 ? 1 : 0 } : prev);
       addToast(result.profile_visible === 1 ? '主页已公开' : '主页已隐藏', 'success');
     } catch {
       addToast('设置失败', 'error');
@@ -104,7 +104,8 @@ export function ProfilePage({ user }: ProfilePageProps) {
   }
 
   const levelColor = getLevelColor(info.level);
-  const expPercent = 100 - info.exp_to_next;
+  // 经验进度统一口径：当前等级内经验 = exp % 100（与下方文本一致）
+  const expPercent = info.exp % 100;
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--color-bg-page)' }}>
@@ -166,7 +167,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
                 </span>
               )}
             </div>
-            {!isSelf && info.profile_visible === false && (
+            {!isSelf && info.profile_visible === 0 && (
               <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 该用户已隐藏主页信息
               </p>
@@ -288,7 +289,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
         )}
 
         {/* 他人信息（公开字段） */}
-        {!isSelf && info.profile_visible !== false && (
+        {!isSelf && info.profile_visible !== 0 && (
           <div
             className="rounded-lg p-4"
             style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}

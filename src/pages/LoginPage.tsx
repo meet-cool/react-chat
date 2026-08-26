@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare, LogIn, UserPlus, Loader2, ArrowLeft } from 'lucide-react';
 import { authApi, setToken } from '../lib/api';
 import { useApp } from '../lib/AppContext';
@@ -22,6 +22,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   });
   const { addToast } = useApp();
   const navigate = useNavigate();
+  // 登录/注册成功后的回跳地址（支持 english 等模块 SSO 跳入）
+  const redirect = new URLSearchParams(useLocation().search).get('redirect') || '/chat';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,7 +47,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         setToken(result.token);
         onLogin(result.userinfo);
         addToast('登录成功', 'success');
-        navigate('/chat');
+        navigate(redirect);
       } else {
         // 注册前端校验（与后端规则一致）
         const username = form.username.trim();
@@ -69,11 +71,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           setLoading(false);
           return;
         }
-        const result = await authApi.register({ username, email, password });
+        const result = await authApi.register({ username, email, password, qq: form.qq || undefined });
         setToken(result.token);
         onLogin(result.userinfo);
         addToast('注册成功，已自动登录', 'success');
-        navigate('/chat');
+        navigate(redirect);
       }
     } catch (err) {
       addToast(err instanceof Error ? err.message : '操作失败', 'error');
@@ -217,12 +219,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               {mode === 'login' ? '登 录' : '注 册'}
             </button>
           </form>
-
-          {mode === 'login' && (
-            <p className="text-xs text-center mt-4" style={{ color: 'var(--color-text-muted)' }}>
-              默认账号：admin / 123456
-            </p>
-          )}
         </div>
 
         {/* 主题切换 */}

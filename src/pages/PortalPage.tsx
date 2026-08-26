@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -150,21 +150,7 @@ export function PortalPage() {
   const [notice, setNotice] = useState('');
   const [noticeDismissed, setNoticeDismissed] = useState(false);
 
-  const navigatedRef = useRef(false);
-
   useEffect(() => {
-    // 防止重复导航
-    if (navigatedRef.current) return;
-    navigatedRef.current = true;
-
-    // 等待 App 完成用户检查后再跳转，避免循环重定向
-    const timer = setTimeout(() => {
-      const token = getToken();
-      if (token) {
-        navigate('/chat', { replace: true });
-      }
-    }, 800);
-
     // 加载公开统计数据
     fetch(`${getApiBaseUrl()}/chat/public/stats`)
       .then((res) => res.json())
@@ -186,8 +172,6 @@ export function PortalPage() {
         }
       })
       .catch(() => {});
-
-    return () => clearTimeout(timer);
   }, [navigate]);
 
   return (

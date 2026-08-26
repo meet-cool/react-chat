@@ -41,7 +41,7 @@ const POINT_TYPES: Record<string, { label: string; color: string }> = {
   confession: { label: '发表表白', color: 'var(--color-error)' },
   like_received: { label: '收到点赞', color: 'var(--color-warning)' },
   comment: { label: '发表评论', color: 'var(--color-info)' },
-  unlock_detail: { label: '解锁详情', color: 'var(--color-muted)' },
+  unlock_detail: { label: '解锁详情', color: 'var(--color-text-muted)' },
 };
 
 function LevelBadge({ level }: { level: number }) {

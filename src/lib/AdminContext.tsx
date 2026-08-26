@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { adminApi, authApi, clearToken, setToken } from '../lib/api';
+import { ADMIN_STORAGE_KEY, authApi, getApiBaseUrl, getAdminToken } from '../lib/api';
 import type { AdminUserRole, UserInfo } from '../types';
 
 export interface AdminUser extends UserInfo {
@@ -26,18 +26,14 @@ const AdminAuthContext = createContext<AdminAuthState | null>(null);
 
 const ADMIN_ROLES: AdminUserRole[] = ['admin', 'super_admin'];
 
-const STORAGE_KEY = 'arcle_admin_token';
+// 管理员 token 独立存储（键名统一定义在 lib/api.ts 的 ADMIN_STORAGE_KEY），与用户 arcle_token 彻底隔离
+const STORAGE_KEY = ADMIN_STORAGE_KEY;
 
-function getAdminToken(): string {
-  return localStorage.getItem(STORAGE_KEY) || '';
-}
 function setAdminToken(token: string): void {
   localStorage.setItem(STORAGE_KEY, token);
-  setToken(token); // 复用通用 token 头（request 读取的是 arcle_token）
 }
 function clearAdminToken(): void {
   localStorage.removeItem(STORAGE_KEY);
-  clearToken();
 }
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
@@ -45,7 +41,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    // 同时使用 admin 专用 token，确保 request() 取到
+    // 独立校验管理员凭证：带显式 Authorization 的独立请求，不经过全局 request()
     const token = getAdminToken();
     if (!token) {
       setAdmin(null);
@@ -53,17 +49,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      // 写入到通用 token 存储，确保 request() 读取
-      setToken(token);
-      const u = (await authApi.profile()) as unknown as AdminUser;
-      if (!ADMIN_ROLES.includes(u.role)) {
+      const res = await fetch(`${getApiBaseUrl()}/chat/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        // 仅在凭证确认为无效时清除管理员会话
+        clearAdminToken();
+        setAdmin(null);
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const u = json?.data as AdminUser | undefined;
+      if (!u || !ADMIN_ROLES.includes(u.role)) {
         clearAdminToken();
         setAdmin(null);
       } else {
         setAdmin(u);
       }
-    } catch {
-      clearAdminToken();
+    } catch (e) {
+      // 网络错误等异常：保留管理员 token（可能是临时故障），仅视为未登录并告警
+      console.warn('[AdminContext] 校验管理员凭证失败', e);
       setAdmin(null);
     } finally {
       setLoading(false);
@@ -103,9 +109,4 @@ export function useAdminAuth(): AdminAuthState {
   const ctx = useContext(AdminAuthContext);
   if (!ctx) throw new Error('useAdminAuth 必须在 AdminAuthProvider 中使用');
   return ctx;
-}
-
-// 便于在 Admin 专属请求中带上 token（与用户 token 分开）
-export function getAdminAuthToken(): string {
-  return getAdminToken();
 }

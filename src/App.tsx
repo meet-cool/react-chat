@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './lib/AppContext';
 import { AdminAuthProvider } from './lib/AdminContext';
+import { DebugProvider } from './lib/DebugContext';
 import { ToastContainer } from './components/Toast';
+import { DebugOverlay } from './components/DebugOverlay';
 import { PageTransition } from './components/PageTransition';
 import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
@@ -38,6 +40,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { DebugPage } from './pages/DebugPage';
+import EnglishRoutes from './english/EnglishRoutes';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -79,13 +82,26 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AppContent user={user} setUser={setUser} />
+      <DebugProvider>
+        <AppContent user={user} setUser={setUser} />
+      </DebugProvider>
     </BrowserRouter>
   );
 }
 
 function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: UserInfo | null) => void }) {
   const navigate = useNavigate();
+
+  // 全局 401 处理：lib/api 的 request() 收到 401 时派发 CustomEvent 'arcle:unauthorized'
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null);
+      navigate('/login', { replace: true });
+    };
+    window.addEventListener('arcle:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('arcle:unauthorized', onUnauthorized);
+  }, [setUser, navigate]);
+
   return (
     <AdminAuthProvider>
       <PageTransition>
@@ -149,7 +165,13 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           {/* 积分中心 - 需登录 */}
           <Route
             path="/points"
-            element={<PointsPage onUserUpdate={(u) => setUser(u as UserInfo)} />}
+            element={
+              user ? (
+                <PointsPage onUserUpdate={(u) => setUser(u as UserInfo)} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
           />
 
           {/* 个人主页 - 需登录 */}
@@ -210,8 +232,12 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           <Route path="/plugins/games/sudoku" element={user ? <SudokuPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
           <Route path="/plugins/games/memory-cards" element={user ? <MemoryCardsPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
           <Route path="/plugins/games/number-guess" element={user ? <NumberGuessPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
+
+          {/* ============ english 英语学习模块（多应用子模块，独立账号体系） ============ */}
+          <Route path="/english/*" element={<EnglishRoutes />} />
         </Routes>
         <ToastContainer />
+        <DebugOverlay />
       </PageTransition>
     </AdminAuthProvider>
   );

@@ -21,23 +21,34 @@ export function SudokuPage({ onBack }: Props) {
   const [timer, setTimer] = useState(0);
   const [won, setWon] = useState(false);
   const [errors, setErrors] = useState(0);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     generateNewGame();
-    const interval = setInterval(() => setTimer(t => t + 1), 1000);
-    return () => clearInterval(interval);
   }, [difficulty]);
 
+  // 计时器：胜利后停止
+  useEffect(() => {
+    if (won) return;
+    const interval = setInterval(() => setTimer(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [won]);
+
   async function generateNewGame() {
-    const res = await gameApi.generateSudoku(difficulty);
-    const puzzleBoard = res.puzzle;
-    setPuzzle(puzzleBoard);
-    setBoard(puzzleBoard.map((row: number[]) => [...row]));
-    setSolution(generateSolution(puzzleBoard));
-    setTimer(0);
-    setWon(false);
-    setErrors(0);
-    setSelected(null);
+    setError('');
+    try {
+      const res = await gameApi.generateSudoku(difficulty);
+      const puzzleBoard = res.puzzle;
+      setPuzzle(puzzleBoard);
+      setBoard(puzzleBoard.map((row: number[]) => [...row]));
+      setSolution(generateSolution(puzzleBoard));
+      setTimer(0);
+      setWon(false);
+      setErrors(0);
+      setSelected(null);
+    } catch {
+      setError('加载题目失败，请重试');
+    }
   }
 
   function generateSolution(puzzle: Board): Board {
@@ -121,9 +132,22 @@ export function SudokuPage({ onBack }: Props) {
   }
 
   function checkWin(b: Board): boolean {
+    // 合法性校验：每行/列/宫都是 1-9 且无重复（不与客户端求解的唯一解比对）
+    const isCompleteUnit = (unit: number[]) =>
+      unit.every(n => n >= 1 && n <= 9) && new Set(unit).size === 9;
     for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
-        if (b[i][j] !== solution[i][j]) return false;
+      if (!isCompleteUnit(b[i])) return false;
+      if (!isCompleteUnit(b.map(row => row[i]))) return false;
+    }
+    for (let boxRow = 0; boxRow < 3; boxRow++) {
+      for (let boxCol = 0; boxCol < 3; boxCol++) {
+        const unit: number[] = [];
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            unit.push(b[boxRow * 3 + i][boxCol * 3 + j]);
+          }
+        }
+        if (!isCompleteUnit(unit)) return false;
       }
     }
     return true;
@@ -178,45 +202,56 @@ export function SudokuPage({ onBack }: Props) {
           </div>
         ) : (
           <>
-            <div className="aspect-square w-full max-w-sm mx-auto mb-4" style={{ border: '2px solid var(--color-border)' }}>
-              <div className="grid grid-cols-9 h-full">
-                {board.map((row, i) =>
-                  row.map((cell, j) => {
-                    const isSelected = selected?.[0] === i && selected?.[1] === j;
-                    const isFixed = puzzle[i][j] !== 0;
-                    const boxBorder = (j + 1) % 3 === 0 && j < 8 ? 'border-r-2' : '';
-                    const rowBorder = (i + 1) % 3 === 0 && i < 8 ? 'border-b-2' : '';
-                    return (
-                      <button
-                        key={`${i}-${j}`}
-                        onClick={() => handleCellClick(i, j)}
-                        className={`flex items-center justify-center text-lg font-medium transition-all ${boxBorder} ${rowBorder}`}
-                        style={{
-                          border: '1px solid var(--color-border-light)',
-                          background: isSelected ? 'var(--color-primary-light)' : isFixed ? 'var(--color-card-alt)' : 'var(--color-card)',
-                          color: isFixed ? 'var(--color-text)' : cell !== 0 ? 'var(--color-primary)' : 'transparent',
-                        }}
-                      >
-                        {cell !== 0 ? cell : ''}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-9 gap-1 max-w-sm mx-auto">
-              {Array.from({ length: 9 }, (_, i) => i + 1).map(num => (
-                <button
-                  key={num}
-                  onClick={() => handleNumberInput(num)}
-                  className="aspect-square btn btn-sm"
-                  style={{ minHeight: 40 }}
-                >
-                  {num}
+            {error ? (
+              <div className="text-center py-12">
+                <p className="text-sm mb-4" style={{ color: 'var(--color-error)' }}>{error}</p>
+                <button onClick={generateNewGame} className="btn btn-primary" style={{ minHeight: 44 }}>
+                  重试
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <>
+                <div className="aspect-square w-full max-w-sm mx-auto mb-4" style={{ border: '2px solid var(--color-border)' }}>
+                  <div className="grid grid-cols-9 h-full">
+                    {board.map((row, i) =>
+                      row.map((cell, j) => {
+                        const isSelected = selected?.[0] === i && selected?.[1] === j;
+                        const isFixed = puzzle[i][j] !== 0;
+                        const boxBorder = (j + 1) % 3 === 0 && j < 8 ? 'border-r-2' : '';
+                        const rowBorder = (i + 1) % 3 === 0 && i < 8 ? 'border-b-2' : '';
+                        return (
+                          <button
+                            key={`${i}-${j}`}
+                            onClick={() => handleCellClick(i, j)}
+                            className={`flex items-center justify-center text-lg font-medium transition-all ${boxBorder} ${rowBorder}`}
+                            style={{
+                              border: '1px solid var(--color-border-light)',
+                              background: isSelected ? 'var(--color-primary-light)' : isFixed ? 'var(--color-card-alt)' : 'var(--color-card)',
+                              color: isFixed ? 'var(--color-text)' : cell !== 0 ? 'var(--color-primary)' : 'transparent',
+                            }}
+                          >
+                            {cell !== 0 ? cell : ''}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-9 gap-1 max-w-sm mx-auto">
+                  {Array.from({ length: 9 }, (_, i) => i + 1).map(num => (
+                    <button
+                      key={num}
+                      onClick={() => handleNumberInput(num)}
+                      className="aspect-square btn btn-sm"
+                      style={{ minHeight: 40 }}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

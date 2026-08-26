@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, RefreshCw } from 'lucide-react';
 import { confessionApi } from '../lib/api';
+import { useApp } from '../lib/AppContext';
 import type { Confession } from '../types';
 import { Avatar } from '../components/Avatar';
 import { PaginationBar } from '../components/admin/PaginationBar';
@@ -15,6 +16,7 @@ interface MineItem extends Confession {
 
 export function ConfessionMine() {
   const navigate = useNavigate();
+  const { addToast } = useApp();
 
   const [theme, setTheme] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem('confession_theme') as ThemeKey | null;
@@ -50,8 +52,14 @@ export function ConfessionMine() {
       setItems(res.items);
       setTotal(res.pagination.total);
       setLastPage(res.pagination.last_page);
-    } catch {
-      navigate('/login');
+    } catch (err) {
+      // 仅登录失效才跳转登录页，其他错误提示并保留页面
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('登录') || message.includes('401')) {
+        navigate('/login');
+      } else {
+        addToast(message || '加载失败', 'error');
+      }
     } finally {
       setLoading(false);
     }

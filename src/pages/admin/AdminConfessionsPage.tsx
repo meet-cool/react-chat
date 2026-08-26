@@ -59,10 +59,6 @@ export function AdminConfessionsPage() {
   }, [page, perPage, status, addToast]);
 
   useEffect(() => {
-    setPage(1);
-  }, [status]);
-
-  useEffect(() => {
     load();
   }, [load]);
 
@@ -108,7 +104,7 @@ export function AdminConfessionsPage() {
                 ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
                 : {}
             }
-            onClick={() => setStatus(s)}
+            onClick={() => { setStatus(s); setPage(1); }}
           >
             {STATUS_LABELS[s]}
           </button>

@@ -22,14 +22,26 @@ export function AdminAiPage() {
   const [totalChats, setTotalChats] = useState(0);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [committedKeyword, setCommittedKeyword] = useState('');
+
+  // 搜索防抖：停止输入 300ms 后才提交关键字，避免逐字符发请求
+  useEffect(() => {
+    const timer = setTimeout(() => setCommittedKeyword(keyword), 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  // 按钮或 Enter 立即提交当前关键字
+  const commitSearchNow = () => {
+    setCommittedKeyword(keyword);
+    setPage(1);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [s, c] = await Promise.all([
         adminApi.aiStats(),
-        adminApi.aiChats({ page, per_page: 20, keyword }),
+        adminApi.aiChats({ page, per_page: 20, keyword: committedKeyword }),
       ]);
       setStats(s);
       setChats(c.items);
@@ -39,17 +51,11 @@ export function AdminAiPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, keyword, addToast]);
+  }, [page, committedKeyword, addToast]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const handleSearch = () => {
-    setPage(1);
-    setSearching(true);
-    setTimeout(() => setSearching(false), 300);
-  };
 
   const handleDelete = async (id: number) => {
     try {
@@ -97,10 +103,10 @@ export function AdminAiPage() {
             placeholder="搜索会话标题..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && commitSearchNow()}
             style={{ borderRadius: '3px' }}
           />
-          <button className="btn btn-sm" onClick={handleSearch} disabled={searching}>
+          <button className="btn btn-sm" onClick={commitSearchNow}>
             <Search size={14} /> 搜索
           </button>
         </div>

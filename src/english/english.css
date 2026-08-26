@@ -1,0 +1,142 @@
+/* ============================================================
+ * english 模块补充样式
+ * 主站 index.css 已提供：CSS 变量、btn 系列、card、输入框等基础样式，
+ * 此处仅补充 english 模块特有的类（与主站无命名冲突）。
+ * ============================================================ */
+
+/* ===== 卡片 ===== */
+.eng-root-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+}
+
+/* english 页面通用卡片（主站未定义 .card，此处补充；无命名冲突） */
+.card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+}
+
+/* ===== 进度条 ===== */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--progress-bg);
+    border-radius: 0px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.3s ease;
+}
+
+/* ===== 选择题选项按钮状态 ===== */
+.btn.option-btn {
+    justify-content: flex-start;
+}
+
+/* 未提交但已选中：蓝色高亮框 */
+.btn.option-btn.option-selected {
+    border: 2px solid var(--color-primary);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* 正确答案：绿色高亮框 */
+.btn.option-btn.answer-correct {
+    border: 2px solid var(--color-success);
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+/* 答错时所选错误项：红色高亮框 */
+.btn.option-btn.answer-wrong {
+    border: 2px solid var(--color-error);
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+/* 已作答的无关选项：置灰 */
+.btn.option-btn.answer-dim {
+    opacity: 0.5;
+}
+
+/* ===== 考试答题卡：已作答题号 ===== */
+.btn.answer-sheet-done {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn.answer-sheet-done:hover {
+    filter: brightness(0.95);
+}
+
+/* ===== 学习结算动画 ===== */
+.finish-card {
+    animation: eng-finish-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.finish-icon {
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border: 2px solid var(--color-success);
+    animation: eng-finish-pop 0.5s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.finish-item {
+    animation: eng-finish-rise 0.4s ease-out both;
+}
+
+@keyframes eng-finish-pop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes eng-finish-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 已学习印章 ===== */
+.stamp-in {
+    animation: eng-stamp-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes eng-stamp-in {
+    from { opacity: 0; transform: rotate(12deg) scale(1.8); }
+    to   { opacity: 1; transform: rotate(12deg) scale(1); }
+}
+
+/* ===== 辅助横杠光标闪烁 ===== */
+.caret-blink {
+    animation: eng-caret-blink 1s step-end infinite;
+}
+
+@keyframes eng-caret-blink {
+    0%, 45% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+/* ===== 超长输入晃动提示 ===== */
+.shake-x {
+    animation: eng-shake-x 0.4s ease-out both;
+}
+
+@keyframes eng-shake-x {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(3px); }
+}

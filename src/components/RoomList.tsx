@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Hash, Plus, Search, Users, LogOut, X, Lock, Globe, Check, Settings } from 'lucide-react';
 import type { ContactUser, Room } from '../types';
 import { Avatar } from './Avatar';
+import { HashAvatar } from './HashAvatar';
 import { useApp } from '../lib/AppContext';
 import { contactApi } from '../lib/api';
 
@@ -107,7 +108,7 @@ export function RoomList({ rooms, activeRoomId, onSelect, onCreate, loading, onO
                   if (!isActive) e.currentTarget.style.background = 'transparent';
                 }}
               >
-                <Avatar username={room.name} size={40} />
+                <HashAvatar seed={`room:${room.id}:${room.name}`} size={40} title={room.name} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     {room.type === 'private' ? (
