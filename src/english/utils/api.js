@@ -55,4 +55,18 @@ api.interceptors.response.use(
     }
 );
 
+/**
+ * 学习时长心跳（页面可见时每 60 秒调用一次）
+ * 服务端按两次心跳真实间隔计时，返回 { today_seconds, total_seconds }
+ * 未登录或请求失败返回 null（不打断学习）
+ */
+export async function studyBeat() {
+    try {
+        const r = await api.post('/api/study_time.php');
+        return r.data?.success ? r.data.data : null;
+    } catch {
+        return null;
+    }
+}
+
 export default api;

@@ -1,12 +1,23 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@eng/contexts/AuthContext';
 import { useTheme } from '@eng/contexts/ThemeContext';
-import { BookOpen, Brain, Trophy, Settings, LogOut, Menu, X, Library, GraduationCap } from 'lucide-react';
-import { useState } from 'react';
+import { studyBeat } from '@eng/utils/api';
+import { BookOpen, Brain, Trophy, Settings, LogOut, Menu, X, Library, GraduationCap, Timer } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 // 统一账号体系：主站 admin/super_admin 或 eng_role 教学角色可进入合并管理页
 const ADMIN_ROLES = ['admin', 'super_admin'];
 const PANEL_ENG_ROLES = ['teacher', 'head_teacher', 'school_admin'];
+
+/** 秒数 → 友好时长文案 */
+function fmtDuration(sec) {
+    if (sec === null || sec === undefined) return '--';
+    const s = Math.max(0, Math.floor(Number(sec)));
+    if (s < 60) return `${s}秒`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}分钟`;
+    return `${Math.floor(m / 60)}小时${m % 60}分`;
+}
 
 function hasPanelAccess(user) {
     if (!user) return false;
@@ -19,6 +30,33 @@ export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [studyTime, setStudyTime] = useState({ today_seconds: null, total_seconds: null });
+
+    // 学习时长心跳：页面可见期间每 60 秒一次，服务端按真实间隔计时
+    // （页面隐藏时暂停发送；离线超 5 分钟服务端自动断开不计，回来立即补一拍）
+    useEffect(() => {
+        if (!user) return undefined;
+        let alive = true;
+        const beat = async () => {
+            if (document.hidden) return;
+            const d = await studyBeat();
+            if (alive && d && d.today_seconds !== null && d.today_seconds !== undefined) {
+                setStudyTime({
+                    today_seconds: Number(d.today_seconds) || 0,
+                    total_seconds: Number(d.total_seconds) || 0,
+                });
+            }
+        };
+        beat();
+        const timer = setInterval(beat, 60000);
+        const onVisibility = () => { if (!document.hidden) beat(); };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            alive = false;
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, [user?.id]);
 
     const handleLogout = async () => {
         await logout();
@@ -64,6 +102,16 @@ export default function Layout() {
                                     </Link>
                                 );
                             })}
+                            {user && studyTime.total_seconds !== null && (
+                                <span
+                                    className="hidden lg:flex items-center gap-1 px-2 py-1 text-xs rounded-sm"
+                                    style={{ color: 'var(--color-text-muted)', background: 'var(--color-card-alt)' }}
+                                    title="今日已学 / 累计已学（在线心跳统计）"
+                                >
+                                    <Timer size={14} />
+                                    今日 {fmtDuration(studyTime.today_seconds)} · 累计 {fmtDuration(studyTime.total_seconds)}
+                                </span>
+                            )}
                             <button
                                 onClick={() => toggleTheme(theme === 'light' ? 'dark' : 'light')}
                                 className="btn btn-sm"
@@ -126,6 +174,12 @@ export default function Layout() {
                             >
                                 切换{theme === 'light' ? '深色' : '浅色'}模式
                             </button>
+                            {user && studyTime.total_seconds !== null && (
+                                <div className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-muted)]">
+                                    <Timer size={14} />
+                                    今日已学 {fmtDuration(studyTime.today_seconds)} · 累计 {fmtDuration(studyTime.total_seconds)}
+                                </div>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 className="w-full text-left px-3 py-3 text-sm text-[var(--color-error)]"

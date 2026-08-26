@@ -31,3 +31,6 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# 本地日志产物（vite.log 等）
+*.log
