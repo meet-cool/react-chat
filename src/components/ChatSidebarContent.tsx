@@ -86,8 +86,8 @@ export function ChatSidebarContent({
     return (
       <div className="p-4">
         <div
-          className="relative overflow-hidden rounded-xl"
-          style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(244,114,182,0.6) 100%)' }}
+          className="relative overflow-hidden rounded-sm"
+          style={{ background: 'var(--color-primary)' }}
         >
           <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
             <circle cx="170" cy="20" r="40" fill="white" />
@@ -114,8 +114,8 @@ export function ChatSidebarContent({
     return (
       <div className="p-4">
         <div
-          className="relative overflow-hidden rounded-xl"
-          style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(79,195,247,0.5) 100%)' }}
+          className="relative overflow-hidden rounded-sm"
+          style={{ background: 'var(--color-info)' }}
         >
           <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
             <ellipse cx="100" cy="60" rx="50" ry="35" fill="none" stroke="white" strokeWidth="1.5" />
@@ -141,8 +141,8 @@ export function ChatSidebarContent({
     return (
       <div className="p-4">
         <div
-          className="relative overflow-hidden rounded-xl"
-          style={{ background: 'linear-gradient(135deg, var(--color-warning) 0%, rgba(251,191,36,0.5) 100%)' }}
+          className="relative overflow-hidden rounded-sm"
+          style={{ background: 'var(--color-warning)' }}
         >
           <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
             <polygon points="100,15 115,50 155,50 122,72 135,110 100,85 65,110 78,72 45,50 85,50" fill="white" />
@@ -166,8 +166,8 @@ export function ChatSidebarContent({
   return (
     <div className="p-4">
       <div
-        className="relative overflow-hidden rounded-xl"
-        style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(168,85,247,0.5) 100%)' }}
+        className="relative overflow-hidden rounded-sm"
+        style={{ background: 'var(--color-primary-dark)' }}
       >
         <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 200 120">
           <circle cx="100" cy="60" r="45" fill="none" stroke="white" strokeWidth="1.5" />

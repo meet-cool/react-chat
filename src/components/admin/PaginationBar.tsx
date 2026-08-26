@@ -32,7 +32,7 @@ export function PaginationBar({
     }
   }
 
-  const btnBase = 'inline-flex items-center justify-center min-w-8 h-8 px-2 text-xs font-medium rounded-lg transition-all duration-150';
+  const btnBase = 'inline-flex items-center justify-center min-w-8 h-8 px-2 text-xs font-medium rounded-sm transition-all duration-150';
   const btnDisabled = 'opacity-40 cursor-not-allowed';
   const btnEnabled = 'hover:opacity-80 active:scale-95';
   const btnActive = 'bg-[var(--color-primary)] text-white border border-[var(--color-primary)]';

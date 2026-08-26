@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@eng/contexts/AuthContext';
 import { useTheme } from '@eng/contexts/ThemeContext';
 import { studyBeat } from '@eng/utils/api';
-import { BookOpen, Brain, Trophy, Settings, LogOut, Menu, X, Library, GraduationCap, Timer } from 'lucide-react';
+import { BookOpen, Brain, Trophy, Settings, LogOut, Menu, X, Library, GraduationCap, Timer, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // 统一账号体系：主站 admin/super_admin 或 eng_role 教学角色可进入合并管理页
@@ -82,6 +82,16 @@ export default function Layout() {
                             英语背单词
                         </Link>
 
+                        {/* 返回主站（桌面端） */}
+                        <button
+                            onClick={() => navigate('/chat')}
+                            className="hidden md:inline-flex items-center gap-1 px-2 py-1 text-xs rounded-sm transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+                            title="返回主站聊天"
+                        >
+                            <ArrowLeft size={14} />
+                            返回主站
+                        </button>
+
                         {/* 桌面导航 */}
                         <div className="hidden md:flex items-center gap-4">
                             {navItems.map((item) => {
@@ -146,6 +156,14 @@ export default function Layout() {
                 {mobileMenuOpen && (
                     <div className="md:hidden border-t border-[var(--color-border)] bg-[var(--color-card)]">
                         <div className="px-4 py-2 space-y-1">
+                            {/* 返回主站（移动端） */}
+                            <button
+                                onClick={() => { navigate('/chat'); setMobileMenuOpen(false); }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[var(--color-primary)]"
+                            >
+                                <ArrowLeft size={16} />
+                                返回主站
+                            </button>
                             {navItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = location.pathname === item.path;

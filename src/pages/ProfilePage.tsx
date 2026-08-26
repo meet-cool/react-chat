@@ -124,7 +124,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
           <button
             onClick={handleToggleVisible}
             disabled={updatingVisible}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all"
             style={{
               background: info.profile_visible ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
               color: info.profile_visible ? '#4ade80' : '#ef4444',
@@ -142,7 +142,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 头像与基本信息 */}
         <div
-          className="flex flex-col items-center py-6 rounded-lg"
+          className="flex flex-col items-center py-6 rounded-sm"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <Avatar username={info.username} avatar={info.avatar} size={80} online={info.online} />
@@ -152,7 +152,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
                 {info.username}
               </span>
               <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
+                className="text-xs px-2 py-0.5 rounded-sm font-medium"
                 style={{ background: levelColor + '22', color: levelColor, border: `1px solid ${levelColor}44` }}
               >
                 <Crown size={10} className="inline mr-0.5" />
@@ -160,7 +160,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
               </span>
               {info.role !== 'member' && (
                 <span
-                  className="text-xs px-2 py-0.5 rounded-full"
+                  className="text-xs px-2 py-0.5 rounded-sm"
                   style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}
                 >
                   {info.role}
@@ -182,7 +182,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
         {/* 等级与积分 */}
         <div
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -194,9 +194,9 @@ export function ProfilePage({ user }: ProfilePageProps) {
               {info.exp % 100}/100 EXP
             </span>
           </div>
-          <div className="h-2 rounded-full mb-3" style={{ background: 'var(--color-border)' }}>
+          <div className="h-2 rounded-sm mb-3" style={{ background: 'var(--color-border)' }}>
             <div
-              className="h-2 rounded-full transition-all"
+              className="h-2 rounded-sm transition-all"
               style={{ width: `${expPercent}%`, background: levelColor }}
             />
           </div>
@@ -210,7 +210,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
         {/* 签到信息 */}
         <div
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center gap-2 mb-2">
@@ -234,7 +234,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
           <>
             {/* 隐私状态 */}
             <div
-              className="rounded-lg p-4"
+              className="rounded-sm p-4"
               style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
             >
               <div className="flex items-center justify-between">
@@ -248,7 +248,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
                     主页可见性
                   </span>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full" style={{
+                <span className="text-xs px-2 py-1 rounded-sm" style={{
                   background: info.profile_visible ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
                   color: info.profile_visible ? '#4ade80' : '#ef4444',
                 }}>
@@ -262,7 +262,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
             {/* 账号信息 */}
             <div
-              className="rounded-lg p-4"
+              className="rounded-sm p-4"
               style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
             >
               <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>
@@ -291,7 +291,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
         {/* 他人信息（公开字段） */}
         {!isSelf && info.profile_visible !== 0 && (
           <div
-            className="rounded-lg p-4"
+            className="rounded-sm p-4"
             style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
           >
             <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>

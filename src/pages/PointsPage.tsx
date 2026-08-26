@@ -9,6 +9,7 @@ import {
   Clock,
   Gift,
   Sparkles,
+  ShoppingBag,
 } from 'lucide-react';
 import { pointsApi, authApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
@@ -49,7 +50,7 @@ function LevelBadge({ level }: { level: number }) {
   const color = colors[Math.min(level - 1, colors.length - 1)] ?? colors[0];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-bold"
       style={{ background: color + '22', color, border: `1px solid ${color}44` }}
     >
       <Trophy size={12} /> Lv.{level}
@@ -150,15 +151,23 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
           <Star size={18} style={{ color: 'var(--color-warning)' }} />
           积分中心
         </h1>
+        <button
+          onClick={() => navigate('/shop')}
+          className="btn btn-sm inline-flex items-center gap-1"
+          style={{ background: 'var(--color-warning)', color: '#fff', borderColor: 'var(--color-warning)' }}
+        >
+          <ShoppingBag size={14} />
+          去商城
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 积分卡片 */}
         {pointsInfo && (
           <div
-            className="rounded-lg p-4 text-center"
+            className="rounded-sm p-4 text-center"
             style={{
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
+              background: 'var(--color-primary)',
               color: '#fff',
             }}
           >
@@ -170,11 +179,11 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
                 <div className="opacity-70">等级</div>
               </div>
               <div
-                className="flex-1 h-2 rounded-full"
+                className="flex-1 h-2 rounded-sm"
                 style={{ background: 'rgba(255,255,255,0.2)' }}
               >
                 <div
-                  className="h-2 rounded-full"
+                  className="h-2 rounded-sm"
                   style={{
                     width: `${((100 - pointsInfo.exp_to_next) / 100) * 100}%`,
                     background: '#fbbf24',
@@ -191,7 +200,7 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
 
         {/* 签到卡片 */}
         <div
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -219,7 +228,7 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
             {[1, 2, 3, 4, 5, 6].map((day) => (
               <div
                 key={day}
-                className="flex-1 h-1.5 rounded-full"
+                className="flex-1 h-1.5 rounded-sm"
                 style={{
                   background: day <= streakDays ? streakColor : 'var(--color-border)',
                 }}
@@ -237,7 +246,7 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
 
         {/* 积分规则 */}
         <div
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <h3 className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
@@ -266,7 +275,7 @@ export function PointsPage({ onUserUpdate }: PointsPageProps) {
 
         {/* 积分明细 */}
         <div
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
           style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}
         >
           <h3 className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>

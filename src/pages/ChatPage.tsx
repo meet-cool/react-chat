@@ -554,7 +554,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           )}
           <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--color-primary)' }}
             >
               <MessagesSquare size={16} color="#fff" strokeWidth={2.5} />
@@ -901,7 +901,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-primary-light)' }}>
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-sm flex items-center justify-center" style={{ background: 'var(--color-primary-light)' }}>
                       <MessagesSquare size={32} style={{ color: 'var(--color-primary)' }} />
                     </div>
                     <p className="text-base font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>选择聊天室开始对话</p>

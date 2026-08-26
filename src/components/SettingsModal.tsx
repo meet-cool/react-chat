@@ -330,7 +330,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between px-3 py-2 rounded" style={{background:'var(--color-card-alt)'}}>
                           <span className="text-sm" style={{color:'var(--color-text-muted)'}}>登录状态</span>
-                          <span className="text-xs px-2 py-1 rounded-full" style={getToken()?{background:'rgba(74,222,128,0.15)',color:'#4ade80'}:{background:'rgba(251,191,36,0.15)',color:'#fbbf24'}}>{getToken()?'已登录':'未登录'}</span>
+                          <span className="text-xs px-2 py-1 rounded-sm" style={getToken()?{background:'rgba(74,222,128,0.15)',color:'#4ade80'}:{background:'rgba(251,191,36,0.15)',color:'#fbbf24'}}>{getToken()?'已登录':'未登录'}</span>
                         </div>
                         {getToken() && <div className="px-3"><span className="text-xs" style={{color:'var(--color-text-muted)'}}>Token 预览</span><p className="text-xs font-mono mt-1 break-all p-2 rounded" style={{background:'var(--color-bg-page)',color:'var(--color-text-muted)'}}>{getToken().slice(0,60)}…</p></div>}
                         <div className="flex items-center justify-between px-3 py-2 rounded" style={{background:'var(--color-card-alt)'}}>
@@ -401,7 +401,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                     )}
                     {debugClickCount > 0 && debugAuth === 'hidden' && (
                       <div className="mt-2">
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{background:'var(--color-border-light)'}}>
+                        <div className="h-1.5 rounded-sm overflow-hidden" style={{background:'var(--color-border-light)'}}>
                           <div 
                             className="h-full transition-all duration-300 ease-out"
                             style={{width: `${debugProgress}%`, background:'var(--color-primary)'}}

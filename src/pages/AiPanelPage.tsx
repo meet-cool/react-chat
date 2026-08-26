@@ -129,7 +129,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
           <div className="flex items-center gap-2">
             <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              className="w-8 h-8 rounded-sm flex items-center justify-center"
               style={{ background: 'var(--color-primary)' }}
             >
               <Bot size={18} color="#fff" />
@@ -217,7 +217,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
           ) : filteredChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 px-4 text-center">
               <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                className="w-12 h-12 rounded-sm flex items-center justify-center"
                 style={{ background: 'var(--color-primary-light)' }}
               >
                 <MessageSquare size={22} style={{ color: 'var(--color-primary)' }} />
@@ -360,7 +360,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
           
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div 
-              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--color-primary)' }}
             >
               <Bot size={15} color="#fff" />
@@ -376,7 +376,16 @@ export function AiPanelPage({ }: AiPanelPageProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            <button 
+            <button
+              className="inline-flex items-center gap-1 p-2 hover:bg-[var(--color-hover-bg)] transition-colors rounded-sm text-xs"
+              style={{ color: 'var(--color-text-muted)' }}
+              onClick={() => navigate('/chat')}
+              title="返回主站"
+            >
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">返回主站</span>
+            </button>
+            <button
               className="p-2 hover:bg-[var(--color-hover-bg)] transition-colors rounded"
               style={{ color: 'var(--color-text-muted)' }}
               title="设置"
@@ -418,7 +427,7 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
     <div className="h-full flex flex-col items-center justify-center p-6">
       <div className="text-center max-w-md">
         <div 
-          className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+          className="w-20 h-20 mx-auto mb-6 rounded-sm flex items-center justify-center"
           style={{ background: 'var(--color-primary-light)' }}
         >
           <Bot size={36} style={{ color: 'var(--color-primary)' }} />
@@ -802,7 +811,7 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
         {messages.length === 0 && !streamingContent ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div 
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              className="w-16 h-16 rounded-sm flex items-center justify-center mb-4"
               style={{ background: 'var(--color-primary-light)' }}
             >
               <Bot size={28} style={{ color: 'var(--color-primary)' }} />

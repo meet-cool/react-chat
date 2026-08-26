@@ -79,7 +79,7 @@ export function ChatSidebarNav({
               }
             }}
             onClick={() => onCategoryClick(c.k)}
-            className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-all duration-150 w-full ${
+            className={`flex items-center gap-3 px-2 py-2.5 rounded-sm transition-all duration-150 w-full ${
               showLabels ? 'justify-start' : 'justify-center'
             }`}
             style={
@@ -111,7 +111,7 @@ export function ChatSidebarNav({
       {/* 切换标签显示 */}
       <button
         onClick={onToggleLabels}
-        className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-150 w-full text-xs ${
+        className={`flex items-center gap-2 px-2 py-2 rounded-sm transition-all duration-150 w-full text-xs ${
           showLabels ? 'justify-start' : 'justify-center'
         }`}
         style={{ color: 'var(--color-text-muted)', background: 'transparent' }}
@@ -128,7 +128,7 @@ export function ChatSidebarNav({
       {/* 个人主页 */}
       <button
         onClick={onNavigateToProfile}
-        className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-xl"
+        className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-sm"
         style={{ color: 'var(--color-text-light)', background: 'transparent' }}
         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -140,7 +140,7 @@ export function ChatSidebarNav({
       {/* 设置按钮 */}
       <button
         onClick={onOpenSettings}
-        className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-xl"
+        className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-sm"
         style={{ color: 'var(--color-text-light)', background: 'transparent' }}
         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}

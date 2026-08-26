@@ -39,12 +39,12 @@ function PasswordScreen({
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg-page)' }}>
-      <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+      <div className="w-full max-w-sm rounded-sm p-6" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
         <button onClick={onBack} className="mb-5 flex items-center gap-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
           <ArrowLeft size={14} /> 返回
         </button>
         <div className="flex flex-col items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+          <div className="w-12 h-12 rounded-sm flex items-center justify-center" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
             <Settings size={24} />
           </div>
           <h1 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>开发者调试</h1>
@@ -58,7 +58,7 @@ function PasswordScreen({
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
               placeholder="请输入密码"
-              className="w-full text-sm rounded-lg px-3 py-2.5 outline-none"
+              className="w-full text-sm rounded-sm px-3 py-2.5 outline-none"
               style={{ background: 'var(--color-input-bg)', border: `1px solid ${error ? 'var(--color-error)' : 'var(--color-divider)'}`, color: 'var(--color-text)' }}
             />
             <button
@@ -69,7 +69,7 @@ function PasswordScreen({
               {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
-          <button onClick={submit} className="px-4 rounded-lg text-sm font-medium" style={{ background: 'var(--color-primary)', color: '#fff' }}>
+          <button onClick={submit} className="px-4 rounded-sm text-sm font-medium" style={{ background: 'var(--color-primary)', color: '#fff' }}>
             解锁
           </button>
         </div>
@@ -121,7 +121,7 @@ function ApiTab() {
   return (
     <>
       {/* 预设地址 */}
-      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+      <div className="rounded-sm p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
           <Globe size={14} style={{ color: 'var(--color-primary)' }} /> 预设地址
         </h3>
@@ -132,7 +132,7 @@ function ApiTab() {
               <button
                 key={preset.url}
                 onClick={() => applyUrl(preset.url)}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all"
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-sm text-sm transition-all"
                 style={{
                   background: active ? 'var(--color-primary-light)' : 'var(--color-hover-bg)',
                   color: active ? 'var(--color-primary)' : 'var(--color-text)',
@@ -148,7 +148,7 @@ function ApiTab() {
       </div>
 
       {/* 自定义地址 */}
-      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+      <div className="rounded-sm p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
           <Settings size={14} style={{ color: 'var(--color-primary)' }} /> 自定义地址
         </h3>
@@ -158,25 +158,25 @@ function ApiTab() {
             value={customUrl}
             onChange={(e) => setCustomUrl(e.target.value)}
             placeholder="https://your-api.com"
-            className="flex-1 text-sm rounded-lg px-3 py-2 outline-none font-mono"
+            className="flex-1 text-sm rounded-sm px-3 py-2 outline-none font-mono"
             style={{ background: 'var(--color-input-bg)', border: '1px solid var(--color-divider)', color: 'var(--color-text)' }}
           />
           <button
             onClick={() => customUrl.trim() && applyUrl(customUrl.trim())}
-            className="px-3 rounded-lg text-sm font-medium"
+            className="px-3 rounded-sm text-sm font-medium"
             style={{ background: 'var(--color-primary)', color: '#fff' }}
           >
             应用
           </button>
         </div>
-        <div className="flex items-center justify-between px-3 py-2 rounded-lg mb-3" style={{ background: 'var(--color-input-bg)' }}>
+        <div className="flex items-center justify-between px-3 py-2 rounded-sm mb-3" style={{ background: 'var(--color-input-bg)' }}>
           <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>当前生效：</span>
           <span className="text-xs font-mono" style={{ color: 'var(--color-text)' }}>{getApiBaseUrl()}</span>
         </div>
         <button
           onClick={testNow}
           disabled={apiStatus === 'checking'}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-sm text-sm transition-all"
           style={{
             background: apiStatus === 'checking' ? 'var(--color-hover-bg)' : 'var(--color-primary-light)',
             color: apiStatus === 'checking' ? 'var(--color-text-muted)' : 'var(--color-primary)',
@@ -203,31 +203,31 @@ function SessionTab() {
   const token = getToken();
 
   return (
-    <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+    <div className="rounded-sm p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
       <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
         <Key size={14} style={{ color: 'var(--color-primary)' }} /> 会话管理
       </h3>
-      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg" style={{ background: 'var(--color-input-bg)' }}>
+      <div className="flex items-center justify-between px-3 py-2.5 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>
         <div>
           <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>登录状态</span>
           <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--color-text)' }}>{token ? '已登录' : '未登录'}</p>
         </div>
         {token
-          ? <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80' }}>活跃</span>
-          : <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>无 token</span>
+          ? <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80' }}>活跃</span>
+          : <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>无 token</span>
         }
       </div>
       {token && (
         <div className="px-3">
           <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Token 预览</span>
-          <p className="text-xs font-mono mt-1 break-all p-2 rounded-lg" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
+          <p className="text-xs font-mono mt-1 break-all p-2 rounded-sm" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
             {token.slice(0, 40)}...
           </p>
         </div>
       )}
       <button
         onClick={() => { clearToken(); window.location.reload(); }}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-sm text-sm font-medium"
         style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
       >
         <Trash2 size={14} /> 清除登录状态
@@ -270,14 +270,14 @@ function StorageTab() {
   };
 
   return (
-    <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+    <div className="rounded-sm p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
           <Trash2 size={14} style={{ color: 'var(--color-primary)' }} /> 本地存储
         </h3>
         <button
           onClick={() => { setItems(new Map(Object.entries(localStorage))); setCleared(false); }}
-          className="text-xs px-2 py-1 rounded-lg flex items-center gap-1"
+          className="text-xs px-2 py-1 rounded-sm flex items-center gap-1"
           style={{ background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
         >
           <RefreshCw size={12} /> 刷新
@@ -289,7 +289,7 @@ function StorageTab() {
         <>
           <div className="max-h-64 overflow-y-auto space-y-1">
             {Array.from(items.entries()).map(([key, val]) => (
-              <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs group" style={{ background: 'var(--color-input-bg)' }}>
+              <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs group" style={{ background: 'var(--color-input-bg)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="font-mono truncate" style={{ color: 'var(--color-text)' }}>{key}</span>
@@ -324,7 +324,7 @@ function StorageTab() {
               setItems(new Map());
               setCleared(true);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-sm text-sm font-medium"
             style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
           >
             <Trash2 size={14} /> 清除所有本地存储
@@ -358,7 +358,7 @@ export function DebugPage() {
         <div className="flex-1" />
         <button
           onClick={() => { setUnlocked(false); setActiveTab('api'); }}
-          className="text-xs px-2 py-1 rounded-lg"
+          className="text-xs px-2 py-1 rounded-sm"
           style={{ background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
         >
           锁定
@@ -423,14 +423,14 @@ function LayoutDebugTab({
   return (
     <div className="space-y-4">
       {/* 调试模式开关 */}
-      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+      <div className="rounded-sm p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Hash size={14} style={{ color: 'var(--color-warning)' }} /> 布局调试模式
           </h3>
           <button
             onClick={toggleDebugMode}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-sm transition-all"
             style={{
               background: debugMode ? 'var(--color-warning-light)' : 'var(--color-hover-bg)',
               color: debugMode ? 'var(--color-warning)' : 'var(--color-text-muted)',
@@ -442,11 +442,11 @@ function LayoutDebugTab({
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="p-3 rounded-lg" style={{ background: 'var(--color-input-bg)' }}>
+          <div className="p-3 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>
             <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>交互元素</div>
             <div className="text-lg font-bold mt-1" style={{ color: 'var(--color-text)' }}>{elementCount}</div>
           </div>
-          <div className="p-3 rounded-lg" style={{ background: 'var(--color-input-bg)' }}>
+          <div className="p-3 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>
             <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>快捷键</div>
             <div className="text-sm font-bold mt-1" style={{ color: 'var(--color-text)' }}>Shift+Click</div>
           </div>
@@ -460,12 +460,12 @@ function LayoutDebugTab({
 
       {/* 最后复制的信息 */}
       {debugInfo && (
-        <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-success-light)' }}>
+        <div className="rounded-sm p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-success-light)' }}>
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle size={14} style={{ color: 'var(--color-success)' }} />
             <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>最后复制的元素</span>
           </div>
-          <div className="p-2 rounded-lg font-mono text-xs break-all" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text)' }}>
+          <div className="p-2 rounded-sm font-mono text-xs break-all" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text)' }}>
             {debugInfo.path}
           </div>
           <div className="mt-2 flex gap-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -485,7 +485,7 @@ function LayoutDebugTab({
       )}
 
       {/* AI 使用说明 */}
-      <div className="rounded-xl p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
+      <div className="rounded-sm p-4" style={{ background: 'var(--color-card)', border: '1px solid var(--color-divider)' }}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
           <Settings size={14} style={{ color: 'var(--color-primary)' }} /> AI 使用指南
         </h3>
@@ -493,7 +493,7 @@ function LayoutDebugTab({
           <p>• 开启布局调试模式后，页面上每个按钮会显示黄色编号</p>
           <p>• 按住 <code className="px-1 py-0.5 rounded" style={{ background: 'var(--color-input-bg)' }}>Shift</code> 并点击页面元素，路径自动复制到剪贴板</p>
           <p>• 将路径提供给 AI，例如：</p>
-          <div className="p-2 rounded-lg font-mono text-xs" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
+          <div className="p-2 rounded-sm font-mono text-xs" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
             {`修改 #header > button.nav-btn 的样式`}
           </div>
         </div>

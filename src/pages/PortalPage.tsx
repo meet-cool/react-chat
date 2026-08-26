@@ -267,7 +267,7 @@ export function PortalPage() {
           <img
             src={titleImg}
             alt="Arcle 聊天互联"
-            className="w-full max-w-3xl mx-auto mb-10 rounded-xl shadow-[var(--shadow-lg)]"
+            className="w-full max-w-3xl mx-auto mb-10 rounded-sm shadow-[var(--shadow-lg)]"
             style={{ objectFit: 'contain', maxHeight: '220px' }}
           />
           <p

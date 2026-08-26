@@ -487,3 +487,28 @@ export interface GroupRequest {
   message: string;
   create_time: number;
 }
+export interface ShopItem {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  image: string;
+  price: number;
+  stock: number;
+  scope: 'school' | 'campus' | 'tuckshop';
+  sort_order: number;
+}
+
+export interface ShopOrder {
+  id: number;
+  item_id: number;
+  item_name: string;
+  icon: string;
+  price: number;
+  quantity: number;
+  total_price: number;
+  scope: string;
+  status: number;
+  create_time: number;
+  create_time_fmt?: string;
+}

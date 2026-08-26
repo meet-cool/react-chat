@@ -203,7 +203,7 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
           {u.mutual && (
             <button
               onClick={() => handleMessage(u)}
-              className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-full"
+              className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-sm"
               style={{ width: 36, height: 36, minWidth: 36 }}
               title="发起私聊"
             >
@@ -219,7 +219,7 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
                 setEditingText(display);
               }
             }}
-            className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-full"
+            className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-sm"
             style={{ width: 36, height: 36, minWidth: 36, color: 'var(--color-text-muted)' }}
             title={isEditing ? '保存备注' : '编辑备注'}
           >
@@ -227,7 +227,7 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
           </button>
           <button
             onClick={() => handleToggleFollow(u)}
-            className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-full"
+            className="btn btn-sm p-1 justify-center flex-shrink-0 rounded-sm"
             style={{
               width: 36, height: 36, minWidth: 36,
               ...(u.i_follow

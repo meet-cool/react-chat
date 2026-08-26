@@ -36,6 +36,7 @@ import { MemoryCardsPage } from './pages/games/MemoryCardsPage';
 import { NumberGuessPage } from './pages/games/NumberGuessPage';
 import MomentsPage from './pages/MomentsPage';
 import { PointsPage } from './pages/PointsPage';
+import { MallPage } from './pages/MallPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -172,6 +173,12 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
                 <Navigate to="/login" replace />
               )
             }
+          />
+
+          {/* 商城 - 需登录 */}
+          <Route
+            path="/shop"
+            element={user ? <MallPage /> : <Navigate to="/login" replace />}
           />
 
           {/* 个人主页 - 需登录 */}

@@ -734,3 +734,25 @@ export const groupApi = {
   poll: (id: number, afterId: number) =>
     get<{ messages: ChatMessage[] }>(`/chat/groups/${id}/poll?after_id=${afterId}`, { timeoutMs: 40000 }),
 };
+
+// ============================================================
+// 商城 API（学校商城 / 校区商城 / 小卖部，积分兑换）
+// ============================================================
+import type { ShopItem, ShopOrder } from '../types';
+
+export type ShopScope = 'school' | 'campus' | 'tuckshop';
+
+export const shopApi = {
+  items: (scope: ShopScope) =>
+    get<{ items: ShopItem[]; balance: number }>(`/chat/shop/items?scope=${scope}`),
+  buy: (itemId: number, quantity = 1) =>
+    post<{ order_id: number; balance: number; message: string }>('/chat/shop/buy', {
+      item_id: itemId,
+      quantity,
+    }),
+  orders: (page = 1, perPage = 20) =>
+    get<{
+      items: ShopOrder[];
+      pagination: { current_page: number; last_page: number; per_page: number; total: number };
+    }>(`/chat/shop/orders?page=${page}&per_page=${perPage}`),
+};

@@ -66,7 +66,7 @@ export default function Points() {
             </h1>
 
             {/* 积分卡片 */}
-            <div className="card p-6 mb-6 bg-gradient-to-br from-[var(--color-primary-light)] to-transparent">
+            <div className="card p-6 mb-6 bg-[var(--color-primary-light)]">
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="text-[var(--color-text-muted)] text-sm">当前积分</div>
