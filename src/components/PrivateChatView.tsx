@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { renderBBCode } from '../lib/bbcode';
+import { socialApi, type SearchResultItem } from '../lib/api';
 import {
   Loader2,
   Send,
   Smile,
   X,
+  Dices,
+  Hand,
+  Search,
+  Undo2,
   Reply as ReplyIcon,
   MessageSquare,
 } from 'lucide-react';
@@ -40,6 +44,12 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const [content, setContent] = useState('');
   const [listLoading, setListLoading] = useState(false);
   const [showListMobile, setShowListMobile] = useState(true);
+  // 消息搜索
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [keyword, setKeyword] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResultItem[] | null>(null);
+  const [searchError, setSearchError] = useState('');
 
   const lastMsgIdRef = useRef<number>(0);
   // 轮询并发防护：上一轮请求未返回时跳过本轮，避免慢响应乱序覆盖
@@ -209,6 +219,83 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   };
 
   // 发送消息
+  // 消息搜索（防抖）
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doSearch = (kw: string) => {
+    const q = kw.trim();
+    if (!activeConv) return;
+    if (q.length < 2) { setSearchError('至少输入 2 个字符'); setSearchResults(null); return; }
+    setSearching(true);
+    setSearchError('');
+    socialApi.searchConvMessages(activeConv.id, q)
+      .then((r) => setSearchResults(r.results))
+      .catch((e) => setSearchError(e instanceof Error ? e.message : '搜索失败'))
+      .finally(() => setSearching(false));
+  };
+  const onKeywordChange = (v: string) => {
+    setKeyword(v);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const q = v.trim();
+    if (q.length >= 2) searchTimerRef.current = setTimeout(() => doSearch(v), 400);
+    else { setSearchResults(null); setSearchError(''); }
+  };
+  const closeSearch = () => { setSearchOpen(false); setKeyword(''); setSearchResults(null); setSearchError(''); };
+
+  // 拍一拍
+  const handlePat = async () => {
+    if (!activeConv) return;
+    try {
+      const r = await socialApi.pat(activeConv.id);
+      setMessages((prev) => [...prev, {
+        id: Date.now(),
+        conversation_id: activeConv.id,
+        sender_id: currentUserId,
+        content: '',
+        type: 'pat',
+        is_read: 0,
+        create_time: r.pat_time,
+        create_time_fmt: '',
+        reply_to: 0,
+        status: 0,
+        is_self: true,
+        reactions: [],
+        reply: null,
+        is_recalled: false,
+        username: '',
+        avatar: '',
+      } as any]);
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : '拍一拍失败', 'error');
+    }
+  };
+
+  // 撤回自己的私聊消息
+  const handleRecall = async (msg: any) => {
+    if (!activeConv) return;
+    try {
+      await socialApi.recallPrivateMessage(activeConv.id, msg.id);
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_recalled: true, content: '' } : m)));
+      addToast('消息已撤回', 'success');
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : '撤回失败', 'error');
+    }
+  };
+
+  // 摇骰子
+  const handleDice = () => {
+    if (!activeConv || sending) return;
+    const n = 1 + Math.floor(Math.random() * 6);
+    (async () => {
+      try {
+        const m = await conversationApi.send(activeConv.id, { content: String(n), type: 'dice' });
+        setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+        lastMsgIdRef.current = Math.max(lastMsgIdRef.current, m.id);
+      } catch (e) {
+        addToast(e instanceof Error ? e.message : '发送失败', 'error');
+      }
+    })();
+  };
+
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || !activeConv) return;
@@ -389,14 +476,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
             {/* 会话头部 */}
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}>
               <div className="flex items-center gap-2 min-w-0">
-                <button
-                  className="md:hidden btn btn-sm p-2"
-                  onClick={() => setShowListMobile(true)}
-                  title="返回会话列表"
-                  style={{ minHeight: 36, minWidth: 36 }}
-                >
-                  <span className="text-lg">×</span>
-                </button>
+                {/* 仅桌面端显示返回按钮；移动端由 ChatPage header 统一处理 */}
                 {onBack && (
                   <button className="hidden md:flex btn btn-sm p-2" onClick={onBack} title="返回聊天室列表" style={{ minHeight: 36, minWidth: 36 }}>
                     <span className="text-lg">×</span>
@@ -410,7 +490,60 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                   </p>
                 </div>
               </div>
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn btn-sm p-2"
+                  onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+                  title={searchOpen ? '关闭搜索' : '搜索聊天记录'}
+                  style={{ minHeight: 36, minWidth: 36 }}
+                >
+                  {searchOpen ? <X size={15} /> : <Search size={15} />}
+                </button>
+                <button className="btn btn-sm p-2" onClick={handlePat} title="拍一拍对方" style={{ minHeight: 36, minWidth: 36 }}>
+                  <Hand size={15} />
+                </button>
+              </div>
             </div>
+
+            {/* 搜索面板 */}
+            {searchOpen && (
+              <div className="border-b px-4 py-2" style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}>
+                <div className="flex items-center gap-2">
+                  <Search size={14} style={{ color: 'var(--color-text-muted)' }} />
+                  <input
+                    autoFocus
+                    value={keyword}
+                    onChange={(e) => onKeywordChange(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && doSearch(keyword)}
+                    placeholder="搜索聊天记录（至少 2 个字符）"
+                    className="flex-1 text-sm bg-transparent border-none outline-none"
+                    style={{ color: 'var(--color-text)' }}
+                  />
+                  {searching && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>搜索中…</span>}
+                </div>
+                {searchError && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{searchError}</p>}
+                {searchResults && (
+                  <div className="mt-2 max-h-60 overflow-y-auto">
+                    {searchResults.length === 0 ? (
+                      <p className="text-xs py-2" style={{ color: 'var(--color-text-muted)' }}>没有找到匹配的消息</p>
+                    ) : (
+                      searchResults.map((r) => (
+                        <div key={r.id} className="flex items-start gap-2 py-2 border-b last:border-b-0" style={{ borderColor: 'var(--color-divider)' }}>
+                          <Avatar username={r.username} avatar={r.avatar} size={26} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{r.is_self ? '我' : r.username}</span>
+                              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{r.create_time_fmt}</span>
+                            </div>
+                            <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>{r.content}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 消息列表 */}
             <div ref={scrollContainerRef} onScroll={handleMessagesScroll} className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
@@ -457,6 +590,9 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                 <button onClick={() => setShowEmoji((s) => !s)} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="表情" type="button">
                   <Smile size={18} />
                 </button>
+                <button onClick={handleDice} disabled={sending} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="摇骰子" type="button">
+                  <Dices size={18} />
+                </button>
                 {showEmoji && (
                   <div className="absolute z-50" style={{ bottom: 72, left: 12 }}>
                     <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />
@@ -499,6 +635,9 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
         onForward={() => { if (actionMenu.msg) handleForward(actionMenu.msg); }}
         onReport={() => { if (actionMenu.msg) handleReport(actionMenu.msg); }}
         onCopy={() => { if (actionMenu.msg) navigator.clipboard?.writeText(actionMenu.msg.content).catch(() => {}); }}
+        canRecall={!!actionMenu.msg && actionMenu.msg.is_self && !actionMenu.msg.is_recalled && (Date.now() - actionMenu.msg.create_time * 1000) < 120000}
+        recallRemaining={actionMenu.msg ? Math.max(0, 120 - Math.floor(Date.now() / 1000 - actionMenu.msg.create_time)) : 0}
+        onRecall={() => { if (actionMenu.msg) handleRecall(actionMenu.msg); }}
       />
 
       {/* 转发弹窗 */}
@@ -529,7 +668,9 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
   onActionTrigger: (x: number, y: number) => void;
   onReact: (emoji: string) => void;
 }) {
-  const isMarkdown = msg.type === 'markdown';
+  // 富文本消息：BBCode 渲染（旧 markdown 类型兼容展示）
+  const isRich = msg.type === 'bbcode' || msg.type === 'markdown';
+  const richHtml = isRich ? renderBBCode(msg.content) : '';
   const time = msg.create_time_fmt.split(' ')[1] || '';
   const trigger = useMessageActionTrigger(onActionTrigger);
 
@@ -552,13 +693,29 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
             <span className="truncate">{msg.reply.content_short}</span>
           </div>
         )}
-        <div className="px-3 py-2 text-sm" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
-          {isMarkdown ? (
-            <div className="markdown-body break-words"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
-          ) : (
-            <span className="break-words whitespace-pre-wrap">{msg.content}</span>
-          )}
-        </div>
+        {msg.is_recalled ? (
+          <div className="px-3 py-1.5 text-xs" style={{ background: 'var(--color-card-alt)', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border-light)', borderRadius: 8, fontStyle: 'italic' }}>
+            {msg.is_self ? '你' : msg.username}撤回了一条消息
+          </div>
+        ) : msg.type === 'pat' ? (
+          <div className="px-3 py-1.5 text-xs" style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+            👋 {msg.is_self ? '你拍了拍对方' : '对方拍了拍你'}
+          </div>
+        ) : msg.type === 'dice' ? (
+          <div className="px-3 py-2 flex items-center gap-2" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
+            <span className="text-xl">🎲</span>
+            <span className="text-lg font-bold">{msg.content || '…'}</span>
+            <span className="text-xs" style={{ opacity: 0.7 }}>点</span>
+          </div>
+        ) : (
+          <div className="px-3 py-2 text-sm" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
+            {isRich ? (
+              <div className="bbcode-body break-words" dangerouslySetInnerHTML={{ __html: richHtml }} />
+            ) : (
+              <span className="break-words whitespace-pre-wrap">{msg.content}</span>
+            )}
+          </div>
+        )}
         {msg.reactions && msg.reactions.length > 0 && (
           <div className={`flex flex-wrap gap-1 mt-1 ${msg.is_self ? 'justify-end' : 'justify-start'}`}>
             {msg.reactions.map((r) => (

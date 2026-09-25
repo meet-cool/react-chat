@@ -32,5 +32,14 @@ lerna-debug.log*
 *.sln
 *.sw?
 
+# 本地环境配置（可能含密钥，见 .env.example）
+.env
+.env.local
+.env.production
+
+# 误入仓的二进制杂物
+.esbuild.exe
+.esbuild_test.exe
+
 # 本地日志产物（vite.log 等）
 *.log

@@ -13,9 +13,11 @@ interface RoomListProps {
   onCreate: () => void;
   loading?: boolean;
   onOpenSettings?: () => void;
+  /** 移动端全屏展开时关闭侧边栏 */
+  onClose?: () => void;
 }
 
-export function RoomList({ rooms, activeRoomId, onSelect, onCreate, loading, onOpenSettings }: RoomListProps) {
+export function RoomList({ rooms, activeRoomId, onSelect, onCreate, loading, onOpenSettings, onClose }: RoomListProps) {
   const [keyword, setKeyword] = useState('');
 
   const filtered = rooms.filter((r) =>
@@ -31,6 +33,16 @@ export function RoomList({ rooms, activeRoomId, onSelect, onCreate, loading, onO
             <Hash size={18} /> 聊天室
           </h2>
           <div className="flex items-center gap-1">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="btn btn-sm p-2"
+                style={{ minHeight: 36, minWidth: 36 }}
+                aria-label="收起"
+              >
+                <X size={16} />
+              </button>
+            )}
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserPlus, UserMinus, AtSign, MessageSquare, X, User } from 'lucide-react';
+import { UserPlus, UserMinus, AtSign, MessageSquare, X, User, Ban } from 'lucide-react';
 import type { FollowStatus } from '../types';
 import { followApi } from '../lib/api';
 import { Avatar } from './Avatar';
@@ -20,6 +20,8 @@ interface UserActionMenuProps {
   onMessage?: (userId: number) => void;
   onFollowChange?: (followed: boolean, mutual: boolean) => void;
   onViewProfile?: (username: string) => void;
+  /** 拉黑该用户 */
+  onBlock?: (userId: number, username: string) => void;
 }
 
 export function UserActionMenu({
@@ -32,6 +34,7 @@ export function UserActionMenu({
   onMessage,
   onFollowChange,
   onViewProfile,
+  onBlock,
 }: UserActionMenuProps) {
   const { addToast } = useApp();
   const [status, setStatus] = useState<FollowStatus | null>(null);
@@ -253,6 +256,19 @@ export function UserActionMenu({
         <User size={15} style={{ color: 'var(--color-primary)' }} />
         <span>查看主页</span>
       </button>
+
+      {onBlock && user.id !== currentUserId && (
+        <button
+          onClick={() => { onBlock?.(user.id, user.username); onClose(); }}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
+          style={{ color: 'var(--color-error)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <Ban size={15} />
+          <span>拉黑该用户</span>
+        </button>
+      )}
     </div>
   );
 }

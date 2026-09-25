@@ -19,6 +19,7 @@ import {
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
 import titleImg from '../assets/title.png';
+import { InstallPrompt } from '../components/InstallPrompt';
 
 interface PublicStats {
   total_users: number;
@@ -183,7 +184,7 @@ export function PortalPage() {
           style={{ background: 'var(--color-primary-light)', borderColor: 'var(--color-primary)' }}
         >
           <Megaphone size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-          <p className="text-sm flex-1" style={{ color: 'var(--color-primary-dark)' }}>
+          <p className="text-sm flex-1 min-w-0" style={{ color: 'var(--color-primary-dark)' }}>
             {notice}
           </p>
           <button
@@ -274,7 +275,7 @@ export function PortalPage() {
             className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            ARCLE 是一个现代化的在线聊天平台，支持实时群聊、私聊、表情反应、Markdown 消息，
+            ARCLE 是一个现代化的在线聊天平台，支持实时群聊、私聊、表情反应、BBCode 富文本消息，
             帮助你和团队轻松沟通。
           </p>
 
@@ -377,7 +378,7 @@ export function PortalPage() {
             <FeatureCard
               icon={MessageSquare}
               title="实时群聊"
-              desc="加入或创建聊天室，与团队成员实时交流。支持 Markdown 格式，让消息更生动。"
+              desc="加入或创建聊天室，与团队成员实时交流。支持 BBCode 富文本，让消息更生动。"
             />
             <FeatureCard
               icon={Lock}
@@ -479,7 +480,7 @@ export function PortalPage() {
           <MessageSquare size={16} style={{ color: 'var(--color-primary)' }} />
           <span style={{ color: 'var(--color-text)' }}>ARCLE</span>
         </div>
-        <p className="mb-3">© 2024 ARCLE 在线聊天平台</p>
+        <p className="mb-3">© {new Date().getFullYear()} ARCLE 在线聊天平台</p>
         <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
           Build v1.0.18 | {new Date().toLocaleDateString('zh-CN')}
         </p>
@@ -499,6 +500,9 @@ export function PortalPage() {
           <span>调试</span>
         </button>
       </footer>
+
+      {/* PWA 安装提示 */}
+      <InstallPrompt />
     </div>
   );
 }

@@ -62,20 +62,30 @@ export function PluginMarketPage({ onBack }: Props) {
             <span className="text-xs px-2 py-0.5 rounded-sm" style={{ background: 'var(--color-success-light)', color: 'var(--color-success)' }}>启用中</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {games.map(game => (
+            {loading
+              ? [0, 1, 2, 3].map(i => (
+                  <div key={i} className="p-4 border animate-pulse" style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
+                    <div className="w-10 h-10 mb-2" style={{ background: 'var(--color-hover-bg)' }} />
+                    <div className="h-4 w-14 mb-2" style={{ background: 'var(--color-hover-bg)' }} />
+                    <div className="h-3 w-24" style={{ background: 'var(--color-hover-bg)' }} />
+                  </div>
+                ))
+              : games.length === 0
+                ? <div className="col-span-2 md:col-span-4 text-center py-6 text-sm" style={{ color: 'var(--color-text-muted)' }}>暂无可用小游戏</div>
+                : games.map(game => (
               <button
                 key={game.slug}
                 onClick={() => navigate(`/plugins/games/${game.slug.replace(/_/g, '-')}`)}
-                className="p-4 text-left transition-all duration-200 hover:scale-105 border"
+                className="p-4 flex flex-col items-start text-left transition-all duration-200 hover:scale-105 border whitespace-normal"
                 style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
               >
                 <div className="w-10 h-10 flex items-center justify-center mb-2" style={{ background: `${game.color}20`, color: game.color }}>
                   <Gamepad2 size={20} />
                 </div>
                 <div className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{game.name}</div>
-                <div className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{game.description}</div>
+                <div className="text-xs mt-1 line-clamp-2 whitespace-normal" style={{ color: 'var(--color-text-muted)' }}>{game.description}</div>
               </button>
-            ))}
+                ))}
           </div>
         </section>
 
@@ -88,7 +98,17 @@ export function PluginMarketPage({ onBack }: Props) {
           </div>
           <div className="p-4 border" style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
             <div className="flex flex-wrap gap-3">
-              {gifts.map(gift => (
+              {loading
+                ? [0, 1, 2].map(i => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 border animate-pulse" style={{ borderColor: 'var(--color-border-light)' }}>
+                      <span className="w-7 h-7" style={{ background: 'var(--color-hover-bg)' }} />
+                      <div>
+                        <div className="h-3.5 w-10 mb-1" style={{ background: 'var(--color-hover-bg)' }} />
+                        <div className="h-2.5 w-12" style={{ background: 'var(--color-hover-bg)' }} />
+                      </div>
+                    </div>
+                  ))
+                : gifts.map(gift => (
                 <div key={gift.id} className="flex items-center gap-2 px-3 py-2 border" style={{ borderColor: 'var(--color-border-light)' }}>
                   <span className="text-2xl">{gift.icon}</span>
                   <div>
@@ -140,12 +160,24 @@ export function PluginMarketPage({ onBack }: Props) {
             <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>全部插件</h2>
           </div>
           <div className="space-y-2">
-            {enabledPlugins.map(plugin => (
-              <PluginCard key={plugin.slug} plugin={plugin} enabled />
-            ))}
-            {disabledPlugins.map(plugin => (
-              <PluginCard key={plugin.slug} plugin={plugin} enabled={false} />
-            ))}
+            {loading
+              ? [0, 1, 2].map(i => (
+                  <div key={i} className="flex items-center gap-3 p-3 border animate-pulse" style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
+                    <div className="w-10 h-10 flex-shrink-0" style={{ background: 'var(--color-hover-bg)' }} />
+                    <div className="flex-1">
+                      <div className="h-3.5 w-28 mb-1.5" style={{ background: 'var(--color-hover-bg)' }} />
+                      <div className="h-2.5 w-44" style={{ background: 'var(--color-hover-bg)' }} />
+                    </div>
+                  </div>
+                ))
+              : (<>
+                {enabledPlugins.map(plugin => (
+                  <PluginCard key={plugin.slug} plugin={plugin} enabled />
+                ))}
+                {disabledPlugins.map(plugin => (
+                  <PluginCard key={plugin.slug} plugin={plugin} enabled={false} />
+                ))}
+              </>)}
           </div>
         </section>
       </div>

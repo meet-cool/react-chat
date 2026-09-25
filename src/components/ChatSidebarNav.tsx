@@ -7,12 +7,18 @@ import {
   SendHorizonal,
   Star,
   Sparkles,
+  Puzzle,
+  Camera,
   GraduationCap,
   ChevronLeft,
   ChevronRight,
   User,
   Settings,
+  Menu as MenuIcon,
+  BookOpen,
+  X,
 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { SidebarCategory } from './chat-types';
 
 interface ChatSidebarNavProps {
@@ -24,6 +30,8 @@ interface ChatSidebarNavProps {
   onToggleLabels: () => void;
   onNavigateToProfile: () => void;
   onOpenSettings: () => void;
+  onOpenGuide: () => void;
+  onOpenMbti: () => void;
 }
 
 const CATEGORIES: { k: SidebarCategory; label: string; icon: typeof MessageSquare }[] = [
@@ -33,8 +41,10 @@ const CATEGORIES: { k: SidebarCategory; label: string; icon: typeof MessageSquar
   { k: 'contacts', label: '通讯录', icon: BookUser },
   { k: 'confession', label: '表白墙', icon: Heart },
   { k: 'bottle', label: '漂流瓶', icon: SendHorizonal },
+  { k: 'moments', label: '朋友圈', icon: Camera },
   { k: 'points', label: '积分中心', icon: Star },
-  { k: 'extensions', label: '插件', icon: Sparkles },
+  { k: 'extensions', label: 'AI 广场', icon: Sparkles },
+  { k: 'plugins', label: '插件市场', icon: Puzzle },
   { k: 'english', label: '英语学习', icon: GraduationCap },
 ];
 
@@ -47,7 +57,35 @@ export function ChatSidebarNav({
   onToggleLabels,
   onNavigateToProfile,
   onOpenSettings,
+  onOpenGuide,
+  onOpenMbti,
 }: ChatSidebarNavProps) {
+  // 底部菜单栏（个人主页 / 设置 / 新手指导）
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
+  const menuItems: { label: string; icon: typeof User; onClick: () => void }[] = [
+    { label: '个人主页', icon: User, onClick: onNavigateToProfile },
+    { label: '设置', icon: Settings, onClick: onOpenSettings },
+    { label: '新手指导', icon: BookOpen, onClick: onOpenGuide },
+  ];
+
   return (
     <div
       className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200"
@@ -125,29 +163,51 @@ export function ChatSidebarNav({
 
       <div className="flex-1" />
 
-      {/* 个人主页 */}
-      <button
-        onClick={onNavigateToProfile}
-        className="w-12 h-12 flex items-center justify-center transition-all duration-150 rounded-sm"
-        style={{ color: 'var(--color-text-light)', background: 'transparent' }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        title="个人主页"
-      >
-        <User size={22} />
-      </button>
-
-      {/* 设置按钮 */}
-      <button
-        onClick={onOpenSettings}
-        className="w-14 h-14 flex items-center justify-center transition-all duration-150 rounded-sm"
-        style={{ color: 'var(--color-text-light)', background: 'transparent' }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        title="设置"
-      >
-        <Settings size={24} />
-      </button>
+      {/* 菜单栏：个人主页 / 设置 / 新手指导 */}
+      <div ref={menuRef} className="relative w-full flex justify-center">
+        {menuOpen && (
+          <div
+            className="absolute bottom-14 left-1 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 60 }}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+              <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>菜单</span>
+              <button onClick={() => setMenuOpen(false)} className="p-0.5" style={{ color: 'var(--color-text-muted)' }} aria-label="关闭菜单">
+                <X size={13} />
+              </button>
+            </div>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => { setMenuOpen(false); item.onClick(); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors text-left"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Icon size={16} style={{ color: 'var(--color-primary)' }} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className={`flex items-center gap-3 px-2 py-2.5 rounded-sm transition-all duration-150 w-full ${
+            showLabels ? 'justify-start' : 'justify-center'
+          }`}
+          style={{ color: 'var(--color-text-light)', background: menuOpen ? 'var(--color-hover-bg)' : 'transparent' }}
+          onMouseEnter={(e) => { if (!menuOpen) e.currentTarget.style.background = 'var(--color-hover-bg)'; }}
+          onMouseLeave={(e) => { if (!menuOpen) e.currentTarget.style.background = 'transparent'; }}
+          title="菜单"
+        >
+          <MenuIcon size={22} />
+          {showLabels && <span className="text-sm font-medium truncate">菜单</span>}
+        </button>
+      </div>
     </div>
   );
 }

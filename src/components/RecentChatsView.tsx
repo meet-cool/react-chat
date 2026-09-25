@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Hash } from 'lucide-react';
+import { Hash, X } from 'lucide-react';
 import type { Room } from '../types';
 import type { Conversation } from '../types';
 import { Avatar } from './Avatar';
+import { HashAvatar } from './HashAvatar';
 
 interface RecentChatItem {
   type: 'room' | 'private';
@@ -22,6 +23,8 @@ interface RecentChatsViewProps {
   onSelectRoom: (room: Room) => void;
   onSelectConv: (conv: Conversation) => void;
   loading?: boolean;
+  /** 移动端全屏展开时关闭侧边栏 */
+  onClose?: () => void;
 }
 
 export function RecentChatsView({
@@ -32,6 +35,7 @@ export function RecentChatsView({
   onSelectRoom,
   onSelectConv,
   loading,
+  onClose,
 }: RecentChatsViewProps) {
   const [keyword, setKeyword] = useState('');
 
@@ -89,6 +93,20 @@ export function RecentChatsView({
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--color-card)' }}>
+      {/* 移动端顶部栏：标题 + 关闭按钮 */}
+      {onClose && (
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
+          <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>最近聊天</span>
+          <button
+            onClick={onClose}
+            className="btn btn-sm p-2"
+            style={{ minHeight: 36, minWidth: 36 }}
+            aria-label="收起"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
       {/* 搜索框 */}
       <div className="p-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
         <div className="relative">
@@ -162,16 +180,11 @@ export function RecentChatsView({
                   }
                 }}
               >
-                {/* 头像/图标 */}
+                {/* 头像/图标：房间用哈希头像（与房间列表一致），私聊用用户头像 */}
                 {item.type === 'private' ? (
                   <Avatar username={item.name} avatar={item.avatar} size={40} />
                 ) : (
-                  <div
-                    className="w-10 h-10 flex items-center justify-center"
-                    style={{ background: 'var(--color-primary-light)', borderRadius: '3px' }}
-                  >
-                    <Hash size={18} style={{ color: 'var(--color-primary)' }} />
-                  </div>
+                  <HashAvatar seed={`room:${item.id}:${item.name}`} size={40} title={item.name} />
                 )}
 
                 {/* 内容 */}

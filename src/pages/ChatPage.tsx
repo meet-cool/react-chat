@@ -21,6 +21,11 @@ import { RoomChatView } from '../components/RoomChatView';
 import { PrivateChatView } from '../components/PrivateChatView';
 import { GroupChatView } from '../components/GroupChatView';
 import { SettingsModal } from '../components/SettingsModal';
+import { CreateRoomModal } from '../components/CreateRoomModal';
+import { InstallPrompt } from '../components/InstallPrompt';
+import { BeginnerGuide } from '../components/BeginnerGuide';
+import { Bell } from 'lucide-react';
+import { socialApi, type NotificationItem } from '../lib/api';
 import { RoomSettingsModal } from '../components/RoomSettingsModal';
 import { ForwardDialog } from '../components/ForwardDialog';
 import { ReportDialog } from '../components/ReportDialog';
@@ -55,6 +60,22 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
+  // 窄桌面（平板竖屏等）：默认折叠右侧成员栏，避免会话区被挤压
+  const [isNarrow, setIsNarrow] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1099px)').matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1099px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsNarrow(e.matches);
+      setRightCollapsed(e.matches);
+    };
+    setIsNarrow(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   // 侧边栏状态
   const [category, setCategory] = useState<SidebarCategory>('recent');
   const [indicatorTop, setIndicatorTop] = useState(24);
@@ -83,8 +104,10 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [privateTarget, setPrivateTarget] = useState<number | null>(null);
   const [showPrivate, setShowPrivate] = useState(false);
 
-  // 右侧成员栏
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  // 右侧成员栏（窄桌面默认折叠，避免会话区被挤压）
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1099px)').matches
+  );
 
   // 发送状态
   const [sending, setSending] = useState(false);
@@ -99,6 +122,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showRoomSettings, setShowRoomSettings] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo>(user);
 
   // refs
@@ -204,6 +228,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           const fresh = list.filter((m) => !existingIds.has(m.id));
           if (fresh.length > 0) {
             lastMessageIdRef.current = Math.max(lastMessageIdRef.current, fresh[fresh.length - 1].id);
+            // 收到他人新消息时播放提示音（设置开关，默认关）
+            const hasOthers = fresh.some((m) => m.user_id !== currentUser.id && !m.is_recalled);
+            if (hasOthers && localStorage.getItem('arcle_sound') === '1') {
+              try { new Audio('/sound/typing.mp3').play().catch(() => {}); } catch { /* ignore */ }
+            }
           }
           return fresh.length > 0 ? [...prev, ...fresh] : prev;
         });
@@ -269,7 +298,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     lastManualActionRef.current = Date.now();
     setShowPrivate(false);
     setPrivateTarget(null);
-    setRightCollapsed(false);
+    if (!isNarrow) setRightCollapsed(false);
     setMobileSidebar(null);
     
     // 移动端：切换到聊天视图
@@ -320,7 +349,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     } finally {
       joiningRef.current.delete(room.id);
     }
-  }, [addToast, loadRooms, loadMessages, loadMembers, handleAuthError, isMobile]);
+  }, [addToast, loadRooms, loadMessages, loadMembers, handleAuthError, isMobile, isNarrow]);
 
   // 退出房间
   const handleLeaveRoom = useCallback(async () => {
@@ -353,6 +382,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       setSending(false);
     }
   }, [activeRoom, addToast, replyTo]);
+
+
+  // 摇骰子：发送 dice 类型消息
+  const handleDice = useCallback(() => {
+    if (!activeRoom) return;
+    const n = 1 + Math.floor(Math.random() * 6);
+    handleSend(String(n), 'dice');
+  }, [activeRoom, handleSend]);
 
   // @提及
   const handleMention = useCallback((username: string) => {
@@ -442,13 +479,54 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleClosePrivate = useCallback(() => {
     setShowPrivate(false);
     setPrivateTarget(null);
-    setRightCollapsed(false);
+    if (!isNarrow) setRightCollapsed(false);
     lastLoadRoomRef.current = null;
     // 移动端：退出聊天视图
     if (isMobile) {
       setMobileView('list');
     }
-  }, [isMobile]);
+  }, [isMobile, isNarrow]);
+
+  // 撤回消息（房间）
+  const handleRecall = useCallback(async (msg: ChatMessage) => {
+    if (!activeRoom) return;
+    try {
+      await socialApi.recallRoomMessage(activeRoom.id, msg.id);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msg.id ? { ...m, is_recalled: true, content: '' } : m))
+      );
+      addToast('消息已撤回', 'success');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '撤回失败', 'error');
+    }
+  }, [activeRoom, addToast]);
+
+  // 通知中心
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifList, setNotifList] = useState<NotificationItem[]>([]);
+  const [notifUnread, setNotifUnread] = useState(0);
+
+  const refreshUnread = useCallback(() => {
+    socialApi.unreadCount().then((r) => setNotifUnread(r.unread)).catch(() => {});
+  }, []);
+
+  const openNotifications = useCallback(() => {
+    setNotifOpen((v) => !v);
+    if (!notifOpen) {
+      socialApi.notifications().then((r) => setNotifList(r)).catch(() => {});
+      socialApi.markRead().then(() => setNotifUnread(0)).catch(() => {});
+    }
+  }, [notifOpen]);
+
+  // 拉黑用户
+  const handleBlock = useCallback(async (userId: number, username: string) => {
+    try {
+      const r = await socialApi.block(userId);
+      addToast(`已拉黑 ${r.username || username}`, 'success');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '操作失败', 'error');
+    }
+  }, [addToast]);
 
   // 房间更新
   const handleRoomUpdated = useCallback((updated: Room) => {
@@ -479,7 +557,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
   useEffect(() => {
     conversationApi.list().then(setConversations).catch(() => {});
-  }, []);
+    refreshUnread();
+  }, [refreshUnread]);
 
   // 轮询消息
   useEffect(() => {
@@ -504,15 +583,18 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       loadRooms();
       conversationApi.list().then(setConversations).catch(() => {});
       if (activeRoom) loadMembers(activeRoom.id);
+      refreshUnread();
     }, REFRESH_INTERVAL);
     return () => { if (refreshTimerRef.current) clearInterval(refreshTimerRef.current); };
-  }, [activeRoom, loadRooms, loadMembers]);
+  }, [activeRoom, loadRooms, loadMembers, refreshUnread]);
 
   const handleSidebarClick = useCallback((k: SidebarCategory) => {
     if (k === 'confession') navigate('/confessions');
     else if (k === 'bottle') navigate('/bottles');
     else if (k === 'points') navigate('/points');
     else if (k === 'extensions') navigate('/ai');
+    else if (k === 'plugins') navigate('/plugins');
+    else if (k === 'moments') navigate('/moments');
     else if (k === 'english') navigate('/english');
     else {
       setCategory(k);
@@ -566,6 +648,50 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* 通知中心 */}
+          <div className="relative">
+            <button
+              onClick={openNotifications}
+              className="btn btn-sm p-2"
+              title="通知中心"
+              style={{ minHeight: 36, minWidth: 36, position: 'relative' }}
+            >
+              <Bell size={16} />
+              {notifUnread > 0 && (
+                <span
+                  className="absolute flex items-center justify-center text-[10px] text-white"
+                  style={{ top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 9999, background: 'var(--color-error)', padding: '0 3px' }}
+                >
+                  {notifUnread > 99 ? '99+' : notifUnread}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div
+                className="fixed top-12 right-3 w-80 max-h-96 overflow-y-auto shadow-[var(--shadow-lg)]"
+                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 80 }}
+              >
+                <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-divider)' }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>通知中心</span>
+                  <button onClick={() => setNotifOpen(false)} className="text-xs" style={{ color: 'var(--color-text-muted)' }}>关闭</button>
+                </div>
+                {notifList.length === 0 ? (
+                  <p className="text-xs text-center py-6" style={{ color: 'var(--color-text-muted)' }}>暂无通知</p>
+                ) : (
+                  notifList.map((n) => (
+                    <div key={n.id} className="px-3 py-2.5 border-b last:border-b-0 flex gap-2" style={{ borderColor: 'var(--color-divider)' }}>
+                      <span style={{ color: 'var(--color-primary)' }}>{n.type === 'follow' ? '👤' : n.type === 'gift' ? '🎁' : '📢'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs leading-5" style={{ color: 'var(--color-text)' }}>{n.content}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{n.create_time_fmt}</p>
+                      </div>
+                      {!n.is_read && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: 'var(--color-error)' }} />}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           {((currentUser as any)?.role === 'admin' || (currentUser as any)?.role === 'super_admin') && (
             <button
               onClick={() => navigate('/admin/dashboard')}
@@ -615,13 +741,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
       {/* 主体布局 */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 左侧边栏 - 移动端聊天视图时隐藏 */}
+        {/* 左侧边栏 - 移动端聊天视图时隐藏；列表视图仅保留图标栏，分类内容由主区域渲染 */}
         <aside
-          className={`border-r flex w-72 flex-shrink-0 md:w-14 transition-all duration-200 ease-out md:relative md:z-0 ${
-            leftCollapsed ? 'md:w-14' : 'md:w-72'
-          } ${
-            mobileSidebar !== null ? 'fixed inset-y-0 left-0 top-0 z-50 w-full md:relative md:w-auto md:translate-x-0 md:z-0' : 'md:relative md:z-0'
-          } ${isMobile && mobileView !== 'list' ? 'hidden md:flex' : ''}`}
+          className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-0 ${
+            isMobile
+              ? mobileView !== 'list'
+                ? 'hidden'
+                : mobileSidebar !== null
+                  ? 'fixed inset-y-0 left-0 top-0 z-50 w-full'
+                  : 'w-14'
+              : `w-72 md:w-14 ${leftCollapsed ? 'md:w-14' : 'md:w-72'}`
+          }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
           {/* 导航图标栏 */}
@@ -634,13 +764,15 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             onToggleLabels={() => setShowLabels((v) => !v)}
             onNavigateToProfile={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
             onOpenSettings={() => setShowSettings(true)}
+            onOpenGuide={() => setShowGuide(true)}
+            onOpenMbti={() => navigate('/mbti')}
           />
 
-          {/* 分类内容区 - 移动端聊天视图时隐藏 */}
+          {/* 分类内容区 - 移动端内联时隐藏（由主区域渲染列表），抽屉/桌面端显示 */}
           <div
             className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
-            } ${isMobile && mobileView !== 'list' ? 'hidden' : ''}`}
+            } ${isMobile && mobileSidebar === null ? 'hidden' : ''}`}
             style={{ width: leftCollapsed ? 0 : undefined }}
             data-sidebar-col
           >
@@ -756,6 +888,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 onConfirmReport={handleConfirmReport}
                 onViewProfile={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)}
                 onOpenMemberProfile={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)}
+                onRecall={handleRecall}
+                onDice={handleDice}
+                onBlock={handleBlock}
               />
             ) : mobileView === 'private' || showPrivate ? (
               <PrivateChatView
@@ -783,6 +918,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
                     onOpenConversation={handleOpenConversation}
                     onNavigate={navigate}
+                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : category === 'rooms' ? (
                   <ChatSidebarContent
@@ -798,6 +934,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
                     onOpenConversation={() => {}}
                     onNavigate={navigate}
+                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : category === 'contacts' ? (
                   <ChatSidebarContent
@@ -813,6 +950,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => {}}
                     onOpenConversation={handleOpenConversation}
                     onNavigate={navigate}
+                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : (
                   <ChatSidebarContent
@@ -831,6 +969,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     activeGroupId={null}
                     onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); if (isMobile) setMobileSidebar(null); }}
                     onGroupsChanged={() => setGroupListKey((k) => k + 1)}
+                    onClose={() => setMobileSidebar(null)}
                   />
                 )}
               </div>
@@ -897,6 +1036,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   onConfirmReport={handleConfirmReport}
                   onViewProfile={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)}
                   onOpenMemberProfile={(username) => navigate(`/profile/${encodeURIComponent(username.trim())}`)}
+                  onRecall={handleRecall}
+                  onDice={handleDice}
+                  onBlock={handleBlock}
                 />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
@@ -920,10 +1062,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       )}
 
       {/* 弹窗 */}
+      <CreateRoomModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={(room) => { handleJoinRoom(room); }}
+      />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} user={currentUser} onUserUpdate={setCurrentUser} />
       <RoomSettingsModal open={showRoomSettings} room={activeRoom} currentUserId={currentUser.id} onClose={() => setShowRoomSettings(false)} onRoomUpdated={handleRoomUpdated} onMembersChanged={handleMembersChanged} />
       <ForwardDialog open={!!forwardMsg} rooms={rooms.filter((r) => r.joined)} conversations={conversations} onClose={() => setForwardMsg(null)} onForward={handleConfirmForward} forwarding={forwarding} />
       <ReportDialog open={!!reportMsg} onClose={() => setReportMsg(null)} onConfirm={handleConfirmReport} submitting={reporting} />
+
+      {/* PWA 安装提示（顶部细条，避免遮挡输入框） */}
+      <InstallPrompt variant="topbar" />
+
+      {/* 新手指导 */}
+      <BeginnerGuide open={showGuide} onClose={() => setShowGuide(false)} />
     </div>
   );
 }

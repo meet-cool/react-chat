@@ -197,7 +197,12 @@ export default function MomentsPage() {
   return (
     <div className="max-w-xl mx-auto pb-8">
       <div className="sticky top-0 z-10 bg-[var(--color-bg-page)] border-b border-[var(--color-border)] px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[var(--color-text)]">朋友圈</h1>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/chat')} className="btn btn-sm p-2" style={{ minHeight: 36, minWidth: 36 }} title="返回聊天室">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+          </button>
+          <h1 className="text-lg font-semibold text-[var(--color-text)]">朋友圈</h1>
+        </div>
         <div className="flex gap-2">
           <button
             className={`btn btn-sm ${viewMode === 'feed' ? 'btn-primary' : ''}`}
@@ -334,10 +339,10 @@ function MomentCard({ moment, onLike, onView, onDelete }: {
         {onDelete && <button onClick={onDelete} className="text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"><Trash2 className="w-4 h-4" /></button>}
       </div>
       {moment.content && <div className="px-4 pb-2"><p className="text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap break-words">{moment.content}</p></div>}
-      {moment.images.length > 0 && (
+      {(moment.images || []).length > 0 && (
         <div className="px-4 pb-3">
-          <div className={`grid gap-2 ${moment.images.length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
-            {moment.images.map((img, i) => (
+          <div className={`grid gap-2 ${(moment.images || []).length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            {(moment.images || []).map((img, i) => (
               <div key={i} className="aspect-square bg-[var(--color-bg-page)] border border-[var(--color-border)] overflow-hidden cursor-pointer" onClick={onView}>
                 <img src={img} alt="" className="w-full h-full object-cover" />
               </div>
@@ -403,9 +408,9 @@ function MomentDetail({ moment, loading, onLike, onComment, onReplyTo, onClose }
         </div>
         <div className="px-4 py-3 overflow-y-auto flex-1">
           {moment.content && <p className="text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">{moment.content}</p>}
-          {moment.images.length > 0 && (
-            <div className={`grid gap-2 mt-3 ${moment.images.length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
-              {moment.images.map((img, i) => (
+          {(moment.images || []).length > 0 && (
+            <div className={`grid gap-2 mt-3 ${(moment.images || []).length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              {(moment.images || []).map((img, i) => (
                 <div key={i} className="aspect-square bg-[var(--color-bg-page)] border border-[var(--color-border)] overflow-hidden">
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </div>

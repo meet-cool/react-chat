@@ -36,7 +36,9 @@ import type {
   MomentSaveResult,
 } from '../types';
 
-const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+// 默认 API 基址：生产指向线上后端；本地开发可用 VITE_API_BASE_URL 覆盖
+// 或通过 Debug 页/设置页手动切换（localStorage 优先）
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.met.cc.cd';
 const API_STORAGE_KEY = 'arcle_api_base';
 
 export function getApiBaseUrl(): string {
@@ -479,21 +481,33 @@ export const aiApi = {
     put<null>(`/chat/ai/chats/${id}`, { title }),
 
   // 流式聊天（convId>0 时写入指定会话，否则后端新建会话）
+  // 内置 60s 超时（AI 上游 AI_REQUEST_TIMEOUT=90s 留 30s 缓冲），防后端挂起拖垮前端
   streamChat: async (messages: AiMsg[], mode: string, deepThinking: boolean, convId?: number): Promise<ReadableStream<Uint8Array> | null> => {
-    const res = await fetch(`${getApiBaseUrl()}/chat/ai/chat/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-      },
-      body: JSON.stringify({
-        messages,
-        mode,
-        deep_thinking: deepThinking ? 1 : 0,
-        conv_id: convId && convId > 0 ? convId : 0,
-      }),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    let res: Response;
+    try {
+      res = await fetch(`${getApiBaseUrl()}/chat/ai/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+        },
+        body: JSON.stringify({
+          messages,
+          mode,
+          deep_thinking: deepThinking ? 1 : 0,
+          conv_id: convId && convId > 0 ? convId : 0,
+        }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      if (controller.signal.aborted) throw new Error('AI 响应超时（60s），请稍后再试');
+      throw new Error('网络错误：无法连接到 AI 服务（Failed to fetch）');
+    }
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`AI 服务返回 HTTP ${res.status}`);
     return res.body || null;
   },
 
@@ -680,7 +694,11 @@ export const gameApi = {
   memoryCardsState: (difficulty = 'easy') =>
     get<{ cards: string[]; pairs: number; difficulty: string }>(`/chat/plugins/games/memory_cards/state?difficulty=${difficulty}`),
   generateNumberGuess: () =>
-    get<{ code: string; max_attempts: number }>(`/chat/plugins/games/number_guess/generate`),
+    get<{ max_attempts: number }>(`/chat/plugins/games/number_guess/generate`),
+  // 服务端逐次判定（答案不下发）：bulls=位置对，cows=数字对位置错
+  numberGuessCheck: (guess: string) =>
+    post<{ bulls: number; cows: number; attempts: number; max_attempts: number; won: boolean }>(
+      '/chat/plugins/games/number_guess/guess', { guess }),
 };
 
 // ============================================================
@@ -760,4 +778,85 @@ export const shopApi = {
       items: ShopOrder[];
       pagination: { current_page: number; last_page: number; per_page: number; total: number };
     }>(`/chat/shop/orders?page=${page}&per_page=${perPage}`),
+};
+
+// ============================================================
+// ZeroTalk 借鉴功能：撤回 / 搜索 / 拉黑 / 通知 / MBTI / 注销
+// ============================================================
+
+export interface SearchResultItem {
+  id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  content: string;
+  create_time: number;
+  create_time_fmt: string;
+  is_self: boolean;
+}
+
+export interface NotificationItem {
+  id: number;
+  type: string;
+  content: string;
+  is_read: number;
+  create_time: number;
+  create_time_fmt: string;
+}
+
+export interface BlockItem {
+  user_id: number;
+  username: string;
+  avatar: string;
+  create_time_fmt: string;
+}
+
+export interface MbtiQuestion {
+  id: number;
+  text: string;
+}
+
+export const socialApi = {
+  /** 撤回聊天室消息（2 分钟内） */
+  recallRoomMessage: (roomId: number, msgId: number) =>
+    post<{ id: number }>(`/chat/rooms/${roomId}/messages/${msgId}/recall`, {}),
+
+  /** 撤回私聊消息（2 分钟内） */
+  recallPrivateMessage: (convId: number, msgId: number) =>
+    post<{ id: number }>(`/chat/conversations/${convId}/messages/${msgId}/recall`, {}),
+
+  /** 房间内消息搜索 */
+  searchRoomMessages: (roomId: number, keyword: string) =>
+    get<{ keyword: string; total: number; results: SearchResultItem[] }>(
+      `/chat/rooms/${roomId}/messages/search?keyword=${encodeURIComponent(keyword)}`
+    ),
+
+  /** 私聊消息搜索 */
+  searchConvMessages: (convId: number, keyword: string) =>
+    get<{ keyword: string; total: number; results: SearchResultItem[] }>(
+      `/chat/conversations/${convId}/messages/search?keyword=${encodeURIComponent(keyword)}`
+    ),
+
+  /** 拍一拍对方 */
+  pat: (convId: number) => post<{ pat_time: number }>(`/chat/conversations/${convId}/pat`, {}),
+
+  /** 拉黑 / 解除 / 列表 */
+  block: (userId: number) => post<{ blocked: boolean; username: string }>(`/chat/user/block/${userId}`, {}),
+  unblock: (userId: number) => del<{ blocked: boolean }>(`/chat/user/block/${userId}`),
+  blocks: () => get<BlockItem[]>('/chat/user/blocks'),
+
+  /** 通知中心 */
+  notifications: (page = 1) =>
+    get<NotificationItem[]>(`/chat/user/notifications?page=${page}&per_page=20`),
+  unreadCount: () => get<{ unread: number }>('/chat/user/notifications/unread'),
+  markRead: (id?: number) => post<{ ok: boolean }>('/chat/user/notifications/read', { id: id ?? 0 }),
+
+  /** MBTI */
+  mbtiQuestions: () => get<{ total: number; questions: MbtiQuestion[] }>('/chat/mbti/questions'),
+  mbtiSubmit: (answers: Record<number, number>) =>
+    post<{ type: string; description: string; scores: Record<string, number> }>('/chat/mbti/submit', { answers }),
+  mbtiResult: () => get<{ type: string; description: string }>('/chat/mbti/result'),
+
+  /** 账号注销（不可逆） */
+  deactivate: (password: string) => post<{ deactivated: boolean }>('/chat/auth/deactivate', { password }),
 };

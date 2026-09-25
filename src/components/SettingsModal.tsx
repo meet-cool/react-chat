@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { X, Settings, User, Lock, Palette, Check, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle, Copy, ArrowRight } from 'lucide-react';
+import { X, Settings, User, Lock, Palette, Check, Volume2, Ban as BanIcon, Image as ImageIcon, Calendar, MapPin, Heart, Shield, ShieldCheck, Server, Loader, Globe, Key, Trash2, RefreshCw, Play, CheckCircle, XCircle, Copy, ArrowRight } from 'lucide-react';
+import { getRadius, setRadius as persistRadius, getTransparency, setTransparency as persistTrans, getColorBg, setColorBg as persistColorBg, RADIUS_OPTIONS, type RadiusName } from '../lib/appearance';
+import { socialApi, type BlockItem } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import { userApi, systemApi } from '../lib/api';
 import { getApiBaseUrl, getToken, clearToken, setApiBaseUrl } from '../lib/api';
@@ -165,6 +167,64 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const [confirmPwd, setConfirmPwd] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
 
+  // 外观自定义（圆角/透明），变更即时生效并持久化
+  const [radius, setRadiusState] = useState<RadiusName>(() => getRadius());
+  const [trans, setTransState] = useState<boolean>(() => getTransparency());
+  const [colorBg, setColorBgState] = useState<boolean>(() => getColorBg());
+  const setRadius = (r: RadiusName) => { persistRadius(r); setRadiusState(r); };
+  const setTrans = (on: boolean) => { persistTrans(on); setTransState(on); };
+  const setColorBg = (on: boolean) => { persistColorBg(on); setColorBgState(on); };
+
+  // 消息提示音（默认关）
+  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('arcle_sound') === '1');
+  const toggleSound = (on: boolean) => {
+    localStorage.setItem('arcle_sound', on ? '1' : '0');
+    setSoundOn(on);
+    if (on) { try { new Audio('/sound/typing.mp3').play().catch(() => {}); } catch { /* ignore */ } }
+  };
+
+  // 黑名单管理
+  const [blockPanel, setBlockPanel] = useState(false);
+  const [blocks, setBlocks] = useState<BlockItem[]>([]);
+  const [blocksLoading, setBlocksLoading] = useState(false);
+  const openBlocks = () => {
+    setBlockPanel(true);
+    setBlocksLoading(true);
+    socialApi.blocks().then((r) => setBlocks(r)).catch(() => setBlocks([])).finally(() => setBlocksLoading(false));
+  };
+  const handleUnblock = (uid: number) => {
+    socialApi.unblock(uid).then(() => setBlocks((prev) => prev.filter((b) => b.user_id !== uid))).catch(() => {});
+  };
+
+  // 账号注销
+  const [deactivateStep, setDeactivateStep] = useState(false);
+  const [deactivatePwd, setDeactivatePwd] = useState('');
+  const [deactivating, setDeactivating] = useState(false);
+  const handleDeactivate = async () => {
+    if (!deactivatePwd) { addToast('请输入密码确认', 'warning'); return; }
+    setDeactivating(true);
+    try {
+      await socialApi.deactivate(deactivatePwd);
+      localStorage.removeItem('arcle_token');
+      localStorage.removeItem('arcle_user');
+      localStorage.removeItem('eng_user');
+      addToast('账号已注销', 'success');
+      setTimeout(() => { window.location.href = '/'; }, 800);
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '注销失败', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  // Escape 关闭弹窗
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const handleClose = () => {
@@ -237,7 +297,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                     <button key={val} type="button" className="btn btn-sm flex-1 justify-center" style={gender===val ? {background:'var(--color-primary)',color:'#fff',borderColor:'var(--color-primary)'} : {}} onClick={() => setGender(gender===val?'':val)}>{icon} {label}</button>))}</div></div>
                 <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}><MapPin size={13} className="inline mr-1"/>城市</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="例如：深圳市" className={inputCls} style={inputStyle} /></div>
                 <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}><Calendar size={13} className="inline mr-1"/>生日</label><input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className={inputCls} style={inputStyle} /></div>
-                <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}>年龄</label><input type="number" min={0} max={150} value={age} onChange={(e) => setAge(parseInt(e.target.value)||0)} className={inputCls} style={inputStyle} /></div>
+                <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}>年龄</label><input type="number" min={0} max={150} placeholder="未填写" value={age === 0 ? '' : age} onChange={(e) => setAge(e.target.value === '' ? 0 : (parseInt(e.target.value) || 0))} className={inputCls} style={inputStyle} /></div>
                 <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}><Heart size={13} className="inline mr-1"/>座右铭</label><textarea value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="写一句你喜欢的话" rows={2} maxLength={200} className={inputCls} style={{...inputStyle,resize:'vertical'}} /><p className="text-xs mt-1 text-right" style={{color:'var(--color-text-muted)'}}>{motto.length}/200</p></div>
                 <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}>个人简介</label><textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="介绍一下自己" rows={3} maxLength={255} className={inputCls} style={{...inputStyle,resize:'vertical'}} /><p className="text-xs mt-1 text-right" style={{color:'var(--color-text-muted)'}}>{bio.length}/255</p></div>
                 <div style={fieldStyle}><label className="block text-sm mb-1.5" style={labelStyle}><span className="inline-flex items-center gap-1">{profileVisible?<ShieldCheck size={14}/>:<Shield size={14}/>}主页可见性</span></label>
@@ -246,6 +306,76 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                     <button type="button" className="btn btn-sm flex-1 justify-center" style={!profileVisible ? {background:'rgba(239,68,68,0.15)',color:'#ef4444',borderColor:'rgba(239,68,68,0.4)'} : {background:'var(--color-hover-bg)',color:'var(--color-text-muted)'}} onClick={() => setProfileVisible(false)}><Shield size={14}/>隐藏</button>
                   </div><p className="text-xs mt-1.5" style={{color:'var(--color-text-muted)'}}>隐藏后其他用户将无法查看您的主页详情</p></div>
                 <div className="flex justify-end pt-2"><button type="submit" disabled={savingProfile} className="btn btn-primary">{savingProfile ? '保存中…' : '保存资料'}</button></div>
+
+                {/* 安全与账号 */}
+                <div className="border-t pt-4 flex flex-col gap-3" style={{ borderColor: 'var(--color-divider)' }}>
+                  <button type="button" onClick={openBlocks} className="btn btn-sm justify-center" style={{ minHeight: 36 }}>
+                    <BanIcon size={14} /> 黑名单管理
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeactivateStep(true)}
+                    className="btn btn-sm justify-center"
+                    style={{ minHeight: 36, borderColor: 'var(--color-error)', color: 'var(--color-error)', background: 'rgba(248,113,113,0.08)' }}
+                  >
+                    注销账号
+                  </button>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>注销后账号将无法登录且不可恢复，请谨慎操作</p>
+                </div>
+
+                {/* 黑名单面板 */}
+                {blockPanel && (
+                  <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setBlockPanel(false)}>
+                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12, maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+                      <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-divider)' }}>
+                        <span className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>黑名单管理</span>
+                        <button onClick={() => setBlockPanel(false)} className="text-xs" style={{ color: 'var(--color-text-muted)' }}>关闭</button>
+                      </div>
+                      <div className="overflow-y-auto">
+                        {blocksLoading ? (
+                          <p className="text-xs text-center py-6" style={{ color: 'var(--color-text-muted)' }}>加载中…</p>
+                        ) : blocks.length === 0 ? (
+                          <p className="text-xs text-center py-6" style={{ color: 'var(--color-text-muted)' }}>黑名单为空</p>
+                        ) : (
+                          blocks.map((b) => (
+                            <div key={b.user_id} className="flex items-center gap-2 px-4 py-2.5 border-b last:border-b-0" style={{ borderColor: 'var(--color-divider)' }}>
+                              <span className="text-sm flex-1" style={{ color: 'var(--color-text)' }}>{b.username}</span>
+                              <button onClick={() => handleUnblock(b.user_id)} className="btn btn-sm" style={{ minHeight: 28 }}>解除拉黑</button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 注销确认面板 */}
+                {deactivateStep && (
+                  <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={() => setDeactivateStep(false)}>
+                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12 }} onClick={(e) => e.stopPropagation()}>
+                      <div className="px-5 py-4">
+                        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-error)' }}>⚠️ 确认注销账号</p>
+                        <p className="text-xs leading-5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+                          注销后账号将匿名化且<b>无法恢复</b>，关注关系将被解除。请输入登录密码确认：
+                        </p>
+                        <input
+                          type="password"
+                          value={deactivatePwd}
+                          onChange={(e) => setDeactivatePwd(e.target.value)}
+                          placeholder="登录密码"
+                          className={inputCls}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div className="px-5 py-3 border-t flex justify-end gap-2" style={{ borderColor: 'var(--color-divider)' }}>
+                        <button onClick={() => { setDeactivateStep(false); setDeactivatePwd(''); }} className="btn btn-sm" style={{ minHeight: 32 }}>取消</button>
+                        <button onClick={handleDeactivate} disabled={deactivating || !deactivatePwd} className="btn btn-sm" style={{ minHeight: 32, background: 'var(--color-error)', color: '#fff', borderColor: 'var(--color-error)' }}>
+                          {deactivating ? '注销中…' : '确认注销'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </form>
             )}
             {tab === 'password' && (
@@ -257,13 +387,117 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
               </form>
             )}
             {tab === 'theme' && (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm mb-1" style={{color:'var(--color-text-secondary)'}}>选择主题外观，设置会自动保存</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {themeOptions.map((opt) => { const isActive = theme === opt.name; return (
-                    <button key={opt.name} onClick={() => { setTheme(opt.name); addToast('已切换到'+opt.label+'主题','success'); }} className="flex items-center justify-between p-4 text-left transition-colors" style={isActive ? {background:'var(--color-primary-light)',border:'2px solid var(--color-primary)'} : {background:'var(--color-card-alt)',border:'2px solid var(--color-border-light)'}}>
-                      <div><p className="font-medium text-sm" style={{color:'var(--color-text)'}}>{opt.label}</p><p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{opt.desc}</p></div>
-                      {isActive && <Check size={18} style={{color:'var(--color-primary)'}}/>}</button>); })}
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm" style={{color:'var(--color-text-secondary)'}}>选择主题外观，设置会自动保存</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {themeOptions.map((opt) => { const isActive = theme === opt.name; return (
+                      <button key={opt.name} onClick={() => { setTheme(opt.name); addToast('已切换到'+opt.label+'主题','success'); }} className="flex items-center justify-between p-4 text-left transition-colors" style={isActive ? {background:'var(--color-primary-light)',border:'2px solid var(--color-primary)'} : {background:'var(--color-card-alt)',border:'2px solid var(--color-border-light)'}}>
+                        <div><p className="font-medium text-sm" style={{color:'var(--color-text)'}}>{opt.label}</p><p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{opt.desc}</p></div>
+                        {isActive && <Check size={18} style={{color:'var(--color-primary)'}}/>}</button>); })}
+                  </div>
+                </div>
+
+                {/* 外观自定义：圆角 + 透明 */}
+                <div className="border-t pt-4 flex flex-col gap-4" style={{ borderColor: 'var(--color-divider)' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>界面自定义</p>
+
+                  <div>
+                    <label className="block text-sm mb-2" style={labelStyle}>界面圆角</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {RADIUS_OPTIONS.map((opt) => {
+                        const active = radius === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setRadius(opt.value); addToast('圆角已调整为「' + opt.label + '」', 'info'); }}
+                            className="btn btn-sm justify-center"
+                            style={active
+                              ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                              : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>调整按钮、输入框与卡片的圆角大小</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-2" style={labelStyle}>彩色背景</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => { setColorBg(true); addToast('彩色背景已开启', 'info'); }}
+                        className="btn btn-sm justify-center"
+                        style={colorBg
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        开启
+                      </button>
+                      <button
+                        onClick={() => { setColorBg(false); addToast('彩色背景已关闭', 'info'); }}
+                        className="btn btn-sm justify-center"
+                        style={!colorBg
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        关闭
+                      </button>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>页面背景显示渐变彩色光斑，深色/高对比主题下自动隐藏</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-2" style={labelStyle}>透明效果</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => { setTrans(true); addToast('透明效果已开启', 'info'); }}
+                        className="btn btn-sm justify-center"
+                        style={trans
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        开启
+                      </button>
+                      <button
+                        onClick={() => { setTrans(false); addToast('透明效果已关闭', 'info'); }}
+                        className="btn btn-sm justify-center"
+                        style={!trans
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        关闭
+                      </button>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>卡片与面板半透明，透出页面渐变底色</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-2" style={labelStyle}>消息提示音</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => toggleSound(true)}
+                        className="btn btn-sm justify-center"
+                        style={soundOn
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        开启
+                      </button>
+                      <button
+                        onClick={() => toggleSound(false)}
+                        className="btn btn-sm justify-center"
+                        style={!soundOn
+                          ? { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }
+                          : { background: 'var(--color-hover-bg)', color: 'var(--color-text-muted)' }}
+                      >
+                        关闭
+                      </button>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>收到新消息时播放提示音</p>
+                  </div>
                 </div>
               </div>
             )}

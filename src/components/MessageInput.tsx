@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Code2, Type, Loader2, Smile, X, Reply as ReplyIcon } from 'lucide-react';
+import { Send, Code2, Type, Loader2, Smile, X, Reply as ReplyIcon, Dices } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import type { MessageReply } from '../types';
 
@@ -10,13 +10,26 @@ interface MessageInputProps {
   insertTextRef?: React.MutableRefObject<((text: string) => void) | null>;
   replyTo?: { id: number; username: string; content_short: string } | null;
   onCancelReply?: () => void;
+  /** 摇骰子：由父组件发送 dice 类型消息 */
+  onDice?: () => void;
 }
 
-export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo, onCancelReply }: MessageInputProps) {
+export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo, onCancelReply, onDice }: MessageInputProps) {
   const [content, setContent] = useState('');
-  const [mode, setMode] = useState<'text' | 'markdown'>('text');
+  const [mode, setMode] = useState<'text' | 'bbcode'>('text');
   const [showEmoji, setShowEmoji] = useState(false);
+  // 窄屏（手机/窄面板）下使用短占位符，避免长提示文字折行被裁切
+  const [compact, setCompact] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = (e: MediaQueryListEvent) => setCompact(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (insertTextRef) {
@@ -80,15 +93,27 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
         <button onClick={() => setMode('text')} className="btn btn-sm flex items-center gap-1" style={mode === 'text' ? { background: 'var(--color-primary)', color: '#FFFFFF', borderColor: 'var(--color-primary)' } : undefined}>
           <Type size={13} /> 纯文本
         </button>
-        <button onClick={() => setMode('markdown')} className="btn btn-sm flex items-center gap-1" style={mode === 'markdown' ? { background: 'var(--color-primary)', color: '#FFFFFF', borderColor: 'var(--color-primary)' } : undefined}>
-          <Code2 size={13} /> Markdown
+        <button onClick={() => setMode('bbcode')} className="btn btn-sm flex items-center gap-1" style={mode === 'bbcode' ? { background: 'var(--color-primary)', color: '#FFFFFF', borderColor: 'var(--color-primary)' } : undefined}>
+          <Code2 size={13} /> BBCode
         </button>
-        {mode === 'markdown' && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>支持代码块、表格、列表等语法</span>}
+        {mode === 'bbcode' && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>支持 [b][i][u][color=红][url][img][quote][code] 等标签</span>}
       </div>
       <div className="flex items-end gap-2">
         <button onClick={() => setShowEmoji((s) => !s)} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="表情" type="button">
           <Smile size={18} />
         </button>
+        {onDice && (
+          <button
+            onClick={() => { if (!disabled && !sending) onDice(); }}
+            className="btn flex-shrink-0"
+            style={{ minHeight: 44, minWidth: 44 }}
+            title="摇骰子"
+            type="button"
+            disabled={disabled}
+          >
+            <Dices size={18} />
+          </button>
+        )}
         {showEmoji && (
           <div className="absolute z-50" style={{ bottom: 72, left: 12 }}>
             <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />
@@ -99,7 +124,7 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={mode === 'markdown' ? '输入 Markdown 消息…（Enter 发送，Shift+Enter 换行）' : '输入消息…（Enter 发送，Shift+Enter 换行）'}
+          placeholder={compact ? '输入消息…' : (mode === 'bbcode' ? '输入 BBCode 消息…（Enter 发送，Shift+Enter 换行）' : '输入消息…（Enter 发送，Shift+Enter 换行）')}
           rows={1}
           disabled={disabled}
           className="flex-1 resize-none"

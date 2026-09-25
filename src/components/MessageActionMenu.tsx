@@ -6,6 +6,7 @@ import {
   Copy,
   Smile,
   Trash2,
+  Undo2,
 } from 'lucide-react';
 import { QuickReactionBar, EmojiPicker } from './EmojiPicker';
 
@@ -21,6 +22,10 @@ export interface MessageActionMenuProps {
   onReport: () => void;
   onCopy: () => void;
   onDelete?: () => void;
+  /** 本人消息且 2 分钟内可撤回；recallRemaining 为剩余秒数 */
+  canRecall?: boolean;
+  recallRemaining?: number;
+  onRecall?: () => void;
 }
 
 type Tab = 'main' | 'emoji';
@@ -37,6 +42,9 @@ export function MessageActionMenu({
   onReport,
   onCopy,
   onDelete,
+  canRecall = false,
+  recallRemaining = 0,
+  onRecall,
 }: MessageActionMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>('main');
@@ -177,6 +185,26 @@ export function MessageActionMenu({
               <Forward size={15} style={{ color: 'var(--color-info)' }} />
               <span>转发</span>
             </button>
+
+            {canRecall && (
+              <button
+                className={itemClass}
+                style={{ color: 'var(--color-error)' }}
+                onMouseEnter={(el) => {
+                  el.currentTarget.style.background = 'var(--color-hover-bg)';
+                }}
+                onMouseLeave={(el) => {
+                  el.currentTarget.style.background = 'transparent';
+                }}
+                onClick={() => {
+                  if (onRecall) onRecall();
+                  onClose();
+                }}
+              >
+                <Undo2 size={15} />
+                <span>撤回{recallRemaining > 0 ? `（剩 ${recallRemaining}s）` : ''}</span>
+              </button>
+            )}
 
             <button
               className={itemClass}

@@ -12,7 +12,7 @@ import { useDebug } from '../lib/DebugContext';
 
 const PRESET_URLS = [
   { label: '本地开发（localhost:8000）', url: 'http://localhost:8000' },
-  { label: '生产环境（ke.l.cd）', url: 'https://ke.l.cd' },
+  { label: '生产环境（api.met.cc.cd）', url: 'https://api.met.cc.cd' },
 ];
 
 const DEBUG_PASSWORD = 'debug2024';

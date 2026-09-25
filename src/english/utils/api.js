@@ -11,7 +11,8 @@ import axios from 'axios';
 /** 与主站 lib/api.ts 的 getApiBaseUrl() 等价（JS 版） */
 export function getApiBaseUrl() {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('arcle_api_base') : null;
-    return stored || import.meta.env.VITE_API_BASE_URL || '';
+    // 默认生产 API：与主站 lib/api.ts 的 DEFAULT_API_BASE 保持一致
+    return stored || import.meta.env.VITE_API_BASE_URL || 'https://api.met.cc.cd';
 }
 
 /** 主站接口实例（/chat/*，登录注册资料积分） */

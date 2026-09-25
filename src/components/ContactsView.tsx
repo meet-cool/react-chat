@@ -9,9 +9,11 @@ type ContactTab = 'mutual' | 'following' | 'followers';
 
 interface ContactsViewProps {
   onOpenConversation?: (userId: number) => void;
+  /** 移动端全屏展开时关闭侧边栏 */
+  onClose?: () => void;
 }
 
-export function ContactsView({ onOpenConversation }: ContactsViewProps) {
+export function ContactsView({ onOpenConversation, onClose }: ContactsViewProps) {
   const { addToast } = useApp();
   const [tab, setTab] = useState<ContactTab>('mutual');
   const [list, setList] = useState<ContactUser[]>([]);
@@ -257,14 +259,26 @@ export function ContactsView({ onOpenConversation }: ContactsViewProps) {
           <h2 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Search size={16} /> 通讯录
           </h2>
-          <button
-            onClick={() => loadList(tab)}
-            disabled={loading}
-            className="btn btn-sm"
-            title="刷新"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          </button>
+          <div className="flex items-center gap-1">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="btn btn-sm p-2"
+                style={{ minHeight: 36, minWidth: 36 }}
+                aria-label="收起"
+              >
+                <X size={16} />
+              </button>
+            )}
+            <button
+              onClick={() => loadList(tab)}
+              disabled={loading}
+              className="btn btn-sm"
+              title="刷新"
+            >
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
 
         {/* 搜索框 */}

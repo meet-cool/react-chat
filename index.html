@@ -6,6 +6,14 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>弧光-微光所至</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#0b72e8" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="弧光" />
   <meta name="description" content="Arcle 弧光，一个学生独立开发的社交平台，支持聊天、表白墙、漂流瓶、AI 助手。" />
   <meta property="og:title" content="Arcle 弧光" />
   <meta property="og:description" content="弧光所至，连接每一个有趣的灵魂。" />
@@ -68,6 +76,26 @@
       var canonical = document.querySelector('link[rel="canonical"]');
       if (canonical) canonical.setAttribute('href', config.base + '/');
     })();
+  </script>
+  <script>
+    // PWA：尽早捕获安装事件，供首页安装提示使用；注册 Service Worker
+    window.__arcleInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__arcleInstallPrompt = e;
+      window.dispatchEvent(new Event('arcle:installprompt'));
+    });
+    window.addEventListener('appinstalled', function () {
+      window.__arcleInstallPrompt = null;
+      window.dispatchEvent(new Event('arcle:appinstalled'));
+    });
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+          console.warn('[PWA] Service Worker 注册失败:', err);
+        });
+      });
+    }
   </script>
 </head>
 

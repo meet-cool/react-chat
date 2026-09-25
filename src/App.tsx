@@ -34,6 +34,7 @@ import { PluginMarketPage } from './pages/PluginMarketPage';
 import { SudokuPage } from './pages/games/SudokuPage';
 import { MemoryCardsPage } from './pages/games/MemoryCardsPage';
 import { NumberGuessPage } from './pages/games/NumberGuessPage';
+import { SlidingPuzzlePage } from './pages/games/SlidingPuzzlePage';
 import MomentsPage from './pages/MomentsPage';
 import { PointsPage } from './pages/PointsPage';
 import { MallPage } from './pages/MallPage';
@@ -42,6 +43,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { DebugPage } from './pages/DebugPage';
 import EnglishRoutes from './english/EnglishRoutes';
+import { MbtiPage } from './pages/MbtiPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -220,6 +222,12 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           {/* 开发者调试 */}
           <Route path="/debug" element={<DebugPage />} />
 
+          {/* MBTI 人格测试 */}
+          <Route
+            path="/mbti"
+            element={user ? <MbtiPage /> : <Navigate to="/" replace />}
+          />
+
           {/* AI 广场 */}
           <Route
             path="/ai"
@@ -239,6 +247,7 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           <Route path="/plugins/games/sudoku" element={user ? <SudokuPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
           <Route path="/plugins/games/memory-cards" element={user ? <MemoryCardsPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
           <Route path="/plugins/games/number-guess" element={user ? <NumberGuessPage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
+          <Route path="/plugins/games/sliding-puzzle" element={user ? <SlidingPuzzlePage onBack={() => navigate('/plugins')} /> : <Navigate to="/" replace />} />
 
           {/* ============ english 英语学习模块（多应用子模块，独立账号体系） ============ */}
           <Route path="/english/*" element={<EnglishRoutes />} />

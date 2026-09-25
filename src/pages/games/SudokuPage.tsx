@@ -223,7 +223,7 @@ export function SudokuPage({ onBack }: Props) {
                           <button
                             key={`${i}-${j}`}
                             onClick={() => handleCellClick(i, j)}
-                            className={`flex items-center justify-center text-lg font-medium transition-all ${boxBorder} ${rowBorder}`}
+                            className={`flex items-center justify-center text-lg font-medium transition-all p-0 ${boxBorder} ${rowBorder}`}
                             style={{
                               border: '1px solid var(--color-border-light)',
                               background: isSelected ? 'var(--color-primary-light)' : isFixed ? 'var(--color-card-alt)' : 'var(--color-card)',

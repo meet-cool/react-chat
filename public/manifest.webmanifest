@@ -1,0 +1,53 @@
+{
+  "name": "Arcle 弧光 - 微光所至",
+  "short_name": "弧光",
+  "description": "Arcle 弧光，学生独立开发的社交平台：聊天、表白墙、漂流瓶、AI 助手、英语背单词。",
+  "id": "/",
+  "start_url": "/chat",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "zh-CN",
+  "background_color": "#f0f4f8",
+  "theme_color": "#0b72e8",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "发起聊天",
+      "short_name": "聊天",
+      "url": "/chat",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "英语背单词",
+      "short_name": "背单词",
+      "url": "/english",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI 助手",
+      "short_name": "AI",
+      "url": "/ai",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

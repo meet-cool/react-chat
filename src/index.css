@@ -53,6 +53,85 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
+    word-break: break-word;
+    overflow-x: hidden;
+}
+
+/* ============================================================
+ * 外观自定义：界面圆角（html[data-radius] 驱动 --app-radius）
+ * ============================================================ */
+:root[data-radius="none"] { --app-radius: 0px; }
+:root[data-radius="sm"] { --app-radius: 6px; }
+:root[data-radius="md"] { --app-radius: 12px; }
+:root[data-radius="lg"] { --app-radius: 18px; }
+
+:root[data-radius] button:not(.rounded-full):not([data-no-radius]),
+:root[data-radius] .btn:not(.rounded-full),
+:root[data-radius] input:not([type="range"]):not([type="color"]):not(.rounded-full),
+:root[data-radius] textarea,
+:root[data-radius] select,
+:root[data-radius] .card,
+:root[data-radius] [class*="rounded-sm"],
+:root[data-radius] [class*="rounded-md"],
+:root[data-radius] [class*="rounded-lg"],
+:root[data-radius] [class*="rounded-xl"] {
+    border-radius: var(--app-radius) !important;
+}
+
+/* 圆形元素（头像/圆点等）始终保持圆形 */
+:root[data-radius] .rounded-full,
+:root[data-radius] [class*="rounded-full"] {
+    border-radius: 9999px !important;
+}
+
+/* ============================================================
+ * 外观自定义：透明效果（html[data-trans="on"] 时卡片半透明，
+ * 页面底衬渐变光斑透出，深浅主题分别适配）
+ * ============================================================ */
+html[data-trans="on"] body {
+    background-image:
+        radial-gradient(1000px 600px at 15% 10%, rgba(11, 114, 232, 0.38), transparent 60%),
+        radial-gradient(900px 600px at 85% 85%, rgba(124, 58, 237, 0.32), transparent 60%),
+        radial-gradient(700px 500px at 70% 20%, rgba(16, 185, 129, 0.24), transparent 55%);
+    background-attachment: fixed;
+}
+
+html[data-trans="on"] body:not(.theme-dark):not(.theme-high1):not(.theme-high2) {
+    --color-card: rgba(255, 255, 255, 0.62);
+    --color-card-alt: rgba(245, 248, 250, 0.55);
+    --color-hover-bg: rgba(232, 240, 248, 0.55);
+    --color-bg: rgba(255, 255, 255, 0.55);
+}
+
+html[data-trans="on"] body.theme-dark {
+    --color-card: rgba(17, 31, 51, 0.66);
+    --color-card-alt: rgba(22, 37, 56, 0.60);
+    --color-hover-bg: rgba(26, 42, 66, 0.60);
+    --color-bg: rgba(10, 22, 40, 0.60);
+}
+
+html[data-trans="on"] body.theme-high1 {
+    --color-card: rgba(255, 255, 255, 0.82);
+    --color-card-alt: rgba(248, 248, 248, 0.76);
+    --color-hover-bg: rgba(240, 240, 240, 0.76);
+}
+
+html[data-trans="on"] body.theme-high2 {
+    --color-card: rgba(21, 34, 56, 0.84);
+    --color-card-alt: rgba(26, 42, 66, 0.80);
+    --color-hover-bg: rgba(32, 50, 78, 0.80);
+}
+
+/* ============================================================
+ * 彩色背景光斑（html[data-color-bg="on"] 时生效）
+ * 默认关闭，可在设置中开启
+ * ============================================================ */
+html[data-color-bg="on"] body {
+    background-image:
+        radial-gradient(1000px 600px at 15% 10%, rgba(11, 114, 232, 0.38), transparent 60%),
+        radial-gradient(900px 600px at 85% 85%, rgba(124, 58, 237, 0.32), transparent 60%),
+        radial-gradient(700px 500px at 70% 20%, rgba(16, 185, 129, 0.24), transparent 55%);
+    background-attachment: fixed;
 }
 
 /* ============================================================
@@ -469,6 +548,59 @@ input::placeholder, textarea::placeholder {
     word-break: break-word;
 }
 .markdown-body p { margin: 0 0 8px 0; }
+
+/* ============================================================
+ * BBCode 内容样式
+ * ============================================================ */
+.bbcode-body {
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-word;
+}
+.bbcode-body a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.bbcode-body a:hover { opacity: 0.85; }
+.bbcode-body .bbcode-img {
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 6px;
+    display: block;
+    margin: 4px 0;
+}
+.bbcode-body .bbcode-code {
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 4px 0;
+    overflow-x: auto;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    white-space: pre;
+}
+.bbcode-body .bbcode-quote {
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-hover-bg);
+    border-radius: 0 6px 6px 0;
+    padding: 6px 10px;
+    margin: 4px 0;
+    color: var(--color-text-secondary);
+}
+.bbcode-body .bbcode-quote-author {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--color-primary);
+}
+.bbcode-body .bbcode-list {
+    margin: 4px 0;
+    padding-left: 20px;
+    list-style: disc;
+}
 .markdown-body p:last-child { margin-bottom: 0; }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {
     margin: 10px 0 6px 0;

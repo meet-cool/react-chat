@@ -106,23 +106,23 @@ export function AiPanelPage({ }: AiPanelPageProps) {
   });
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
+    <div className="h-screen flex flex-row overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
       {/* 侧边栏遮罩 */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
-      {/* 左侧边栏 - 对话历史 */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-200 ease-out md:relative md:translate-x-0 ${
+      {/* 左侧边栏 - 移动端 fixed 浮层，桌面端静态侧栏占位 */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-200 ease-out md:static md:translate-x-0 md:shrink-0 md:border-r ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ 
-          background: 'var(--color-card)', 
-          borderRight: '1px solid var(--color-divider)',
+        style={{
+          background: 'var(--color-card)',
+          borderColor: 'var(--color-divider)',
         }}
       >
         {/* 侧边栏头部 */}
@@ -438,11 +438,11 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
         <p className="text-sm mb-8" style={{ color: 'var(--color-text-light)' }}>
           与弧光 AI 对话，探索无限可能。支持快速和专业两种回答模式。
         </p>
-        <div className="grid grid-cols-2 gap-3 text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
           <button
-            className="p-4 transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{ 
-              background: 'var(--color-card)', 
+            className="p-4 flex flex-col items-start text-left transition-all duration-200 hover:scale-105 active:scale-95 whitespace-normal"
+            style={{
+              background: 'var(--color-card)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md, 8px)'
             }}
@@ -450,12 +450,12 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
           >
             <Zap size={20} style={{ color: 'var(--color-warning)', marginBottom: 8 }} />
             <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>快速模式</div>
-            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>直接给出结论和可执行答案</div>
+            <div className="text-xs whitespace-normal" style={{ color: 'var(--color-text-muted)' }}>直接给出结论和可执行答案</div>
           </button>
           <button
-            className="p-4 transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{ 
-              background: 'var(--color-card)', 
+            className="p-4 flex flex-col items-start text-left transition-all duration-200 hover:scale-105 active:scale-95 whitespace-normal"
+            style={{
+              background: 'var(--color-card)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md, 8px)'
             }}
@@ -463,7 +463,7 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
           >
             <Sparkles size={20} style={{ color: 'var(--color-primary)', marginBottom: 8 }} />
             <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>专业模式</div>
-            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>结构化分析，补充风险和验证方案</div>
+            <div className="text-xs whitespace-normal" style={{ color: 'var(--color-text-muted)' }}>结构化分析，补充风险和验证方案</div>
           </button>
         </div>
       </div>
@@ -619,7 +619,8 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
       }
     } catch (err) {
       addToast(err instanceof Error ? err.message : '发送失败', 'error');
-      setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+      setSendError(err instanceof Error ? err.message : '发送失败');
+      // 保留用户消息便于重试，不主动 pop
     } finally {
       setSending(false);
     }
@@ -831,15 +832,15 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
                 key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
-                  className={`max-w-[85%] p-3 text-sm leading-relaxed ${
-                    msg.role === 'user' 
-                      ? 'rounded-tl-xl rounded-tr-lg rounded-bl-lg' 
-                      : 'rounded-tr-xl rounded-tl-lg rounded-br-lg'
+                <div
+                  className={`max-w-[85%] p-3 text-sm leading-relaxed rounded-sm ${
+                    msg.role === 'user'
+                      ? 'rounded-tr-sm'
+                      : 'rounded-tl-sm'
                   }`}
-                  style={{ 
-                    background: msg.role === 'user' 
-                      ? 'var(--color-primary)' 
+                  style={{
+                    background: msg.role === 'user'
+                      ? 'var(--color-primary)'
                       : 'var(--color-card-alt)',
                     color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
                     border: msg.role !== 'user' ? '1px solid var(--color-divider)' : 'none'
@@ -860,9 +861,9 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
             ))}
             {streamingContent && (
               <div className="flex justify-start">
-                <div 
-                  className="max-w-[85%] p-3 rounded-tr-xl rounded-tl-lg rounded-br-lg"
-                  style={{ 
+                <div
+                  className="max-w-[85%] p-3 rounded-sm rounded-tl-sm"
+                  style={{
                     background: 'var(--color-card-alt)',
                     border: '1px solid var(--color-divider)'
                   }}

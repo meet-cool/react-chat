@@ -18,6 +18,8 @@ interface ChatSidebarContentProps {
   onOpenRoomSettings: () => void;
   onOpenConversation: (userId: number) => void;
   onNavigate: (path: string) => void;
+  /** 移动端全屏展开时关闭侧边栏 */
+  onClose?: () => void;
   /** 群聊（category='groups' 时使用） */
   activeGroupId?: number | null;
   onSelectGroup?: (group: any) => void;
@@ -37,6 +39,7 @@ export function ChatSidebarContent({
   onOpenRoomSettings,
   onOpenConversation,
   onNavigate,
+  onClose,
   activeGroupId,
   onSelectGroup,
   onGroupsChanged,
@@ -47,6 +50,7 @@ export function ChatSidebarContent({
         activeGroupId={activeGroupId ?? null}
         onSelectGroup={onSelectGroup || (() => {})}
         onGroupsChanged={onGroupsChanged || (() => {})}
+        onClose={onClose}
       />
     );
   }
@@ -61,6 +65,7 @@ export function ChatSidebarContent({
         onSelectRoom={onSelectRoom}
         onSelectConv={onSelectConv}
         loading={roomsLoading}
+        onClose={onClose}
       />
     );
   }
@@ -74,12 +79,13 @@ export function ChatSidebarContent({
         onCreate={onCreateRoom}
         loading={roomsLoading}
         onOpenSettings={onOpenRoomSettings}
+        onClose={onClose}
       />
     );
   }
 
   if (category === 'contacts') {
-    return <ContactsView onOpenConversation={onOpenConversation} />;
+    return <ContactsView onOpenConversation={onOpenConversation} onClose={onClose} />;
   }
 
   if (category === 'confession') {

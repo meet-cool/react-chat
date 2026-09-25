@@ -402,7 +402,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               onClick={() => navigate('/confessions/new')}
               className="btn btn-sm"
@@ -449,7 +449,7 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         </div>
 
         {/* 搜索和筛选 */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex-1 flex items-center gap-2">
             <div className="flex-1 relative">
               <Search
@@ -481,12 +481,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             onChange={(e) => setSort(e.target.value as SortType)}
             className="text-sm"
             style={{
-              background: T.inputBg,
+              background: T.cardBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',
               padding: '4px 6px',
               outline: 'none',
+              cursor: 'pointer',
             }}
           >
             <option value="latest">最新</option>
@@ -498,12 +499,13 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
             onChange={(e) => setTheme(e.target.value as ThemeKey)}
             className="text-sm"
             style={{
-              background: T.inputBg,
+              background: T.cardBg,
               border: `1px solid ${T.cardBorder}`,
               color: T.text,
               borderRadius: '3px',
               padding: '4px 6px',
               outline: 'none',
+              cursor: 'pointer',
             }}
           >
             <option value="ocean">海洋</option>

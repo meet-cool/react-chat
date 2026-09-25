@@ -18,6 +18,7 @@ export interface PaginatedData<T> {
 
 // 用户信息
 export interface UserInfo {
+  mbti?: string;
   id: number;
   username: string;
   email: string;
@@ -78,6 +79,7 @@ export interface RoomMember {
 
 // 消息
 export interface ChatMessage {
+  is_recalled?: boolean;
   id: number;
   room_id: number;
   user_id: number;
@@ -171,6 +173,7 @@ export interface Conversation {
 
 // 私聊消息
 export interface PrivateMessage {
+  is_recalled?: boolean;
   id: number;
   conversation_id: number;
   sender_id: number;

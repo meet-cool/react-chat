@@ -17,13 +17,13 @@ interface GuessResult {
 export function NumberGuessPage({ onBack }: Props) {
   const navigate = useNavigate();
   const { addToast } = useApp();
-  const [secretCode, setSecretCode] = useState('');
   const [guesses, setGuesses] = useState<GuessResult[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
   const [maxAttempts, setMaxAttempts] = useState(10);
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     generateNewGame();
@@ -32,10 +32,9 @@ export function NumberGuessPage({ onBack }: Props) {
   async function generateNewGame() {
     setError('');
     try {
-      const code = await gameApi.generateNumberGuess();
-      setSecretCode(code.code);
-      // 使用服务端下发的最大尝试次数，替代硬编码
-      setMaxAttempts(code.max_attempts || 10);
+      // 服务端开新局（答案存服务端状态，不下发客户端）
+      const res = await gameApi.generateNumberGuess();
+      setMaxAttempts(res.max_attempts || 10);
       setGuesses([]);
       setCurrentGuess('');
       setWon(false);
@@ -45,50 +44,33 @@ export function NumberGuessPage({ onBack }: Props) {
     }
   }
 
-  function handleSubmit() {
-    if (currentGuess.length !== 4) {
-      addToast('请输入4位数字', 'warning');
+  async function handleSubmit() {
+    if (currentGuess.length !== 4 || submitting) {
+      if (currentGuess.length !== 4) addToast('请输入4位数字', 'warning');
       return;
     }
+    setSubmitting(true);
+    try {
+      const digits = currentGuess.split('').map(Number);
+      // 服务端判定（答案不落地客户端，杜绝抄答案作弊）
+      const res = await gameApi.numberGuessCheck(currentGuess);
+      const newGuesses = [{ digits, bulls: res.bulls, cows: res.cows }, ...guesses];
+      setGuesses(newGuesses);
+      setCurrentGuess('');
 
-    const digits = currentGuess.split('').map(Number);
-    const secretDigits = secretCode.split('').map(Number);
-
-    // 正确算法：先数 bulls（同位相同），再对双方剩余数字做多重集合计数得 cows
-    // 例：secret='1234' vs guess='1111' → 1A0B
-    let bulls = 0;
-    const secretRest: number[] = [];
-    const guessRest: number[] = [];
-    for (let i = 0; i < 4; i++) {
-      if (digits[i] === secretDigits[i]) {
-        bulls++;
-      } else {
-        secretRest.push(secretDigits[i]);
-        guessRest.push(digits[i]);
+      if (res.won) {
+        setWon(true);
+        gameApi.submitScore('number_guess', { score: Math.max(100 - newGuesses.length * 5, 10), time_used: newGuesses.length * 10 }).then(() => {
+          addToast('恭喜猜对！积分已发放', 'success');
+        });
+      } else if (newGuesses.length >= res.max_attempts) {
+        setLost(true);
+        addToast('游戏结束，尝试次数已用完', 'error');
       }
-    }
-    let cows = 0;
-    const remaining = [...secretRest];
-    for (const d of guessRest) {
-      const idx = remaining.indexOf(d);
-      if (idx !== -1) {
-        cows++;
-        remaining.splice(idx, 1);
-      }
-    }
-
-    const newGuesses = [{ digits, bulls, cows }, ...guesses];
-    setGuesses(newGuesses);
-    setCurrentGuess('');
-
-    if (bulls === 4) {
-      setWon(true);
-      gameApi.submitScore('number_guess', { score: Math.max(100 - newGuesses.length * 5, 10), time_used: newGuesses.length * 10 }).then(() => {
-        addToast('恭喜猜对！积分已发放', 'success');
-      });
-    } else if (newGuesses.length >= maxAttempts) {
-      setLost(true);
-      addToast(`游戏结束，正确答案是 ${secretCode}`, 'error');
+    } catch {
+      setError('判定失败，请重试');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -139,8 +121,7 @@ export function NumberGuessPage({ onBack }: Props) {
           <div className="text-center py-12" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
             <div className="text-6xl mb-4">😢</div>
             <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>游戏结束</h2>
-            <p className="mb-2" style={{ color: 'var(--color-text-secondary)' }}>正确答案是：</p>
-            <p className="text-3xl font-mono font-bold mb-4" style={{ color: 'var(--color-primary)' }}>{secretCode}</p>
+            <p className="mb-4" style={{ color: 'var(--color-text-secondary)' }}>尝试次数已用完，再来一局吧</p>
             <button onClick={generateNewGame} className="btn btn-primary" style={{ minHeight: 44 }}>再来一局</button>
           </div>
         ) : error ? (

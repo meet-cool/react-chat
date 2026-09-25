@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { UsersRound, Plus, Search, CheckCheck, Clock, ShieldCheck } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { UsersRound, Plus, Search, CheckCheck, Clock, ShieldCheck, X } from 'lucide-react';
 import type { GroupInfo } from '../types';
 import { groupApi } from '../lib/api';
 import { HashAvatar } from './HashAvatar';
@@ -8,13 +9,15 @@ interface GroupsViewProps {
   activeGroupId: number | null;
   onSelectGroup: (group: GroupInfo) => void;
   onGroupsChanged: () => void;
+  /** 移动端全屏展开时关闭侧边栏 */
+  onClose?: () => void;
 }
 
 /**
  * 群聊侧栏：我的群聊 / 发现（申请入群）/ 创建群聊
  * 与聊天室不同：群聊默认开启入群审批，列表中展示申请状态。
  */
-export function GroupsView({ activeGroupId, onSelectGroup, onGroupsChanged }: GroupsViewProps) {
+export function GroupsView({ activeGroupId, onSelectGroup, onGroupsChanged, onClose }: GroupsViewProps) {
   const [tab, setTab] = useState<'my' | 'discover'>('my');
   const [my, setMy] = useState<GroupInfo[]>([]);
   const [discover, setDiscover] = useState<GroupInfo[]>([]);
@@ -98,9 +101,21 @@ export function GroupsView({ activeGroupId, onSelectGroup, onGroupsChanged }: Gr
               需审批
             </span>
           </h2>
-          <button className="btn btn-sm p-2" title="创建群聊" onClick={() => setCreateOpen(true)} style={{ minHeight: 30, minWidth: 30 }}>
-            <Plus size={15} />
-          </button>
+          <div className="flex items-center gap-1">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="btn btn-sm p-1.5"
+                style={{ minHeight: 28, minWidth: 28 }}
+                aria-label="收起"
+              >
+                <X size={14} />
+              </button>
+            )}
+            <button className="btn btn-sm p-2" title="创建群聊" onClick={() => setCreateOpen(true)} style={{ minHeight: 30, minWidth: 30 }}>
+              <Plus size={15} />
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2 px-2 py-1.5" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border-light)' }}>
           <Search size={13} style={{ color: 'var(--color-text-muted)' }} />
@@ -217,10 +232,10 @@ export function GroupsView({ activeGroupId, onSelectGroup, onGroupsChanged }: Gr
         ))}
       </div>
 
-      {/* 创建群聊弹窗 */}
-      {createOpen && (
+      {/* 创建群聊弹窗（Portal 直挂 body：脱离聊天布局堆叠上下文，z-[100] 在根层生效） */}
+      {createOpen && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.4)' }}
           onClick={() => setCreateOpen(false)}
         >
@@ -259,7 +274,8 @@ export function GroupsView({ activeGroupId, onSelectGroup, onGroupsChanged }: Gr
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

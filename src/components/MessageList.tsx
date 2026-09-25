@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { ChevronDown, Loader2, Reply as ReplyIcon } from 'lucide-react';
 import type { ChatMessage, MessageReaction } from '../types';
+import { renderBBCode } from '../lib/bbcode';
 import { Avatar } from './Avatar';
 import { UserActionMenu } from './UserActionMenu';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
@@ -20,6 +19,8 @@ interface MessageListProps {
   onReply?: (msg: ChatMessage) => void;
   onForward?: (msg: ChatMessage) => void;
   onReport?: (msg: ChatMessage) => void;
+  onRecall?: (msg: ChatMessage) => void;
+  onBlock?: (userId: number, username: string) => void;
 }
 
 interface MenuState {
@@ -34,7 +35,7 @@ interface ActionMenuState {
   msg: ChatMessage | null;
 }
 
-export function MessageList({ messages, loading, hasMore, onLoadMore, currentUserId, onMention, onMessage, onViewProfile, onReact, onReply, onForward, onReport }: MessageListProps) {
+export function MessageList({ messages, loading, hasMore, onLoadMore, currentUserId, onMention, onMessage, onViewProfile, onReact, onReply, onForward, onReport, onRecall, onBlock }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // 是否处于距底部 <160px 的近底状态（决定新消息是否自动滚底）
@@ -100,6 +101,7 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
                   onAvatarClick={(e) => handleAvatarClick(e, msg)}
                   onActionTrigger={(x, y) => setActionMenu({ open: true, pos: { x, y }, msg })}
                   onReact={onReact}
+                  onRecall={onRecall}
                 />
               ))}
             </div>
@@ -112,8 +114,11 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
           <ChevronDown size={18} />
         </button>
       )}
-      <UserActionMenu open={menu.open} anchorRect={menu.anchor} user={menu.user} currentUserId={currentUserId} onClose={() => setMenu((m) => ({ ...m, open: false }))} onMention={onMention} onMessage={onMessage} onViewProfile={(username) => onViewProfile?.(username)} />
-      <MessageActionMenu open={actionMenu.open} anchor={actionMenu.pos} isSelf={actionMenu.msg?.user_id === currentUserId} canDelete={false} onClose={() => setActionMenu((s) => ({ ...s, open: false }))} onReact={(emoji) => { if (actionMenu.msg && onReact) onReact(actionMenu.msg.id, emoji); }} onReply={() => { if (actionMenu.msg && onReply) onReply(actionMenu.msg); }} onForward={() => { if (actionMenu.msg && onForward) onForward(actionMenu.msg); }} onReport={() => { if (actionMenu.msg && onReport) onReport(actionMenu.msg); }} onCopy={() => { if (actionMenu.msg) navigator.clipboard?.writeText(actionMenu.msg.content).catch(() => {}); }} />
+      <UserActionMenu open={menu.open} anchorRect={menu.anchor} user={menu.user} currentUserId={currentUserId} onClose={() => setMenu((m) => ({ ...m, open: false }))} onMention={onMention} onMessage={onMessage} onViewProfile={(username) => onViewProfile?.(username)} onBlock={onBlock} />
+      <MessageActionMenu open={actionMenu.open} anchor={actionMenu.pos} isSelf={actionMenu.msg?.user_id === currentUserId} canDelete={false} onClose={() => setActionMenu((s) => ({ ...s, open: false }))} onReact={(emoji) => { if (actionMenu.msg && onReact) onReact(actionMenu.msg.id, emoji); }} onReply={() => { if (actionMenu.msg && onReply) onReply(actionMenu.msg); }} onForward={() => { if (actionMenu.msg && onForward) onForward(actionMenu.msg); }} onReport={() => { if (actionMenu.msg && onReport) onReport(actionMenu.msg); }} onCopy={() => { if (actionMenu.msg) navigator.clipboard?.writeText(actionMenu.msg.content).catch(() => {}); }} 
+        canRecall={!!actionMenu.msg && actionMenu.msg.is_self && !actionMenu.msg.is_recalled && (Date.now() - actionMenu.msg.create_time * 1000) < 120000}
+        recallRemaining={actionMenu.msg ? Math.max(0, 120 - Math.floor(Date.now() / 1000 - actionMenu.msg.create_time)) : 0}
+        onRecall={() => { if (actionMenu.msg && onRecall) onRecall(actionMenu.msg); }} />
     </div>
   );
 }
@@ -128,8 +133,10 @@ interface MessageBubbleProps {
   onReact?: (msgId: number, emoji: string) => void;
 }
 
-function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, onActionTrigger, onReact }: MessageBubbleProps) {
-  const isMarkdown = msg.type === 'markdown';
+function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, onActionTrigger, onReact, onRecall }: MessageBubbleProps & { onRecall?: (msg: ChatMessage) => void }) {
+  // 富文本消息：BBCode 渲染（旧 markdown 类型消息按 BBCode 兼容展示）
+  const isRich = msg.type === 'bbcode' || msg.type === 'markdown';
+  const richHtml = isRich ? renderBBCode(msg.content) : '';
   const time = msg.create_time_fmt.split(' ')[1] || '';
   const trigger = useMessageActionTrigger(onActionTrigger);
 
@@ -152,19 +159,35 @@ function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, 
           </div>
         )}
         {msg.reply && (
-          <div className="flex items-center gap-1.5 px-2 py-1 mb-1 text-xs max-w-full" style={{ background: 'var(--color-card-alt)', borderLeft: '3px solid var(--color-primary)', color: 'var(--color-text-secondary)' }}>
+          <div className="flex items-center gap-1.5 px-2 py-1 mb-1 text-xs max-w-full rounded-sm" style={{ background: 'var(--color-card-alt)', borderLeft: '3px solid var(--color-primary)', color: 'var(--color-text-secondary)' }}>
             <ReplyIcon size={11} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
             <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{msg.reply.username}:</span>
             <span className="truncate">{msg.reply.content_short}</span>
           </div>
         )}
-        <div className="px-3 py-2 text-sm" style={isSelf ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
-          {isMarkdown ? (
-            <div className="markdown-body break-words"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
-          ) : (
-            <span className="break-words whitespace-pre-wrap">{msg.content}</span>
-          )}
-        </div>
+        {msg.is_recalled ? (
+          <div className="px-3 py-1.5 text-xs rounded-sm" style={{ background: 'var(--color-card-alt)', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border-light)', fontStyle: 'italic' }}>
+            {isSelf ? '你' : msg.username}撤回了一条消息
+          </div>
+        ) : msg.type === 'pat' ? (
+          <div className="px-3 py-1.5 text-xs" style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+            👋 {isSelf ? '你' : msg.username}拍了拍{isSelf ? '对方' : '你'}
+          </div>
+        ) : msg.type === 'dice' ? (
+          <div className="px-3 py-2 flex items-center gap-2 rounded-sm" style={isSelf ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
+            <span className="text-xl">🎲</span>
+            <span className="text-lg font-bold">{msg.content || '…'}</span>
+            <span className="text-xs" style={{ opacity: 0.7 }}>点</span>
+          </div>
+        ) : (
+          <div className="px-3 py-2 text-sm rounded-sm" style={isSelf ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
+            {isRich ? (
+              <div className="bbcode-body break-words" dangerouslySetInnerHTML={{ __html: richHtml }} />
+            ) : (
+              <span className="break-words whitespace-pre-wrap">{msg.content}</span>
+            )}
+          </div>
+        )}
         {msg.reactions && msg.reactions.length > 0 && (
           <div className={`flex flex-wrap gap-1 mt-1 ${isSelf ? 'justify-end' : 'justify-start'}`}>
             {msg.reactions.map((r) => (

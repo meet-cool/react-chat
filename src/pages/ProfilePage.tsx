@@ -280,8 +280,29 @@ export function ProfilePage({ user }: ProfilePageProps) {
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--color-text-muted)' }}>注册时间</span>
                   <span style={{ color: 'var(--color-text)' }}>
-                    {new Date(info.create_time * 1000).toLocaleDateString('zh-CN')}
+                    {info.create_time ? new Date(info.create_time * 1000).toLocaleDateString('zh-CN') : '—'}
                   </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span style={{ color: 'var(--color-text-muted)' }}>MBTI</span>
+                  {info.mbti ? (
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 cursor-pointer"
+                      style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: 9999, letterSpacing: 1 }}
+                      title="去测试/查看"
+                      onClick={() => (window.location.href = '/mbti')}
+                    >
+                      {info.mbti}
+                    </span>
+                  ) : (
+                    <a
+                      href="/mbti"
+                      className="text-xs"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      去测试 →
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
