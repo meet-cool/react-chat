@@ -20,6 +20,7 @@ import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
 import titleImg from '../assets/title.png';
 import { InstallPrompt } from '../components/InstallPrompt';
+import { TriviaBar } from '../components/TriviaBar';
 
 interface PublicStats {
   total_users: number;
@@ -500,6 +501,9 @@ export function PortalPage() {
           <span>调试</span>
         </button>
       </footer>
+
+      {/* "你知道吗"加载提示（数据加载中固定在底部显示，加载完成后消失） */}
+      <TriviaBar visible={loading} />
 
       {/* PWA 安装提示 */}
       <InstallPrompt />
