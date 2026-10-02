@@ -88,8 +88,8 @@ export function ChatSidebarNav({
 
   return (
     <div
-      className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200"
-      style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
+      className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200 overflow-hidden"
+      style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)', width: 56 }}
     >
       {/* 左侧活跃指示条 */}
       <div

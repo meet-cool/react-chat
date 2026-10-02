@@ -743,7 +743,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧边栏 - 移动端聊天视图时隐藏；列表视图仅保留图标栏，分类内容由主区域渲染 */}
         <aside
-          className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-0 ${
+          className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-0 overflow-hidden ${
             isMobile
               ? mobileView !== 'list'
                 ? 'hidden'
@@ -773,7 +773,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
             } ${isMobile && mobileSidebar === null ? 'hidden' : ''}`}
-            style={{ width: leftCollapsed ? 0 : undefined }}
+            style={{ width: leftCollapsed ? 0 : undefined, minWidth: 0 }}
             data-sidebar-col
           >
             {showPrivate ? null : category === 'recent' ? (

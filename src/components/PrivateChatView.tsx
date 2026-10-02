@@ -702,10 +702,10 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
             👋 {msg.is_self ? '你拍了拍对方' : '对方拍了拍你'}
           </div>
         ) : msg.type === 'dice' ? (
-          <div className="px-3 py-2 flex items-center gap-2" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
-            <span className="text-xl">🎲</span>
-            <span className="text-lg font-bold">{msg.content || '…'}</span>
-            <span className="text-xs" style={{ opacity: 0.7 }}>点</span>
+          <div className="px-3 py-1.5 flex items-center justify-center rounded" style={{ background: 'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-card-alt) 100%)', border: '1px solid var(--color-border)', margin: '4px 0' }}>
+            <span className="text-2xl mr-2">🎲</span>
+            <span className="text-xl font-bold" style={{ color: 'var(--color-primary)' }}>{msg.content || '?'}</span>
+            <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>点</span>
           </div>
         ) : (
           <div className="px-3 py-2 text-sm" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
