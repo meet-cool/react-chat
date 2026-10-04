@@ -88,7 +88,7 @@ export function ChatSidebarNav({
 
   return (
     <div
-      className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200 overflow-hidden"
+      className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200"
       style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)', width: 56 }}
     >
       {/* 左侧活跃指示条 */}
@@ -164,11 +164,11 @@ export function ChatSidebarNav({
       <div className="flex-1" />
 
       {/* 菜单栏：个人主页 / 设置 / 新手指导 */}
-      <div ref={menuRef} className="relative w-full flex justify-center z-50">
+      <div ref={menuRef} className="relative w-full flex justify-center">
         {menuOpen && (
           <div
-            className="absolute bottom-14 left-0 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 100 }}
+            className="fixed bottom-16 left-2 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 200 }}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
               <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>菜单</span>
