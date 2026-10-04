@@ -60,13 +60,13 @@ export default function MemoryChartCard({ memory, word }) {
                     <div className="text-lg font-bold text-[var(--color-success)]">{memory?.correct_count ?? 0}</div>
                     <div className="text-[10px] text-[var(--color-text-muted)]">答对</div>
                 </div>
-                <div className="p-2 bg-[var(--color-error-bg)] rounded-sm">
-                    <div className="text-lg font-bold text-[var(--color-error)]">{memory?.wrong_answers ?? 0}</div>
-                    <div className="text-[10px] text-[var(--color-text-muted)]">答错</div>
-                </div>
                 <div className="p-2 bg-[var(--color-card-alt)] rounded-sm">
                     <div className="text-lg font-bold text-[var(--color-primary)]">{times}</div>
                     <div className="text-[10px] text-[var(--color-text-muted)]">学习次数</div>
+                </div>
+                <div className="p-2 bg-[var(--color-error-bg)] rounded-sm">
+                    <div className="text-lg font-bold text-[var(--color-error)]">{memory?.wrong_answers ?? 0}</div>
+                    <div className="text-[10px] text-[var(--color-text-muted)]">答错</div>
                 </div>
             </div>
             <div className="mt-auto pt-4 text-xs text-[var(--color-text-muted)] leading-relaxed">
