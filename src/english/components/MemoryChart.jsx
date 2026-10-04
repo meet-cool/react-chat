@@ -83,10 +83,6 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointRadius: 0,
                         pointHoverRadius: 4,
                         borderWidth: 2,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart',
-                        },
                     },
                     {
                         label: '学习点',
@@ -97,10 +93,6 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointBorderColor: '#FFFFFF',
                         pointBorderWidth: 1.5,
                         showLine: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart',
-                        },
                     },
                     {
                         label: '现在',
@@ -111,10 +103,6 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointBorderColor: '#FFFFFF',
                         pointBorderWidth: 2,
                         showLine: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart',
-                        },
                     },
                 ],
             },
@@ -123,7 +111,7 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                 maintainAspectRatio: false,
                 layout: { padding: { top: 4, bottom: 2 } },
                 animation: {
-                    duration: 800,
+                    duration: 1000,
                     easing: 'easeOutQuart',
                 },
                 plugins: {
@@ -143,8 +131,18 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                     },
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#8AA0B8', maxRotation: 0, autoSkip: false } },
-                    // 上方留余量避免 100% 圆点被裁剪；>100 的刻度不显示文字
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 9 }, color: '#8AA0B8', maxRotation: 0, autoSkip: false },
+                        // 从左到右绘制动画
+                        ticks: {
+                            ...{ font: { size: 9 }, color: '#8AA0B8', maxRotation: 0, autoSkip: false },
+                            callback: function(value, index) {
+                                // 动画时延迟显示刻度
+                                return this.getLabelForValue(value);
+                            }
+                        }
+                    },
                     y: {
                         min: 0,
                         max: 110,
