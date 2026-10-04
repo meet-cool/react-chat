@@ -770,10 +770,10 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
           {/* 分类内容区 - 移动端内联时隐藏（由主区域渲染列表），抽屉/桌面端显示 */}
           <div
-            className={`flex-1 min-w-0 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
+            className={`flex-1 min-w-[200px] flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
             } ${isMobile && mobileSidebar === null ? 'hidden' : ''}`}
-            style={{ width: leftCollapsed ? 0 : undefined, minWidth: 0 }}
+            style={{ width: leftCollapsed ? 0 : undefined }}
             data-sidebar-col
           >
             {showPrivate ? null : category === 'recent' ? (

@@ -252,7 +252,7 @@ export function ContactsView({ onOpenConversation, onClose }: ContactsViewProps)
   const displayList = searchResults ?? list;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--color-card)' }}>
+    <div className="flex flex-col h-full min-w-[280px]" style={{ background: 'var(--color-card)' }}>
       {/* 头部 */}
       <div className="p-4 border-b" style={{ borderColor: 'var(--color-divider)' }}>
         <div className="flex items-center justify-between mb-3">
