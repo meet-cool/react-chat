@@ -846,7 +846,81 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         {/* 中间内容区 */}
         <main className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--color-bg)' }}>
           {/* 移动端视图 */}
-          {isMobile ? (
+          {isMobile && mobileSidebar !== null ? (
+            /* 移动端：显示侧边栏内容（通过 aside 渲染） */
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {category === 'recent' && (
+                <ChatSidebarContent
+                  category={category}
+                  rooms={rooms}
+                  conversations={conversations}
+                  activeRoomId={activeRoom?.id ?? null}
+                  activeConvId={activeConv?.id ?? null}
+                  roomsLoading={roomsLoading}
+                  onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                  onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setMobileSidebar(null); setMobileView('private'); }}
+                  onCreateRoom={() => setShowCreateModal(true)}
+                  onOpenRoomSettings={() => setShowRoomSettings(true)}
+                  onOpenConversation={handleOpenConversation}
+                  onNavigate={navigate}
+                  onClose={() => setMobileSidebar(null)}
+                />
+              )}
+              {category === 'rooms' && (
+                <ChatSidebarContent
+                  category={category}
+                  rooms={rooms}
+                  conversations={conversations}
+                  activeRoomId={activeRoom?.id ?? null}
+                  activeConvId={activeConv?.id ?? null}
+                  roomsLoading={roomsLoading}
+                  onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                  onSelectConv={() => {}}
+                  onCreateRoom={() => setShowCreateModal(true)}
+                  onOpenRoomSettings={() => setShowRoomSettings(true)}
+                  onOpenConversation={() => {}}
+                  onNavigate={navigate}
+                  onClose={() => setMobileSidebar(null)}
+                />
+              )}
+              {category === 'contacts' && (
+                <ChatSidebarContent
+                  category={category}
+                  rooms={[]}
+                  conversations={[]}
+                  activeRoomId={null}
+                  activeConvId={null}
+                  roomsLoading={false}
+                  onSelectRoom={() => {}}
+                  onSelectConv={() => {}}
+                  onCreateRoom={() => {}}
+                  onOpenRoomSettings={() => {}}
+                  onOpenConversation={handleOpenConversation}
+                  onNavigate={navigate}
+                  onClose={() => setMobileSidebar(null)}
+                />
+              )}
+              {category === 'groups' && (
+                <ChatSidebarContent
+                  category={category}
+                  rooms={[]}
+                  conversations={[]}
+                  activeRoomId={null}
+                  activeConvId={null}
+                  roomsLoading={false}
+                  onSelectRoom={() => {}}
+                  onSelectConv={() => {}}
+                  onCreateRoom={() => {}}
+                  onOpenRoomSettings={() => {}}
+                  onOpenConversation={() => {}}
+                  onNavigate={navigate}
+                  activeGroupId={activeGroup?.id ?? null}
+                  onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); setMobileSidebar(null); }}
+                  onGroupsChanged={() => setGroupListKey((k) => k + 1)}
+                />
+              )}
+            </div>
+          ) : isMobile ? (
             activeGroup ? (
               <GroupChatView
                 group={activeGroup}
