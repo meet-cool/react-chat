@@ -61,9 +61,10 @@
     color: var(--color-error);
 }
 
-/* 已作答的无关选项：置灰 */
+/* 已作答的无关选项：保持原样，仅禁用点击 */
 .btn.option-btn.answer-dim {
-    opacity: 0.5;
+    opacity: 1;
+    cursor: default;
 }
 
 /* ===== 考试答题卡：已作答题号 ===== */
