@@ -145,12 +145,10 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                             callback: (value) => (value > 100 ? '' : value),
                         },
                         grid: { color: 'rgba(0,0,0,0.05)' },
-                    },
-                },
-                // 禁用 Y 轴动画，只保留 X 轴横向绘制
-                transition: {
-                    animation: {
-                        duration: 1000,
+                        // 禁用 Y 轴动画，防止向上浮动
+                        animation: {
+                            duration: 0,
+                        },
                     },
                 },
             },
