@@ -643,7 +643,7 @@ export default function LearnModule({ module }) {
                                         cls += 'option-selected';
                                     }
                                     return (
-                                        <button key={i} disabled={answered} onClick={() => setSelectedOption(opt.text)} className={cls}>
+                                        <button key={i} disabled={answered} onClick={() => !answered && setSelectedOption(opt.text)} className={cls}>
                                             <span className="flex items-center justify-between gap-2 w-full">
                                                 <span>{opt.text}</span>
                                                 {answered && opt.correct && <Check size={14} className="shrink-0" />}
