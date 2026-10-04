@@ -587,7 +587,7 @@ export default function LearnModule({ module }) {
                 <MemoryChartCard memory={currentWord.memory} word={currentWord.word} />
 
                 {/* 右侧：题干+作答 */}
-                <section className={`flex-1 min-w-0 card flex flex-col ${answerResult ? (answerResult === 'correct' ? 'border-2 border-[var(--color-success)]' : 'border-2 border-[var(--color-error)]') : ''}`}>
+                <section className="flex-1 min-w-0 card flex flex-col">
                     {/* 题干 */}
                     <div className="relative text-center pt-6 pb-4 shrink-0">
                         <button onClick={() => { setFbMsg(null); setFbOpen(true); }} className="absolute top-2 right-2 btn btn-sm !px-1.5" title="反馈此错误">
@@ -745,8 +745,8 @@ export default function LearnModule({ module }) {
                     onClick={() => {
                         next();
                     }}
-                    disabled={!answered}
                     className="flex-1 btn"
+                    style={{ opacity: answered ? 0.5 : 1, pointerEvents: answered ? 'none' : 'auto' }}
                 >
                     {currentIndex < words.length - 1 ? '下一题' : '完成'}
                 </button>
