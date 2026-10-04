@@ -83,6 +83,10 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointRadius: 0,
                         pointHoverRadius: 4,
                         borderWidth: 2,
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart',
+                        },
                     },
                     {
                         label: '学习点',
@@ -93,6 +97,10 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointBorderColor: '#FFFFFF',
                         pointBorderWidth: 1.5,
                         showLine: false,
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart',
+                        },
                     },
                     {
                         label: '现在',
@@ -103,6 +111,10 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                         pointBorderColor: '#FFFFFF',
                         pointBorderWidth: 2,
                         showLine: false,
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart',
+                        },
                     },
                 ],
             },
@@ -110,6 +122,10 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: { padding: { top: 4, bottom: 2 } },
+                animation: {
+                    duration: 800,
+                    easing: 'easeOutQuart',
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {

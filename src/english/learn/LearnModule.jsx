@@ -746,7 +746,7 @@ export default function LearnModule({ module }) {
                         next();
                     }}
                     className="flex-1 btn"
-                    style={{ opacity: answered ? 0.5 : 1, pointerEvents: answered ? 'none' : 'auto' }}
+                    disabled={!answered}
                 >
                     {currentIndex < words.length - 1 ? '下一题' : '完成'}
                 </button>
