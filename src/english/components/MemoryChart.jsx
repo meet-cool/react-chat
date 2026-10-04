@@ -112,7 +112,7 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                 layout: { padding: { top: 4, bottom: 2 } },
                 animation: {
                     duration: 1000,
-                    easing: 'easeOutQuart',
+                    easing: 'linear',
                 },
                 plugins: {
                     legend: { display: false },
@@ -134,14 +134,6 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                     x: {
                         grid: { display: false },
                         ticks: { font: { size: 9 }, color: '#8AA0B8', maxRotation: 0, autoSkip: false },
-                        // 从左到右绘制动画
-                        ticks: {
-                            ...{ font: { size: 9 }, color: '#8AA0B8', maxRotation: 0, autoSkip: false },
-                            callback: function(value, index) {
-                                // 动画时延迟显示刻度
-                                return this.getLabelForValue(value);
-                            }
-                        }
                     },
                     y: {
                         min: 0,
@@ -153,6 +145,12 @@ export default function MemoryChart({ timeline, retention = 100, daysElapsed = 0
                             callback: (value) => (value > 100 ? '' : value),
                         },
                         grid: { color: 'rgba(0,0,0,0.05)' },
+                    },
+                },
+                // 禁用 Y 轴动画，只保留 X 轴横向绘制
+                transition: {
+                    animation: {
+                        duration: 1000,
                     },
                 },
             },
