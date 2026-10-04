@@ -743,7 +743,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧边栏 - 移动端聊天视图时隐藏；列表视图仅保留图标栏，分类内容由主区域渲染 */}
         <aside
-          className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-0 overflow-hidden ${
+          className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-10 overflow-hidden ${
             isMobile
               ? mobileView !== 'list'
                 ? 'hidden'

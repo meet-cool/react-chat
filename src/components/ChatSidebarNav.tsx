@@ -164,11 +164,11 @@ export function ChatSidebarNav({
       <div className="flex-1" />
 
       {/* 菜单栏：个人主页 / 设置 / 新手指导 */}
-      <div ref={menuRef} className="relative w-full flex justify-center">
+      <div ref={menuRef} className="relative w-full flex justify-center z-50">
         {menuOpen && (
           <div
-            className="absolute bottom-14 left-1 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 60 }}
+            className="absolute bottom-14 left-0 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 100 }}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
               <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>菜单</span>
