@@ -406,10 +406,10 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           />
 
           <div
-            className={`flex-1 min-w-[200px] flex flex-col overflow-hidden transition-[width] duration-200 relative ${
-              leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
+            className={`flex-1 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
+              leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100 md:min-w-[200px]'
             } ${isMobile && mobileSidebar === null ? 'hidden' : ''}`}
-            style={{ width: leftCollapsed ? 0 : undefined }}
+            style={leftCollapsed ? { width: 0, minWidth: 0 } : undefined}
             data-sidebar-col
           >
             {showPrivate ? null : category === 'recent' ? (
