@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   ArrowLeft,
   Bell,
-  Menu,
 } from 'lucide-react';
 import type { UserInfo, Conversation, GroupInfo, ChatMessage } from '../types';
 import { clearToken, conversationApi, socialApi, messageApi } from '../lib/api';
@@ -28,6 +27,7 @@ import type { SidebarCategory } from '../components/chat-types';
 import { useChatRooms } from '../lib/useChatRooms';
 import { useMobileView, type MobileView } from '../lib/useMobileView';
 import type { NotificationItem } from '../lib/api';
+import { MobileTabBar, type MobileTab } from '../components/MobileTabBar';
 
 interface ChatPageProps {
   user: UserInfo;
@@ -56,6 +56,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState<SidebarCategory | 'members' | null>(null);
+
+  // 移动端底部 Tab 导航状态
+  const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>('arcle');
+  const [contactsPanelOpen, setContactsPanelOpen] = useState(false);
+  const [contactsSubTab, setContactsSubTab] = useState<SidebarCategory>('rooms');
 
   // 发送成功后触发 MessageList 瞬时滚到底部（自增即可，组件内 effect 监听该值）
   const [scrollSignal, setScrollSignal] = useState(0);
@@ -250,7 +255,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     else if (k === 'english') navigate('/english');
     else {
       setCategory(k);
-      if (isMobile) setMobileSidebar(k);
+      if (isMobile) {
+        // 移动端：切到「弧光」Tab，收起通讯录面板
+        setMobileActiveTab('arcle');
+        setContactsPanelOpen(false);
+      }
     }
   }, [navigate, isMobile]);
 
@@ -258,6 +267,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const handleMobileBack = useCallback(() => {
     setMobileView('list');
     setMobileSidebar(null);
+    setContactsPanelOpen(false);
   }, [setMobileView]);
 
   const {
@@ -274,6 +284,80 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     return handleSend(content, type, () => setScrollSignal((s) => s + 1));
   }, [handleSend]);
 
+  // 移动端通讯录面板内容（根据 contactsSubTab 渲染对应 ChatSidebarContent）
+  const contactsPanelContent = (
+    <>
+      {contactsSubTab === 'rooms' ? (
+        <ChatSidebarContent
+          category="rooms"
+          rooms={rooms}
+          conversations={conversations}
+          activeRoomId={activeRoom?.id ?? null}
+          activeConvId={activeConv?.id ?? null}
+          roomsLoading={roomsLoading}
+          onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); setContactsPanelOpen(false); }}
+          onSelectConv={() => {}}
+          onCreateRoom={() => setShowCreateModal(true)}
+          onOpenRoomSettings={() => setShowRoomSettings(true)}
+          onOpenConversation={() => {}}
+          onNavigate={navigate}
+          onClose={() => setContactsPanelOpen(false)}
+        />
+      ) : contactsSubTab === 'recent' ? (
+        <ChatSidebarContent
+          category="recent"
+          rooms={rooms}
+          conversations={conversations}
+          activeRoomId={activeRoom?.id ?? null}
+          activeConvId={activeConv?.id ?? null}
+          roomsLoading={roomsLoading}
+          onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); setContactsPanelOpen(false); }}
+          onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setContactsPanelOpen(false); setMobileView('private'); }}
+          onCreateRoom={() => setShowCreateModal(true)}
+          onOpenRoomSettings={() => setShowRoomSettings(true)}
+          onOpenConversation={handleOpenConversation}
+          onNavigate={navigate}
+          onClose={() => setContactsPanelOpen(false)}
+        />
+      ) : contactsSubTab === 'contacts' ? (
+        <ChatSidebarContent
+          category="contacts"
+          rooms={[]}
+          conversations={[]}
+          activeRoomId={null}
+          activeConvId={null}
+          roomsLoading={false}
+          onSelectRoom={() => {}}
+          onSelectConv={() => {}}
+          onCreateRoom={() => {}}
+          onOpenRoomSettings={() => {}}
+          onOpenConversation={handleOpenConversation}
+          onNavigate={navigate}
+          onClose={() => setContactsPanelOpen(false)}
+        />
+      ) : (
+        <ChatSidebarContent
+          category="groups"
+          rooms={[]}
+          conversations={[]}
+          activeRoomId={null}
+          activeConvId={null}
+          roomsLoading={false}
+          onSelectRoom={() => {}}
+          onSelectConv={() => {}}
+          onCreateRoom={() => {}}
+          onOpenRoomSettings={() => {}}
+          onOpenConversation={() => {}}
+          onNavigate={navigate}
+          activeGroupId={activeGroup?.id ?? null}
+          onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); setContactsPanelOpen(false); }}
+          onGroupsChanged={() => setGroupListKey((k) => k + 1)}
+          onClose={() => setContactsPanelOpen(false)}
+        />
+      )}
+    </>
+  );
+
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
       {/* 顶部导航 */}
@@ -284,21 +368,25 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         <div className="flex items-center gap-3">
           {isMobile && mobileView !== 'list' ? (
             <button
-              className="btn btn-sm p-2"
+              className="md:hidden btn btn-sm p-2"
               onClick={handleMobileBack}
-              style={{ minHeight: 36, minWidth: 36 }}
+              style={{ minHeight: 44, minWidth: 44 }}
             >
               <ArrowLeft size={18} />
             </button>
-          ) : (
+          ) : isMobile ? (
             <button
               className="md:hidden btn btn-sm p-2"
-              onClick={() => setMobileSidebar('recent')}
-              style={{ minHeight: 36, minWidth: 36 }}
+              onClick={() => {
+                setMobileActiveTab('contacts');
+                setContactsPanelOpen(true);
+              }}
+              style={{ minHeight: 44, minWidth: 44 }}
+              title="通讯录"
             >
-              <Menu size={18} />
+              <Bell size={18} />
             </button>
-          )}
+          ) : null}
           <div className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0"
@@ -403,9 +491,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             isMobile
               ? mobileView !== 'list'
                 ? 'hidden'
-                : mobileSidebar !== null
-                  ? 'fixed inset-y-0 left-0 top-0 z-50 w-[320px] max-w-[85vw]'
-                  : 'w-14'
+                : 'w-14'
               : `w-64 md:w-14 ${leftCollapsed ? 'md:w-14' : showLabels ? 'md:w-[360px]' : 'md:w-64'}`
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
@@ -427,7 +513,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           <div
             className={`flex-1 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
               leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100 md:min-w-[200px]'
-            } ${isMobile && mobileSidebar === null ? 'hidden' : ''}`}
+            } ${isMobile ? 'hidden' : leftCollapsed ? 'md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none' : 'md:opacity-100 md:min-w-[200px]'}`}
             style={leftCollapsed ? { width: 0, minWidth: 0 } : undefined}
             data-sidebar-col
           >
@@ -498,83 +584,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           </div>
         </aside>
 
-        {/* 中间内容区 */}
-        <main className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--color-bg)' }}>
-          {isMobile && mobileSidebar !== null ? (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              {category === 'recent' && (
-                <ChatSidebarContent
-                  category={category}
-                  rooms={rooms}
-                  conversations={conversations}
-                  activeRoomId={activeRoom?.id ?? null}
-                  activeConvId={activeConv?.id ?? null}
-                  roomsLoading={roomsLoading}
-                  onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
-                  onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setMobileSidebar(null); setMobileView('private'); }}
-                  onCreateRoom={() => setShowCreateModal(true)}
-                  onOpenRoomSettings={() => setShowRoomSettings(true)}
-                  onOpenConversation={handleOpenConversation}
-                  onNavigate={navigate}
-                  onClose={() => setMobileSidebar(null)}
-                />
-              )}
-              {category === 'rooms' && (
-                <ChatSidebarContent
-                  category={category}
-                  rooms={rooms}
-                  conversations={conversations}
-                  activeRoomId={activeRoom?.id ?? null}
-                  activeConvId={activeConv?.id ?? null}
-                  roomsLoading={roomsLoading}
-                  onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
-                  onSelectConv={() => {}}
-                  onCreateRoom={() => setShowCreateModal(true)}
-                  onOpenRoomSettings={() => setShowRoomSettings(true)}
-                  onOpenConversation={() => {}}
-                  onNavigate={navigate}
-                  onClose={() => setMobileSidebar(null)}
-                />
-              )}
-              {category === 'contacts' && (
-                <ChatSidebarContent
-                  category={category}
-                  rooms={[]}
-                  conversations={[]}
-                  activeRoomId={null}
-                  activeConvId={null}
-                  roomsLoading={false}
-                  onSelectRoom={() => {}}
-                  onSelectConv={() => {}}
-                  onCreateRoom={() => {}}
-                  onOpenRoomSettings={() => {}}
-                  onOpenConversation={handleOpenConversation}
-                  onNavigate={navigate}
-                  onClose={() => setMobileSidebar(null)}
-                />
-              )}
-              {category === 'groups' && (
-                <ChatSidebarContent
-                  category={category}
-                  rooms={[]}
-                  conversations={[]}
-                  activeRoomId={null}
-                  activeConvId={null}
-                  roomsLoading={false}
-                  onSelectRoom={() => {}}
-                  onSelectConv={() => {}}
-                  onCreateRoom={() => {}}
-                  onOpenRoomSettings={() => {}}
-                  onOpenConversation={() => {}}
-                  onNavigate={navigate}
-                  activeGroupId={activeGroup?.id ?? null}
-                  onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); setMobileSidebar(null); }}
-                  onGroupsChanged={() => setGroupListKey((k) => k + 1)}
-                  onClose={() => setMobileSidebar(null)}
-                />
-              )}
-            </div>
-          ) : isMobile ? (
+        {/* 中间内容区（移动端给底部 TabBar 留 padding） */}
+        <main className="flex-1 flex flex-col min-w-0 pb-14 md:pb-0" style={{ background: 'var(--color-bg)' }}>
+          {isMobile ? (
             activeGroup ? (
               <GroupChatView
                 group={activeGroup}
@@ -784,9 +796,35 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         </main>
       </div>
 
-      {/* 移动端遮罩 */}
-      {mobileSidebar && (
-        <div className="md:hidden fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setMobileSidebar(null)} />
+      {/* 移动端底部 Tab 导航（弧光 / 通讯录 / 更多） */}
+      {isMobile && (
+        <MobileTabBar
+          activeTab={mobileActiveTab}
+          contactsPanelOpen={contactsPanelOpen}
+          contactsSubTab={contactsSubTab}
+          arcleBadge={notifUnread}
+          onArcle={() => {
+            setMobileActiveTab('arcle');
+            setContactsPanelOpen(false);
+            setCategory('recent');
+            setMobileView('list');
+          }}
+          onContactsToggle={() => {
+            setMobileActiveTab('contacts');
+            setContactsPanelOpen((v) => !v);
+            setMobileView('list');
+          }}
+          onContactsSubTab={(tab) => setContactsSubTab(tab)}
+          onMoreToggle={() => {
+            setMobileActiveTab('more');
+            setContactsPanelOpen(false);
+          }}
+          onNewRoom={() => setShowCreateModal(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenGuide={() => setShowGuide(true)}
+          onLogout={handleLogout}
+          panelContent={contactsPanelContent}
+        />
       )}
 
       {/* 弹窗 */}

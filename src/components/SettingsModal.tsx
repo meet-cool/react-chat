@@ -276,7 +276,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={handleClose}>
-      <div className="w-full max-w-xl flex flex-col shadow-[var(--shadow-lg)]" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-xl flex flex-col shadow-[var(--shadow-lg)]" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', height: '85vh' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
           <div className="flex items-center gap-2"><Settings size={18} style={{ color: 'var(--color-primary)' }} /><h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>设置</h3></div>
           <button onClick={handleClose} className="p-1" style={{ color: 'var(--color-text-muted)' }}><X size={18} /></button>
