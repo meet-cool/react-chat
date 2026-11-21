@@ -357,13 +357,22 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   }, []);
 
   // 消息反应
+  // 表情反应竞态守卫：同一消息快速连点多个表情时，3 个请求并发，
+  // 后返回的旧 reactions 会覆盖先返回的新数据 → 表情互相「抵消」消失。
+  // 用 per-msg 请求序号，只应用该消息最新一次的返回。
+  const reactSeqRef = useRef<Map<number, number>>(new Map());
   const handleReact = useCallback(async (msgId: number, emoji: string) => {
     const room = activeRoomRef.current;
     if (!room) return;
+    const seq = (reactSeqRef.current.get(msgId) ?? 0) + 1;
+    reactSeqRef.current.set(msgId, seq);
     try {
       const res = await messageApi.react(room.id, msgId, emoji);
+      // 若期间又点过该消息（seq 已失效），丢弃本次结果，避免旧数据覆盖
+      if (reactSeqRef.current.get(msgId) !== seq) return;
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, reactions: res.reactions } : m)));
     } catch (err: unknown) {
+      if (reactSeqRef.current.get(msgId) !== seq) return;
       optsRef.current.onError(err instanceof Error ? err.message : '操作失败', false);
     }
   }, []);

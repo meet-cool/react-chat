@@ -62,6 +62,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const lastMsgIdRef = useRef<number>(0);
   // 进入会话的消息基线：只播 id 大于基线的对方消息（进入时拉取的历史不响铃）
   const baselineMsgIdRef = useRef<number>(0);
+  // 表情反应竞态守卫：per-msg 请求序号（快速连点多表情时只应用最新返回）
+  const reactSeqRef = useRef<Map<number, number>>(new Map());
   // 消息滚动容器与近底状态（距底 <160px 才自动滚底）
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
@@ -419,10 +421,15 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   // 消息反应
   const handleReact = async (msgId: number, emoji: string) => {
     if (!activeConv) return;
+    // 竞态守卫：同一消息快速连点多个表情时，只应用最新一次返回，避免旧数据覆盖
+    const seq = (reactSeqRef.current.get(msgId) ?? 0) + 1;
+    reactSeqRef.current.set(msgId, seq);
     try {
       const res = await conversationApi.react(activeConv.id, msgId, emoji);
+      if (reactSeqRef.current.get(msgId) !== seq) return;
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, reactions: res.reactions } : m)));
     } catch (err) {
+      if (reactSeqRef.current.get(msgId) !== seq) return;
       addToast(err instanceof Error ? err.message : '操作失败', 'error');
     }
   };
