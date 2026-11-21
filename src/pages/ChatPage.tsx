@@ -317,13 +317,14 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             </button>
             {notifOpen && (
               <div
-                className="fixed top-12 right-3 w-80 max-h-96 overflow-y-auto shadow-[var(--shadow-lg)]"
-                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 10, zIndex: 80 }}
+                className="fixed top-12 right-3 w-80 max-h-96 flex flex-col shadow-[var(--shadow-lg)]"
+                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, zIndex: 80 }}
               >
-                <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-divider)' }}>
+                <div className="px-3 py-2 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
                   <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>通知中心</span>
                   <button onClick={() => setNotifOpen(false)} className="text-xs" style={{ color: 'var(--color-text-muted)' }}>关闭</button>
                 </div>
+                <div className="flex-1 overflow-y-auto">
                 {notifList.length === 0 ? (
                   <p className="text-xs text-center py-6" style={{ color: 'var(--color-text-muted)' }}>暂无通知</p>
                 ) : (
@@ -338,6 +339,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     </div>
                   ))
                 )}
+                </div>
               </div>
             )}
           </div>
@@ -345,7 +347,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             <button
               onClick={() => navigate('/admin/dashboard')}
               className="btn btn-sm"
-              style={{ color: 'var(--color-primary)', background: 'var(--color-primary-light)', borderRadius: 6, padding: '6px 12px' }}
+              style={{ color: 'var(--color-primary)', background: 'var(--color-primary-light)', borderRadius: 3, padding: '6px 12px' }}
             >
               <ShieldCheck size={14} />
               <span className="hidden sm:inline ml-1">管理</span>
@@ -369,7 +371,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           <button
             onClick={handleLogout}
             className="btn btn-sm"
-            style={{ borderRadius: 6, padding: '6px 12px', borderColor: 'var(--color-error)', color: 'var(--color-error)', background: 'rgba(248,113,113,0.08)' }}
+            style={{ borderRadius: 3, padding: '6px 12px', borderColor: 'var(--color-error)', color: 'var(--color-error)', background: 'rgba(248,113,113,0.08)' }}
           >
             <LogOut size={14} />
             <span className="hidden sm:inline ml-1">退出</span>
