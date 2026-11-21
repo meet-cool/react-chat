@@ -68,6 +68,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const listPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 会话列表加载竞态守卫（多次触发 loadConversations 时丢弃旧结果）
+  const listLoadSeqRef = useRef(0);
 
   // 消息加载竞态守卫：requestId 递增 + activeConv 快照（ref 避免闭包过期）
   const loadMsgRequestIdRef = useRef(0);
@@ -92,13 +94,18 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   // 加载会话列表
   const loadConversations = useCallback(async () => {
     setListLoading(true);
+    const requestId = ++listLoadSeqRef.current;
     try {
+      // 8s 超时兜底：单线程后端被长轮询/慢请求堵住时，避免骨架无限卡住
       const list = await conversationApi.list();
+      if (requestId !== listLoadSeqRef.current) return; // 已有更新的重载请求，丢弃
       setConversations(list);
     } catch {
-      // 静默
+      // 静默（后端暂不可用时保持上次数据，不清空）
     } finally {
-      setListLoading(false);
+      if (requestId === listLoadSeqRef.current) {
+        setListLoading(false);
+      }
     }
   }, []);
 

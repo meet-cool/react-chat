@@ -317,7 +317,7 @@ export const aliasApi = {
 // ============ 私聊 API ============
 
 export const conversationApi = {
-  list: () => get<Conversation[]>('/chat/conversations'),
+  list: () => get<Conversation[]>('/chat/conversations', { timeoutMs: 8000 }),
 
   create: (userId: number) =>
     post<ConversationCreateResult>('/chat/conversations', { user_id: userId }),
