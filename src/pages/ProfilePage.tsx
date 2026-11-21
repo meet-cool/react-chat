@@ -79,9 +79,28 @@ export function ProfilePage({ user }: ProfilePageProps) {
   };
 
   if (loading) {
+    // 与 PortalPage 等其它页面保持一致：加载用骨架屏（非全屏 spinner）
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)' }}>
-        <div className="w-8 h-8 border-2 animate-spin rounded-full" style={{ borderTopColor: 'var(--color-primary)', borderLeftColor: 'var(--color-border)', borderBottomColor: 'var(--color-border)', borderRightColor: 'var(--color-border)' }} />
+      <div className="flex flex-col h-full p-4 space-y-4" style={{ background: 'var(--color-bg-page)' }}>
+        {/* 头像区骨架 */}
+        <div className="flex flex-col items-center gap-3 py-6 rounded-sm" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
+          <div className="skeleton rounded-full" style={{ width: 80, height: 80, borderRadius: '50%' }} />
+          <div className="skeleton w-32 h-4" />
+          <div className="skeleton w-40 h-3" />
+        </div>
+        {/* 等级/积分骨架 */}
+        <div className="rounded-sm p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
+          <div className="skeleton h-4 w-32" />
+          <div className="skeleton h-3 w-full" />
+          <div className="skeleton h-3 w-2/3" />
+        </div>
+        {/* 账号信息骨架 */}
+        <div className="rounded-sm p-4 space-y-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
+          <div className="skeleton h-4 w-24" />
+          <div className="skeleton h-3 w-full" />
+          <div className="skeleton h-3 w-full" />
+          <div className="skeleton h-3 w-full" />
+        </div>
       </div>
     );
   }

@@ -348,7 +348,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             {notifOpen && (
               <div
                 className="fixed top-12 right-3 w-80 max-h-96 flex flex-col shadow-[var(--shadow-lg)]"
-                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, zIndex: 80 }}
+                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--app-radius)', zIndex: 80 }}
               >
                 <div className="px-3 py-2 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
                   <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>通知中心</span>

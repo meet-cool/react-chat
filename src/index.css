@@ -60,6 +60,8 @@ body {
 /* ============================================================
  * 外观自定义：界面圆角（html[data-radius] 驱动 --app-radius）
  * ============================================================ */
+/* 默认 0（未设 data-radius 时），供内联 borderRadius: 'var(--app-radius)' 使用 */
+:root { --app-radius: 0px; }
 :root[data-radius="none"] { --app-radius: 0px; }
 :root[data-radius="sm"] { --app-radius: 6px; }
 :root[data-radius="md"] { --app-radius: 12px; }

@@ -7,6 +7,7 @@ import { DebugProvider } from './lib/DebugContext';
 import { ToastContainer } from './components/Toast';
 import { DebugOverlay } from './components/DebugOverlay';
 import { PageTransition } from './components/PageTransition';
+import { TriviaBar } from './components/TriviaBar';
 import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -70,16 +71,24 @@ export default function App() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg-page)' }}>
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="w-10 h-10 border-2 animate-spin"
-            style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }}
-          />
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            加载中…
-          </p>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-page)' }}>
+        {/* 首屏加载进度条（仅首次进入网页显示，路由跳转不再出现） */}
+        <div className="fixed top-0 left-0 right-0 h-0.5 z-[200]" style={{ background: 'var(--color-divider)' }}>
+          <div className="h-full transition-[width] duration-300 ease-out" style={{ width: '70%', background: 'var(--color-primary)' }} />
         </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="w-10 h-10 border-2 animate-spin"
+              style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-primary)' }}
+            />
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              加载中…
+            </p>
+          </div>
+        </div>
+        {/* "你知道吗"：放在进度条/加载中下方，减轻等待焦虑（底部固定） */}
+        <TriviaBar visible />
       </div>
     );
   }

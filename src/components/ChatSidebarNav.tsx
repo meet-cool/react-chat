@@ -175,7 +175,7 @@ export function ChatSidebarNav({
         {menuOpen && (
           <div
             className="fixed bottom-16 left-2 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, zIndex: 200 }}
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--app-radius)', zIndex: 200 }}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
               <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>菜单</span>

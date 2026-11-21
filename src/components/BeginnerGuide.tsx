@@ -71,7 +71,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
     >
       <div
         className="w-full max-w-md flex flex-col shadow-[var(--shadow-lg)]"
-        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, maxHeight: '85vh' }}
+        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--app-radius)', maxHeight: '85vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
