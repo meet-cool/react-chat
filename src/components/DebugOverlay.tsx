@@ -260,7 +260,7 @@ function DebugBadge({
           height: 16,
           background: 'var(--color-warning)',
           color: '#000',
-          borderRadius: '2px',
+          borderRadius: 3,
           boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
           zIndex: 10,
           lineHeight: '16px',

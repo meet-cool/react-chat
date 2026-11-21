@@ -71,7 +71,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
     >
       <div
         className="w-full max-w-md flex flex-col shadow-[var(--shadow-lg)]"
-        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: '85vh' }}
+        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, maxHeight: '85vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
@@ -98,7 +98,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
         <div className="px-6 py-5 text-center overflow-y-auto">
           <div
             className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"
-            style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: 16 }}
+            style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: 3 }}
           >
             {s.icon}
           </div>
@@ -119,7 +119,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
             onClick={() => setStep((v) => Math.max(0, v - 1))}
             disabled={step === 0}
             className="btn btn-sm"
-            style={{ minHeight: 34, borderRadius: 8, opacity: step === 0 ? 0.4 : 1 }}
+            style={{ minHeight: 34, borderRadius: 3, opacity: step === 0 ? 0.4 : 1 }}
           >
             <ChevronLeft size={14} /> 上一步
           </button>
@@ -130,7 +130,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
             <button
               onClick={onClose}
               className="btn btn-primary btn-sm"
-              style={{ minHeight: 34, borderRadius: 8 }}
+              style={{ minHeight: 34, borderRadius: 3 }}
             >
               开始使用 <Rocket size={13} className="ml-1" />
             </button>
@@ -138,7 +138,7 @@ export function BeginnerGuide({ open, onClose }: { open: boolean; onClose: () =>
             <button
               onClick={() => setStep((v) => Math.min(STEPS.length - 1, v + 1))}
               className="btn btn-primary btn-sm"
-              style={{ minHeight: 34, borderRadius: 8 }}
+              style={{ minHeight: 34, borderRadius: 3 }}
             >
               下一步 <ChevronRight size={14} />
             </button>

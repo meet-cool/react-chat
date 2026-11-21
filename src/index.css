@@ -566,14 +566,14 @@ input::placeholder, textarea::placeholder {
 .bbcode-body .bbcode-img {
     max-width: 100%;
     max-height: 260px;
-    border-radius: 6px;
+    border-radius: 3px;
     display: block;
     margin: 4px 0;
 }
 .bbcode-body .bbcode-code {
     background: rgba(0, 0, 0, 0.18);
     border: 1px solid var(--color-border-light);
-    border-radius: 6px;
+    border-radius: 3px;
     padding: 8px 10px;
     margin: 4px 0;
     overflow-x: auto;
@@ -584,7 +584,7 @@ input::placeholder, textarea::placeholder {
 .bbcode-body .bbcode-quote {
     border-left: 3px solid var(--color-primary);
     background: var(--color-hover-bg);
-    border-radius: 0 6px 6px 0;
+    border-radius: 0 3px 3px 0;
     padding: 6px 10px;
     margin: 4px 0;
     color: var(--color-text-secondary);

@@ -444,7 +444,7 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
             style={{
               background: 'var(--color-card)',
               border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md, 8px)'
+              borderRadius: 'var(--radius-sm, 3px)'
             }}
             onClick={() => onCreateChat('fast')}
           >
@@ -457,7 +457,7 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
             style={{
               background: 'var(--color-card)',
               border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md, 8px)'
+              borderRadius: 'var(--radius-sm, 3px)'
             }}
             onClick={() => onCreateChat('professional')}
           >

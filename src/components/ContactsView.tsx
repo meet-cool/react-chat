@@ -410,7 +410,7 @@ export function ContactsView({ onOpenConversation, onClose }: ContactsViewProps)
           style={{
             background: 'var(--color-card)',
             border: '1px solid var(--color-border)',
-            borderRadius: 8,
+            borderRadius: 0,
             left: Math.min(actionMenu.x, window.innerWidth - 160),
             top: actionMenu.y,
             minWidth: 140,

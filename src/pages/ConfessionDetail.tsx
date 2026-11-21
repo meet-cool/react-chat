@@ -550,7 +550,7 @@ export function ConfessionDetail() {
       {showQrUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setShowQrUrl('')}>
-          <div className="w-full max-w-xs" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 20 }}
+          <div className="w-full max-w-xs" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, padding: 20 }}
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>

@@ -218,7 +218,7 @@ export function AdminConfessionsPage() {
         >
           <div
             className="w-full max-w-md"
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6 }}
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>

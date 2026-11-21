@@ -176,7 +176,7 @@ export function MbtiPage() {
           <div className="text-center py-10">
             <div
               className="w-20 h-20 mx-auto mb-5 flex items-center justify-center"
-              style={{ background: 'var(--color-primary-light)', borderRadius: 20 }}
+              style={{ background: 'var(--color-primary-light)', borderRadius: 3 }}
             >
               <Sparkles size={36} style={{ color: 'var(--color-primary)' }} />
             </div>
@@ -185,7 +185,7 @@ export function MbtiPage() {
               {result.type}
             </h2>
             <p className="text-sm mb-8" style={{ color: 'var(--color-text-secondary)' }}>{result.description}</p>
-            <div className="inline-flex items-center gap-2 text-xs px-3 py-2" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, color: 'var(--color-text-muted)' }}>
+            <div className="inline-flex items-center gap-2 text-xs px-3 py-2" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 3, color: 'var(--color-text-muted)' }}>
               <Trophy size={13} /> 结果已保存，将展示在你的个人主页
             </div>
             <div className="mt-8">

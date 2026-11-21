@@ -119,7 +119,7 @@ export function InstallPrompt({ variant = 'card' }: { variant?: 'card' | 'topbar
             onClick={install}
             disabled={installing}
             className="btn btn-primary btn-sm flex-shrink-0"
-            style={{ minHeight: 30, borderRadius: 8 }}
+            style={{ minHeight: 30, borderRadius: 3 }}
           >
             <Download size={13} />
             {installing ? '安装中…' : '安装'}
@@ -146,11 +146,11 @@ export function InstallPrompt({ variant = 'card' }: { variant?: 'card' | 'topbar
     >
       <div
         className="flex items-center gap-3 px-4 py-3 shadow-[var(--shadow-lg)]"
-        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12 }}
+        style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0 }}
       >
         <div
           className="w-10 h-10 flex items-center justify-center flex-shrink-0"
-          style={{ background: 'var(--color-primary-light)', borderRadius: 10 }}
+          style={{ background: 'var(--color-primary-light)', borderRadius: 3 }}
         >
           <Smartphone size={20} style={{ color: 'var(--color-primary)' }} />
         </div>
