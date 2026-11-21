@@ -423,10 +423,31 @@ function LayoutDebugTab({
 }: {
   debugMode: boolean;
   toggleDebugMode: () => void;
-  debugInfo: { path: string; tag: string; className: string; id: string; index: number; timestamp: number } | null;
+  debugInfo: { path: string; tag: string; className: string; id: string; index: number; timestamp: number; url?: string } | null;
   elementCount: number;
 }) {
   const { setDebugInfo } = useDebug();
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  // 单独复制 URL（不改动 storage tab 的「复制键值对/复制值」行为）
+  const copyUrl = async () => {
+    if (!debugInfo?.url) return;
+    const text = debugInfo.url;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-4">
@@ -476,6 +497,20 @@ function LayoutDebugTab({
           <div className="p-2 rounded-sm font-mono text-xs break-all" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text)' }}>
             {debugInfo.path}
           </div>
+          {debugInfo.url && (
+            <div className="mt-2 flex items-center gap-2 p-2 rounded-sm font-mono text-xs break-all" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text)' }}>
+              <span className="flex-1 min-w-0">URL: {debugInfo.url}</span>
+              <button
+                onClick={copyUrl}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                style={{ background: 'var(--color-hover-bg)', color: urlCopied ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                title="复制页面地址"
+              >
+                {urlCopied ? <Check size={10} /> : <Copy size={10} />}
+                <span className="text-[10px]">{urlCopied ? '已复制' : '复制'}</span>
+              </button>
+            </div>
+          )}
           <div className="mt-2 flex gap-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
             <span>标签: &lt;{debugInfo.tag}&gt;</span>
             {debugInfo.id && <span>ID: {debugInfo.id}</span>}

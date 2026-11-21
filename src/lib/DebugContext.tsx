@@ -9,6 +9,8 @@ interface DebugInfo {
   index: number;
   timestamp: number;
   pageName: string;
+  /** 复制元素路径时记录当前页面地址（window.location.href） */
+  url?: string;
 }
 
 interface DebugContextValue {
@@ -117,6 +119,15 @@ export function DebugProvider({ children }: { children: ReactNode }) {
     const path = buildElementPath(el);
     const index = ++counterRef.current;
 
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+
+    // 多行结构化文本：页面名 + 页面地址 + 元素路径，方便把「在哪个页面 + 哪个元素」一起交给 AI
+    const copyText = [
+      `页面: ${pageName}`,
+      `URL: ${url}`,
+      `元素: ${path}`,
+    ].join('\n');
+
     const info: DebugInfo = {
       path,
       tag,
@@ -125,15 +136,16 @@ export function DebugProvider({ children }: { children: ReactNode }) {
       index,
       timestamp: Date.now(),
       pageName,
+      url,
     };
 
     setDebugInfo(info);
 
     // 复制到剪贴板
-    navigator.clipboard.writeText(path).catch(() => {
+    navigator.clipboard.writeText(copyText).catch(() => {
       // fallback
       const ta = document.createElement('textarea');
-      ta.value = path;
+      ta.value = copyText;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);

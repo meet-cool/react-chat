@@ -110,27 +110,10 @@ export function DebugOverlay() {
 
   return (
     <>
-      {/* 右上角提示 */}
-      {debugInfo && (
-        <div
-          className="fixed top-4 right-4 z-[9998] flex items-center gap-2 px-4 py-2 text-sm"
-          style={{
-            background: 'var(--color-card)',
-            border: '1px solid var(--color-success)',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'debugSlideIn 0.25s ease-out',
-            pointerEvents: 'none',
-          }}
-        >
-          <span style={{ color: 'var(--color-success)' }}>✓</span>
-          <span style={{ color: 'var(--color-text)' }}>已复制路径</span>
-          <span style={{ color: 'var(--color-text-muted)' }} className="max-w-[300px] truncate font-mono text-xs">
-            {debugInfo.pageName} | {debugInfo.path}
-          </span>
-        </div>
-      )}
+      {/* 右上角提示：显示 2.5s 后自动淡出，避免常驻遮挡；每次复制后 key 变化重新计时 */}
+      {debugInfo && <CopyToast debugInfo={debugInfo} />}
 
-      {/* 数字标签容器 - pointer-events-none 确保不阻挡点击 */}
+      {/* 数字标签容器：默认不显示编号/边框（零视觉噪音），hover 到元素时才显现；pointer-events:none 不阻挡 Shift+Click 复制 */}
       <div
         className="fixed inset-0 pointer-events-none z-[9996]"
         style={{ overflow: 'hidden' }}
@@ -155,6 +138,44 @@ export function DebugOverlay() {
   );
 }
 
+/** 已复制提示条：key={timestamp} 随每次复制重新挂载，显示 2.5s 后淡出 0.3s 隐藏 */
+function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string; url?: string; timestamp: number } }) {
+  const [fading, setFading] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setFading(true), 2500);
+    const t2 = setTimeout(() => setGone(true), 2800);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
+
+  if (gone) return null;
+
+  return (
+    <div
+      className="fixed top-4 right-4 z-[9998] flex items-center gap-2 px-4 py-2 text-sm"
+      style={{
+        background: 'var(--color-card)',
+        border: '1px solid var(--color-success)',
+        boxShadow: 'var(--shadow-lg)',
+        animation: 'debugSlideIn 0.25s ease-out',
+        pointerEvents: 'none',
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 0.3s ease-out',
+      }}
+    >
+      <span style={{ color: 'var(--color-success)' }}>✓</span>
+      <span style={{ color: 'var(--color-text)' }}>已复制路径</span>
+      <span style={{ color: 'var(--color-text-muted)' }} className="max-w-[300px] truncate font-mono text-xs" title={debugInfo.url || ''}>
+        {debugInfo.pageName} · {debugInfo.url || ''}
+      </span>
+    </div>
+  );
+}
+
 function DebugBadge({
   element,
   number,
@@ -174,6 +195,7 @@ function DebugBadge({
 }) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
+  // 用 ResizeObserver 监听元素自身尺寸变化（布局变化时自动跟随，避免标签漂移）
   useEffect(() => {
     const updatePosition = () => {
       const rect = element.getBoundingClientRect();
@@ -188,9 +210,17 @@ function DebugBadge({
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
 
+    // 布局/尺寸变化时重新定位；无 ResizeObserver 的浏览器直接跳过
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(updatePosition);
+      ro.observe(element);
+    }
+
     return () => {
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
+      if (ro) ro.disconnect();
     };
   }, [element]);
 
@@ -202,23 +232,24 @@ function DebugBadge({
         left: position.left,
         width: element.offsetWidth || 40,
         height: element.offsetHeight || 24,
-        pointerEvents: 'none',
+        // 覆盖元素本体才能接收 hover（父容器仍保持 pointer-events:none，不阻挡 Shift+Click 复制）
+        pointerEvents: 'auto',
       }}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
     >
-      {/* 绿色高亮框 */}
+      {/* 边框：仅 hover 时显示 */}
       <div
-        className="absolute inset-0 transition-all duration-150"
+        className="absolute inset-0"
         style={{
           border: isHovered ? '2px solid var(--color-success)' : '1px solid transparent',
-          boxShadow: isHovered ? '0 0 0 1px var(--color-success)' : 'none',
-          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+          opacity: isHovered ? 1 : 0,
+          transition: 'opacity 0.15s ease, border-color 0.15s ease',
           zIndex: 5,
         }}
       />
 
-      {/* 数字标签 */}
+      {/* 数字标签：仅 hover 时显示 */}
       <div
         className="flex items-center justify-center font-mono text-xs font-bold select-none"
         style={{
@@ -227,13 +258,14 @@ function DebugBadge({
           right: -2,
           width: 16,
           height: 16,
-          background: isHovered ? 'var(--color-success)' : 'var(--color-warning)',
-          color: isHovered ? '#fff' : '#000',
+          background: 'var(--color-warning)',
+          color: '#000',
           borderRadius: '2px',
           boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
           zIndex: 10,
           lineHeight: '16px',
-          transition: 'all 0.15s ease',
+          opacity: isHovered ? 1 : 0,
+          transition: 'opacity 0.15s ease',
         }}
       >
         {number}
@@ -248,7 +280,7 @@ function DebugButton() {
   return (
     <button
       onClick={() => navigate('/debug')}
-      className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all"
+      className="fixed bottom-16 right-4 z-[9999] max-md:hidden flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all"
       style={{
         background: 'var(--color-primary)',
         color: '#fff',
