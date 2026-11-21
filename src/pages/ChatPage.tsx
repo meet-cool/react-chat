@@ -396,9 +396,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               ? mobileView !== 'list'
                 ? 'hidden'
                 : mobileSidebar !== null
-                  ? 'fixed inset-y-0 left-0 top-0 z-50 w-full'
+                  ? 'fixed inset-y-0 left-0 top-0 z-50 w-[320px] max-w-[85vw]'
                   : 'w-14'
-              : `w-72 md:w-14 ${leftCollapsed ? 'md:w-14' : 'md:w-72'}`
+              : `w-64 md:w-14 ${leftCollapsed ? 'md:w-14' : 'md:w-64'}`
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
