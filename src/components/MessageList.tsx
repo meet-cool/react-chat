@@ -98,6 +98,43 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
 
   const scrollToBottom = () => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); };
 
+  // 「加载更多」滚动锚定：点击前记录当前最早的已渲染消息节点及其 offsetTop，
+  // 加载完成后新消息 prepend 到顶部会撑高内容 → 用「新 offsetTop - 旧 offsetTop」补偿 scrollTop，
+  // 让视口仍停在原本那条消息上，不跳动。
+  const anchorNodeRef = useRef<HTMLElement | null>(null);
+  const anchorPrevTopRef = useRef(0);
+
+  const handleLoadMore = async () => {
+    const el = containerRef.current;
+    const firstMsgNode = el?.querySelector('[data-msg-anchor]') as HTMLElement | null;
+    if (el && firstMsgNode) {
+      anchorNodeRef.current = firstMsgNode;
+      anchorPrevTopRef.current = firstMsgNode.offsetTop;
+    } else {
+      anchorNodeRef.current = null;
+    }
+    await onLoadMore();
+  };
+
+  // 消息 prepend（加载更多）后恢复滚动锚点
+  const prevFirstIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    const firstId = messages.length > 0 ? messages[0].id : null;
+    if (anchorNodeRef.current && prevFirstIdRef.current !== null && firstId !== prevFirstIdRef.current && firstId !== null) {
+      // 列表变长且最早消息变了 → 刚 prepend 了更早消息，补偿 scrollTop
+      requestAnimationFrame(() => {
+        const el = containerRef.current;
+        const node = anchorNodeRef.current;
+        if (el && node && node.isConnected) {
+          const newTop = node.offsetTop;
+          el.scrollTop += newTop - anchorPrevTopRef.current;
+        }
+        anchorNodeRef.current = null;
+      });
+    }
+    prevFirstIdRef.current = firstId;
+  }, [messages]);
+
   const grouped = groupByDate(messages);
 
   const handleAvatarClick = (e: React.MouseEvent, msg: ChatMessage) => {
@@ -109,15 +146,17 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
 
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
-      {hasMore && (
-        <div className="flex justify-center py-2">
-          <button onClick={onLoadMore} disabled={loading} className="btn btn-sm">
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
-            加载更多消息
-          </button>
-        </div>
-      )}
       <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-3">
+        {/* 「加载更多」放在滚动区内最上方：随最早消息一起滚动，翻到顶部才可见；
+            加载更多后保持在最早消息上方，不固定页面上端 */}
+        {hasMore && (
+          <div className="flex justify-center py-2">
+            <button onClick={handleLoadMore} disabled={loading} className="btn btn-sm">
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
+              加载更多消息
+            </button>
+          </div>
+        )}
         {messages.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p className="text-sm">还没有消息，发送第一条消息开始聊天吧</p>
@@ -141,6 +180,7 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
                   onActionTrigger={(x, y) => setActionMenu({ open: true, pos: { x, y }, msg })}
                   onReact={onReact}
                   onRecall={onRecall}
+                  anchor={msg.id === messages[0]?.id}
                 />
               ))}
             </div>
@@ -172,7 +212,7 @@ interface MessageBubbleProps {
   onReact?: (msgId: number, emoji: string) => void;
 }
 
-function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, onActionTrigger, onReact, onRecall }: MessageBubbleProps & { onRecall?: (msg: ChatMessage) => void }) {
+function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, onActionTrigger, onReact, onRecall, anchor }: MessageBubbleProps & { onRecall?: (msg: ChatMessage) => void; anchor?: boolean }) {
   // 富文本消息：BBCode 渲染（旧 markdown 类型消息按 BBCode 兼容展示）
   // 兜底：type='text' 但内容含成对 BBCode 标签（如早期表情包以 text 入库的 [img]url[/img]）
   // 也按 BBCode 渲染，避免旧消息显示成字面量
@@ -185,7 +225,11 @@ function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, 
   const handleReactionClick = (emoji: string) => { if (onReact) onReact(msg.id, emoji); };
 
   return (
-    <div className={`flex gap-2 mb-3 ${isSelf ? 'flex-row-reverse' : ''}`} onTouchStart={trigger.onTouchStart} onTouchEnd={trigger.onTouchEnd} onTouchMove={trigger.onTouchMove} onContextMenu={trigger.onContextMenu}>
+    <div
+      {...(anchor ? { 'data-msg-anchor': '' } : {})}
+      className={`flex gap-2 mb-3 ${isSelf ? 'flex-row-reverse' : ''}`}
+      onTouchStart={trigger.onTouchStart} onTouchEnd={trigger.onTouchEnd} onTouchMove={trigger.onTouchMove} onContextMenu={trigger.onContextMenu}
+    >
       <div className="w-9 flex-shrink-0">
         {showAvatar && (
           <button onClick={(e) => { if (trigger.isLongPress()) { e.preventDefault(); return; } onAvatarClick(e); }} className="cursor-pointer" style={{ background: 'transparent', border: 'none', padding: 0 }} title={`@${msg.username}`}>
