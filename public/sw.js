@@ -54,6 +54,19 @@ function isApiRequest(url) {
   );
 }
 
+// 开发态直连（不缓存）：Vite dev 模块与带查询串的 URL。
+// dev 模块内容随 HMR/重启变化，一旦进缓存就会冻结陈旧代码导致白屏；
+// 生产构建产物无查询串且路径为 /assets/*，不受影响。
+function isDevOrDynamic(url) {
+  return (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/@vite') ||
+    url.pathname.startsWith('/@react-refresh') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.search.length > 0
+  );
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -61,6 +74,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // 跨域（第三方头像等）直连
   if (isApiRequest(url)) return; // 后端 API 直连
+  if (isDevOrDynamic(url)) return; // dev 模块 / 动态 URL 直连，绝不进缓存
 
   // 页面导航：网络优先，离线回退 shell
   if (req.mode === 'navigate') {

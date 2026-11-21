@@ -78,7 +78,10 @@
     })();
   </script>
   <script>
-    // PWA：尽早捕获安装事件，供首页安装提示使用；注册 Service Worker
+    // PWA：尽早捕获安装事件，供首页安装提示使用
+    // 注意：Service Worker 注册已移至 src/main.tsx（仅生产环境注册）。
+    // 开发环境若注册 SW，其缓存逻辑会把 Vite dev 模块（/src/*、/@vite/client）缓存优先，
+    // 导致 HMR 更新或 dev server 重启后页面拿到陈旧模块而白屏。
     window.__arcleInstallPrompt = null;
     window.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
@@ -89,13 +92,6 @@
       window.__arcleInstallPrompt = null;
       window.dispatchEvent(new Event('arcle:appinstalled'));
     });
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/sw.js').catch(function (err) {
-          console.warn('[PWA] Service Worker 注册失败:', err);
-        });
-      });
-    }
   </script>
 </head>
 
