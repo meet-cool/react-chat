@@ -38,6 +38,8 @@ export function RecentChatsView({
   onClose,
 }: RecentChatsViewProps) {
   const [keyword, setKeyword] = useState('');
+  // 桌面端「最近聊天」是常驻侧栏，不需要标题栏 + × 关闭按钮（仅移动端抽屉需要）
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
   // 合并房间和私聊为最近聊天列表
   const items: RecentChatItem[] = (() => {
@@ -93,8 +95,8 @@ export function RecentChatsView({
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--color-card)' }}>
-      {/* 移动端顶部栏：标题 + 关闭按钮 */}
-      {onClose && (
+      {/* 移动端顶部栏：标题 + 关闭按钮（桌面端常驻侧栏不显示） */}
+      {onClose && isMobile && (
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
           <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>最近聊天</span>
           <button
