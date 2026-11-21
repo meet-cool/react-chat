@@ -62,6 +62,13 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // 消息加载竞态守卫：requestId 递增 + activeConv 快照（ref 避免闭包过期）
+  const loadMsgRequestIdRef = useRef(0);
+  const activeConvRef = useRef<Conversation | null>(null);
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+  }, [activeConv]);
+
   const [showEmoji, setShowEmoji] = useState(false);
   const [replyTo, setReplyTo] = useState<PrivateMessage | null>(null);
   const [forwardMsg, setForwardMsg] = useState<PrivateMessage | null>(null);
@@ -87,17 +94,23 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     }
   }, []);
 
-  // 加载某个会话的消息
+  // 加载某个会话的消息（带竞态守卫：requestId 失配或会话已切换则丢弃结果）
   const loadMessages = useCallback(async (convId: number) => {
+    const requestId = ++loadMsgRequestIdRef.current;
+    const isStale = () => requestId !== loadMsgRequestIdRef.current || convId !== activeConvRef.current?.id;
     setMessagesLoading(true);
     try {
       const list = await conversationApi.messages(convId, { limit: PAGE_SIZE });
+      if (isStale()) return;
       setMessages(list);
       lastMsgIdRef.current = list.length > 0 ? list[list.length - 1].id : 0;
     } catch (err) {
+      if (isStale()) return;
       addToast(err instanceof Error ? err.message : '加载私聊消息失败', 'error');
     } finally {
-      setMessagesLoading(false);
+      if (!isStale()) {
+        setMessagesLoading(false);
+      }
     }
   }, [addToast]);
 

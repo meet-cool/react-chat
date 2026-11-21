@@ -174,14 +174,19 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     onMessage: (payload) => onMsgRef.current(payload),
   });
 
-  // 加载更多
+  // 加载更多（带竞态守卫：与 loadMessages 共用 requestId，房间切换后丢弃晚到结果）
   const loadMore = useCallback(async () => {
     const room = activeRoomRef.current;
     if (!room || messages.length === 0) return;
+    // 入口校验：房间存在；游标用调用时刻的 messages[0].id（闭包），请求期间切房间则 stale 丢弃
+    const requestId = ++loadMessagesRequestIdRef.current;
+    const isStale = () =>
+      requestId !== loadMessagesRequestIdRef.current || room.id !== activeRoomRef.current?.id;
     setMessagesLoading(true);
     try {
       const firstId = messages[0].id;
       const list = await messageApi.list(room.id, { before_id: firstId, limit: PAGE_SIZE });
+      if (isStale()) return;
       if (list.length > 0) {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
@@ -195,7 +200,9 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     } catch {
       // 静默
     } finally {
-      setMessagesLoading(false);
+      if (!isStale()) {
+        setMessagesLoading(false);
+      }
     }
   }, [messages]);
 
