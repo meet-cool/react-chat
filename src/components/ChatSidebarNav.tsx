@@ -25,6 +25,7 @@ interface ChatSidebarNavProps {
   category: SidebarCategory;
   showLabels: boolean;
   indicatorTop: number;
+  indicatorHeight: number;
   categoryBtnRefs: React.RefObject<Map<string, HTMLButtonElement>>;
   onCategoryClick: (k: SidebarCategory) => void;
   onToggleLabels: () => void;
@@ -52,6 +53,7 @@ export function ChatSidebarNav({
   category,
   showLabels,
   indicatorTop,
+  indicatorHeight,
   categoryBtnRefs,
   onCategoryClick,
   onToggleLabels,
@@ -95,12 +97,12 @@ export function ChatSidebarNav({
       <div
         className="absolute left-0 w-1 rounded-r"
         style={{
-          height: 56,
+          height: indicatorHeight,
           background: 'var(--color-primary)',
           opacity: 0.8,
           boxShadow: '0 0 6px var(--color-primary)',
           top: indicatorTop,
-          transition: 'top 0.2s ease-out',
+          transition: 'top 0.2s ease-out, height 0.2s ease-out',
         }}
       />
 

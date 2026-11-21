@@ -51,6 +51,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   // 侧边栏状态
   const [category, setCategory] = useState<SidebarCategory>('recent');
   const [indicatorTop, setIndicatorTop] = useState(24);
+  const [indicatorHeight, setIndicatorHeight] = useState(40);
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
@@ -106,14 +107,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     onRecalled: () => addToast('消息已撤回', 'success'),
   });
 
-  // 更新指示条位置
+  // 更新指示条位置：指示条相对 aside（position:relative）定位，
+  // top = 按钮相对 aside 顶部的偏移，使其与当前选中按钮垂直居中对齐。
+  // 用 getBoundingClientRect 差值（按钮 top - aside top），避免 offsetTop 祖先定位问题。
   useEffect(() => {
     requestAnimationFrame(() => {
       const btn = categoryBtnRefs.current.get(category);
-      const col = document.querySelector('[data-sidebar-col]') as HTMLElement;
-      if (btn && col) {
-        setIndicatorTop(btn.offsetTop - col.offsetTop + 8);
-      }
+      if (!btn) return;
+      // 向上找 aside（relative 定位的侧栏容器）作为参照
+      const aside = btn.closest('aside');
+      if (!aside) return;
+      const asideRect = aside.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      // 指示条顶对齐按钮顶；高度 = 按钮实际高度（含 padding，随 showLabels 变化）
+      setIndicatorTop(btnRect.top - asideRect.top);
+      setIndicatorHeight(btn.clientHeight);
     });
   }, [category, showLabels]);
 
@@ -406,6 +414,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
             category={category}
             showLabels={showLabels}
             indicatorTop={indicatorTop}
+            indicatorHeight={indicatorHeight}
             categoryBtnRefs={categoryBtnRefs}
             onCategoryClick={handleSidebarClick}
             onToggleLabels={() => setShowLabels((v) => !v)}
