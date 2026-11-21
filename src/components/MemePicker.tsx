@@ -69,6 +69,15 @@ export function MemePicker({ keyword: initialKeyword, onPick, onClose }: MemePic
   const pageRef = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
+  // 选择去抖：同一 URL 600ms 内只触发一次 onPick（防双击/事件冒泡导致连发两条）
+  const pickLastRef = useRef<{ url: string; at: number }>({ url: '', at: 0 });
+
+  const safePick = useCallback((url: string) => {
+    const now = Date.now();
+    if (pickLastRef.current.url === url && now - pickLastRef.current.at < 600) return;
+    pickLastRef.current = { url, at: now };
+    onPick(url);
+  }, [onPick]);
 
   // 聚焦搜索框
   useEffect(() => {
@@ -297,7 +306,7 @@ export function MemePicker({ keyword: initialKeyword, onPick, onClose }: MemePic
                       key={`${item.url}-${i}`}
                       item={item}
                       isFav={isFav(item.url)}
-                      onPick={onPick}
+                      onPick={safePick}
                       onToggleFav={toggleFav}
                     />
                   ))}
@@ -329,7 +338,7 @@ export function MemePicker({ keyword: initialKeyword, onPick, onClose }: MemePic
             ) : (
               <div className="grid grid-cols-4 gap-1.5 p-2">
                 {favs.map((item, i) => (
-                  <MemeThumb key={`fav-${item.url}-${i}`} item={item} isFav onPick={onPick} onToggleFav={toggleFav} />
+                  <MemeThumb key={`fav-${item.url}-${i}`} item={item} isFav onPick={safePick} onToggleFav={toggleFav} />
                 ))}
               </div>
             )}
