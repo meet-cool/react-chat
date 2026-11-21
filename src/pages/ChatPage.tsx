@@ -139,6 +139,21 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     setReportMsg(msg);
   }, []);
 
+  // 收集被举报消息的前后各 5 条作为 evidence（供反馈页附带）
+  const collectEvidence = useCallback((msg: ChatMessage) => {
+    const msgs = chat.messages;
+    const idx = msgs.findIndex((m) => m.id === msg.id);
+    const from = Math.max(0, idx - 5);
+    const to = Math.min(msgs.length, idx + 6);
+    return msgs.slice(from, to).map((m) => ({
+      id: m.id,
+      username: m.username,
+      content: m.content.slice(0, 100),
+      create_time_fmt: m.create_time_fmt,
+      is_self: m.is_self,
+    }));
+  }, [chat.messages]);
+
   // 确认转发
   const handleConfirmForward = useCallback(async (target: { type: 'room' | 'private'; id: number; name: string }) => {
     if (!forwardMsg) return;
@@ -759,7 +774,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} user={currentUser} onUserUpdate={setCurrentUser} />
       <RoomSettingsModal open={showRoomSettings} room={activeRoom} currentUserId={currentUser.id} onClose={() => setShowRoomSettings(false)} onRoomUpdated={chat.handleRoomUpdated} onMembersChanged={chat.handleMembersChanged} />
       <ForwardDialog open={!!forwardMsg} rooms={rooms.filter((r) => r.joined)} conversations={conversations} onClose={() => setForwardMsg(null)} onForward={handleConfirmForward} forwarding={forwarding} />
-      <ReportDialog open={!!reportMsg} onClose={() => setReportMsg(null)} onConfirm={handleConfirmReport} submitting={reporting} />
+      <ReportDialog open={!!reportMsg} onClose={() => setReportMsg(null)} onConfirm={handleConfirmReport} submitting={reporting}
+        feedbackJump={reportMsg ? { targetUser: reportMsg.username, context: collectEvidence(reportMsg) } : undefined}
+      />
 
       {/* PWA 安装提示 */}
       <InstallPrompt variant="topbar" />
