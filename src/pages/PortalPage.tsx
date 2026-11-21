@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
-import titleImg from '../assets/title.png';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { TriviaBar } from '../components/TriviaBar';
 
@@ -268,12 +267,6 @@ export function PortalPage() {
             让连接{' '}
             <span style={{ color: 'var(--color-primary)' }}>更简单</span>
           </h1>
-          <img
-            src={titleImg}
-            alt="Arcle 聊天互联"
-            className="w-full max-w-3xl mx-auto mb-10 rounded-sm shadow-[var(--shadow-lg)]"
-            style={{ objectFit: 'contain', maxHeight: '220px' }}
-          />
           <p
             className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
             style={{ color: 'var(--color-text-secondary)' }}
