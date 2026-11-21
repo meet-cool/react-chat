@@ -79,8 +79,10 @@ export function renderBBCode(input: string): string {
     // [img]url[/img]
     [/\[img\]([\s\S]*?)\[\/img\]/gi, (_m, p1) => {
       const u = safeUrl(p1);
+      // onerror 兜底：图床 404/防盗链/断网时把 <img> 替换成「图片加载失败」占位，
+      // 避免显示浏览器默认破损图片图标
       return u
-        ? '<img src="' + u + '" alt="图片" class="bbcode-img" loading="lazy" referrerpolicy="no-referrer" />'
+        ? '<img src="' + u + '" alt="图片" class="bbcode-img" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';var s=this.parentElement;if(s){s.insertAdjacentHTML(\'beforeend\',\'<span class=\\\'bbcode-img-fail\\\' style=\\\'display:inline-block;padding:2px 8px;font-size:12px;color:var(--color-text-muted);background:var(--color-card-alt);border:1px solid var(--color-divider);border-radius:3px>图片加载失败</span>\');}" />'
         : p1;
     }],
     // [quote] 与 [quote=作者]
