@@ -26,6 +26,19 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 骰子连点锁：sending 是 React state（异步更新），同帧/快速双击挡不住，
+  // 用 ref 立即锁 800ms（本地一次往返 ~200ms 足够释放）；后端 2 秒同内容去重兜底。
+  const diceLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (diceLockRef.current) clearTimeout(diceLockRef.current);
+  }, []);
+
+  const rollDice = () => {
+    if (!onDice || disabled || sending || diceLockRef.current !== null) return;
+    onDice();
+    diceLockRef.current = setTimeout(() => { diceLockRef.current = null; }, 800);
+  };
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 900px)');
@@ -121,12 +134,12 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
         </button>
         {onDice && (
           <button
-            onClick={() => { if (!disabled && !sending) onDice(); }}
+            onClick={rollDice}
             className="btn flex-shrink-0"
-            style={{ minHeight: 44, minWidth: 44 }}
+            style={{ minHeight: 44, minWidth: 44, opacity: sending ? 0.6 : 1 }}
             title="摇骰子"
             type="button"
-            disabled={disabled}
+            disabled={disabled || sending}
           >
             <Dices size={18} />
           </button>

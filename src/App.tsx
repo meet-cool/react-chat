@@ -135,7 +135,7 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           <Route
             path="/chat"
             element={
-              user ? <ChatPage user={user} onLogout={() => setUser(null)} /> : <Navigate to="/" replace />
+              user ? <ChatPage key={user.id} user={user} onLogout={() => setUser(null)} /> : <Navigate to="/" replace />
             }
           />
 

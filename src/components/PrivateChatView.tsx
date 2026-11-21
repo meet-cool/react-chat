@@ -334,9 +334,13 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     }
   };
 
-  // 摇骰子
+  // 摇骰子（ref 连点锁 800ms：sending 是 state 更新有延迟，同帧双击挡不住；
+  // 后端 2 秒同内容去重兜底）
+  const diceLockRef = useRef(false);
   const handleDice = () => {
-    if (!activeConv || sending) return;
+    if (!activeConv || sending || diceLockRef.current) return;
+    diceLockRef.current = true;
+    setTimeout(() => { diceLockRef.current = false; }, 800);
     const n = 1 + Math.floor(Math.random() * 6);
     (async () => {
       try {
