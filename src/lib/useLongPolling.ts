@@ -62,6 +62,9 @@ export interface UseLongPollingOptions<TPollResult> {
 const DEFAULT_BACKOFF = [1000, 2000, 4000, 8000];
 const DEFAULT_MAX_FAILS = 5;
 const DEFAULT_DEGRADED_MS = 30000;
+/** 成功路径轮询间隔：pollFn 若是「秒回的快查询」（非服务端 20s 挂起），
+ *  零等待紧循环会打满主线程与后端；统一加 1s 节流（dev 体验无感、服务端压力骤降）。 */
+const LOOP_GAP_MS = 1000;
 
 export function useLongPolling<TPollResult>(options: UseLongPollingOptions<TPollResult>): void {
   const {
@@ -140,8 +143,12 @@ export function useLongPolling<TPollResult>(options: UseLongPollingOptions<TPoll
           continue;
         }
 
-        // 正常路径：立即发起下一轮（无额外等待，靠后端 20s 挂起实现准实时）
-        // 退避路径已在 catch 内 sleep，这里不重复等待
+        // 成功路径节流：防「快查询 + 零等待」紧循环打满主线程/后端。
+        // 退避路径已在 catch 内 sleep，这里跳过避免双重等待。
+        if (consecutiveFails === 0) {
+          await pick(LOOP_GAP_MS, signal);
+          if (cancelled) break;
+        }
       }
     };
 
