@@ -206,13 +206,15 @@ export function MobileTabBar({
             style={{ background: 'rgba(0,0,0,0.35)' }}
             onClick={onMoreToggle}
           />
-          {/* 底部 Sheet 主体（z-40，在遮罩之上但在 TabBar 之下，让 TabBar 始终可点） */}
+          {/* 底部 Sheet 主体（z-40，停到底部 TabBar 上方，避免被遮挡；高度匹配 TabBar 含 safe-area） */}
           <div
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-hidden"
+            className="md:hidden fixed left-0 right-0 z-40 overflow-hidden"
             style={{
+              // 与 TabBar 实际高度对齐：按钮 36 + 上 padding 4 + 底 padding max(4px, safe-area)
+              bottom: 'calc(40px + max(4px, env(safe-area-inset-bottom)))',
               background: 'var(--color-card)',
               borderTop: '1px solid var(--color-divider)',
-              maxHeight: '70vh',
+              maxHeight: 'calc(70vh - 40px)',
             }}
           >
             {/* Sheet 头部 */}
