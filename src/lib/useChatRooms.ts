@@ -96,6 +96,9 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   const pollReadyRef = useRef(false);
   // 进入房间时的消息基线：只播 id 大于基线的他人消息
   const baselineIdRef = useRef(0);
+  // 自动选中房间待加载标记：loadRooms 首次自动选中某房间（activeRoom 由 null 切到它）时
+  // 记 id，由下方 effect 触发其历史消息/成员加载；用户手动加入/离开时清掉
+  const autoPickedRef = useRef<number | null>(null);
   useEffect(() => {
     activeRoomRef.current = activeRoom;
   }, [activeRoom]);
@@ -107,8 +110,10 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       setRooms(list);
       setActiveRoom((prev) => {
         if (prev) return prev;
-        const joined = list.find((r) => r.joined);
-        return joined || list[0] || null;
+        const picked = list.find((r) => r.joined) || list[0] || null;
+        // 自动选中 → 记标记，让 effect 加载该房间的历史消息（否则首进页面房间为空）
+        if (picked) autoPickedRef.current = picked.id;
+        return picked;
       });
       return list;
     } catch (err: unknown) {
@@ -250,12 +255,23 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     }
   }, []);
 
+  // 自动选中房间时加载其历史消息 + 成员（首进页面 loadRooms 自动选中房间，
+  // 若不加载，聊天区为空、看不到历史消息，要切房再切回才有）。
+  // 用户手动加入（handleJoinRoom）会清掉标记，避免重复加载。
+  useEffect(() => {
+    if (!activeRoom || autoPickedRef.current !== activeRoom.id) return;
+    autoPickedRef.current = null;
+    void loadMessages(activeRoom.id);
+    void loadMembers(activeRoom.id);
+  }, [activeRoom, loadMessages, loadMembers]);
+
   // 加入房间
   const handleJoinRoom = useCallback(async (room: Room) => {
     if (joiningRef.current.has(room.id)) return;
     joiningRef.current.add(room.id);
     lastManualActionRef.current = Date.now();
     lastLoadRoomRef.current = null;
+    autoPickedRef.current = null; // 手动加入由本函数负责加载历史
     try {
       const list = await loadRooms();
       const freshRoom = list.find((r) => r.id === room.id);
