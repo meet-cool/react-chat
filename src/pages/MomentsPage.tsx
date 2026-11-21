@@ -195,7 +195,7 @@ export default function MomentsPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto pb-8">
+    <div className="max-w-xl mx-auto pb-8 lg:max-w-5xl">
       <div className="sticky top-0 z-10 bg-[var(--color-bg-page)] border-b border-[var(--color-border)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/chat')} className="btn btn-sm p-2" style={{ minHeight: 36, minWidth: 36 }} title="返回聊天室">
@@ -278,33 +278,33 @@ export default function MomentsPage() {
       )}
 
       {viewMode === 'feed' && (
-        <>
+        <div className="px-4 mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {moments.map(m => (
             <MomentCard key={m.id} moment={m} onLike={() => handleLike(m)} onView={() => viewDetail(m)}
               onDelete={m.user_id === currentUser.id ? () => handleDelete(m.id) : undefined} />
           ))}
-          {loading && <div className="text-center py-4 text-[var(--color-text-muted)] text-sm">加载中...</div>}
+          {loading && <div className="col-span-full text-center py-4 text-[var(--color-text-muted)] text-sm">加载中...</div>}
           {!loading && moments.length === 0 && (
-            <div className="text-center py-12 text-[var(--color-text-muted)]">
+            <div className="col-span-full text-center py-12 text-[var(--color-text-muted)]">
               <Globe className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>还没有动态</p>
               <p className="text-sm mt-1">发布第一条动态，记录精彩瞬间</p>
             </div>
           )}
-          <div ref={loadMoreRef} />
-        </>
+          <div ref={loadMoreRef} className="col-span-full" />
+        </div>
       )}
 
       {viewMode === 'mine' && (
-        <>
+        <div className="px-4 mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {myMoments.map(m => (
             <MomentCard key={m.id} moment={m} onLike={() => handleLike(m)} onView={() => viewDetail(m)}
               onDelete={() => handleDelete(m.id)} />
           ))}
           {!loading && myMoments.length === 0 && (
-            <div className="text-center py-12 text-[var(--color-text-muted)]"><p>还没有发布过动态</p></div>
+            <div className="col-span-full text-center py-12 text-[var(--color-text-muted)]"><p>还没有发布过动态</p></div>
           )}
-        </>
+        </div>
       )}
 
       {selectedMoment && (
@@ -325,7 +325,7 @@ function MomentCard({ moment, onLike, onView, onDelete }: {
   moment: MomentType; onLike: () => void; onView: () => void; onDelete?: () => void;
 }) {
   return (
-    <div className="mx-4 mt-3 bg-[var(--color-card)] border border-[var(--color-border)]">
+    <div className="bg-[var(--color-card)] border border-[var(--color-border)]">
       <div className="flex items-center gap-3 px-4 py-3">
         <img src={moment.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${moment.username}`}
           alt="" className="w-10 h-10 bg-[var(--color-bg-page)] flex-shrink-0" />
