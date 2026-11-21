@@ -117,6 +117,13 @@ export function RoomChatView({
             <span className="text-xs hidden sm:flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
               <Users size={13} />{activeRoom.online_count ?? 0} 在线
             </span>
+            {/* 仅成员面板折叠时显示「展开」入口（桌面端）：原顶栏「成员」按钮已移除，
+                避免遮挡；折叠后靠此按钮重新展开成员列表 */}
+            {rightCollapsed && (
+              <button className="btn btn-sm p-2 hidden md:flex" onClick={onToggleRight} title="展开成员列表" style={{ minHeight: 36, minWidth: 36 }}>
+                <PanelRightOpen size={15} />
+              </button>
+            )}
             {/* 消息搜索 */}
             <button
               className="btn btn-sm p-2"
@@ -125,24 +132,6 @@ export function RoomChatView({
               style={{ minHeight: 36, minWidth: 36 }}
             >
               {searchOpen ? <X size={15} /> : <Search size={15} />}
-            </button>
-            <button className="btn btn-sm hidden md:flex items-center gap-1 relative" onClick={onToggleRight} title={rightCollapsed ? '展开右侧栏' : '折叠右侧栏'} style={{ minHeight: 36 }}>
-              {rightCollapsed ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
-              <span className="hidden lg:inline">成员</span>
-              {/* 成员数角标：定位在按钮内右上角（relative 父级 + 内嵌，不再飘出按钮） */}
-              {(activeRoom.member_count ?? 0) > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold leading-none"
-                  style={{
-                    background: 'var(--color-primary)',
-                    color: '#fff',
-                    border: '1px solid var(--color-card)',
-                    borderRadius: 3,
-                  }}
-                >
-                  {activeRoom.member_count}
-                </span>
-              )}
             </button>
             <button className="btn btn-sm md:hidden p-2" onClick={onMobileMembers} title="成员列表" style={{ minHeight: 36, minWidth: 36 }}>
               <Users size={16} />
