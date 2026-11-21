@@ -12,6 +12,8 @@ import {
   Undo2,
   Reply as ReplyIcon,
   MessageSquare,
+  Code2,
+  Type,
 } from 'lucide-react';
 import type { Conversation, PrivateMessage, MessageReaction } from '../types';
 import { conversationApi } from '../lib/api';
@@ -42,6 +44,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [content, setContent] = useState('');
+  const [mode, setMode] = useState<'text' | 'bbcode'>('text');
   const [listLoading, setListLoading] = useState(false);
   const [showListMobile, setShowListMobile] = useState(true);
   // 消息搜索
@@ -297,7 +300,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     if (!trimmed || !activeConv) return;
     setSending(true);
     try {
-      const msg = await conversationApi.send(activeConv.id, { content: trimmed, type: 'text', reply_to: replyTo?.id || 0 });
+      const msg = await conversationApi.send(activeConv.id, { content: trimmed, type: mode, reply_to: replyTo?.id || 0 });
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       setContent('');
@@ -582,6 +585,15 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                   </button>
                 </div>
               )}
+              <div className="flex items-center gap-2 mb-2">
+                <button onClick={() => setMode('text')} className="btn btn-sm flex items-center gap-1" style={mode === 'text' ? { background: 'var(--color-primary)', color: '#FFFFFF', borderColor: 'var(--color-primary)' } : undefined}>
+                  <Type size={13} /> 纯文本
+                </button>
+                <button onClick={() => setMode('bbcode')} className="btn btn-sm flex items-center gap-1" style={mode === 'bbcode' ? { background: 'var(--color-primary)', color: '#FFFFFF', borderColor: 'var(--color-primary)' } : undefined}>
+                  <Code2 size={13} /> BBCode
+                </button>
+                {mode === 'bbcode' && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>支持 [b][i][u][color=红][url][img][quote][code] 等标签</span>}
+              </div>
               <div className="flex items-end gap-2">
                 <button onClick={() => setShowEmoji((s) => !s)} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="表情" type="button">
                   <Smile size={18} />
@@ -599,7 +611,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="输入消息…"
+                  placeholder={mode === 'bbcode' ? '输入 BBCode 消息…' : '输入消息…'}
                   rows={1}
                   className="flex-1 resize-none"
                   style={{ minHeight: 44, maxHeight: 120 }}
