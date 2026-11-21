@@ -511,7 +511,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         </aside>
 
         {/* 中间内容区（移动端给底部 TabBar 留 padding） */}
-        <main className="flex-1 flex flex-col min-w-0 pb-14 md:pb-0" style={{ background: 'var(--color-bg)' }}>
+        <main className="flex-1 flex flex-col min-w-0 pb-12 md:pb-0" style={{ background: 'var(--color-bg)' }}>
           {isMobile ? (
             activeGroup ? (
               <GroupChatView

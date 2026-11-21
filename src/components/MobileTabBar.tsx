@@ -89,7 +89,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] cursor-pointer"
+      className="relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[36px] cursor-pointer"
       style={{
         background: 'transparent',
         border: 'none',
@@ -99,7 +99,7 @@ function TabButton({
       }}
     >
       <div className="relative">
-        <Icon size={20} />
+        <Icon size={18} />
         {badge && badge > 0 && (
           <span
             className="absolute -top-1 -right-1 flex items-center justify-center text-[9px] text-white"
@@ -115,7 +115,7 @@ function TabButton({
           </span>
         )}
       </div>
-      <span style={{ fontSize: 10, lineHeight: 1.2 }}>{label}</span>
+      <span style={{ fontSize: 9, lineHeight: 1.2 }}>{label}</span>
     </button>
   );
 }
@@ -265,7 +265,7 @@ export function MobileTabBar({
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-sm"
         style={{ background: 'var(--nav-bg)', borderColor: 'var(--color-divider)' }}
       >
-        <div className="flex py-1.5 px-2">
+        <div className="flex py-1 px-2" style={{ paddingBottom: 'max(4px, env(safe-area-inset-bottom))' }}>
           <TabButton
             icon={Sparkles}
             label="弧光"
