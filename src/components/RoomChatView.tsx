@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Hash, Users, LogOut, PanelRightClose, PanelRightOpen, Search, X, ChevronLeft } from 'lucide-react';
 import type { Room, RoomMember, ChatMessage } from '../types';
 import { socialApi, type SearchResultItem } from '../lib/api';
+import { renderBBCode } from '../lib/bbcode';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { MemberList } from './MemberList';
@@ -168,7 +169,12 @@ export function RoomChatView({
                           <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{r.is_self ? '我' : r.username}</span>
                           <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{r.create_time_fmt}</span>
                         </div>
-                        <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>{r.content}</p>
+                        {r.type === 'bbcode' || r.type === 'markdown' ? (
+                          <div className="bbcode-body text-xs break-words max-w-[220px] my-0.5" style={{ color: 'var(--color-text-secondary)' }}
+                               dangerouslySetInnerHTML={{ __html: renderBBCode(r.content) }} />
+                        ) : (
+                          <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>{r.content}</p>
+                        )}
                       </div>
                     </div>
                   ))

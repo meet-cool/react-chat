@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown, Loader2, Reply as ReplyIcon } from 'lucide-react';
 import type { ChatMessage, MessageReaction } from '../types';
-import { renderBBCode } from '../lib/bbcode';
+import { renderBBCode, hasBbcodeMarkup } from '../lib/bbcode';
 import { Avatar } from './Avatar';
 import { UserActionMenu } from './UserActionMenu';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
@@ -174,7 +174,10 @@ interface MessageBubbleProps {
 
 function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, onActionTrigger, onReact, onRecall }: MessageBubbleProps & { onRecall?: (msg: ChatMessage) => void }) {
   // 富文本消息：BBCode 渲染（旧 markdown 类型消息按 BBCode 兼容展示）
-  const isRich = msg.type === 'bbcode' || msg.type === 'markdown';
+  // 兜底：type='text' 但内容含成对 BBCode 标签（如早期表情包以 text 入库的 [img]url[/img]）
+  // 也按 BBCode 渲染，避免旧消息显示成字面量
+  const isRich = msg.type === 'bbcode' || msg.type === 'markdown'
+    || (msg.type === 'text' && hasBbcodeMarkup(msg.content));
   const richHtml = isRich ? renderBBCode(msg.content) : '';
   const time = msg.create_time_fmt.split(' ')[1] || '';
   const trigger = useMessageActionTrigger(onActionTrigger);

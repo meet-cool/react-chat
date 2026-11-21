@@ -822,6 +822,7 @@ export interface SearchResultItem {
   username: string;
   avatar: string;
   content: string;
+  type: string;
   create_time: number;
   create_time_fmt: string;
   is_self: boolean;

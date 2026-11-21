@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { renderBBCode, resolveMessageType } from '../lib/bbcode';
+import { renderBBCode, resolveMessageType, hasBbcodeMarkup } from '../lib/bbcode';
 import { socialApi, type SearchResultItem } from '../lib/api';
 import {
   Loader2,
@@ -607,7 +607,12 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                               <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{r.is_self ? '我' : r.username}</span>
                               <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{r.create_time_fmt}</span>
                             </div>
-                            <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>{r.content}</p>
+                            {(r as SearchResultItem & { type?: string }).type === 'bbcode' || (r as SearchResultItem & { type?: string }).type === 'markdown' ? (
+                              <div className="bbcode-body text-xs break-words max-w-[220px] my-0.5" style={{ color: 'var(--color-text-secondary)' }}
+                                   dangerouslySetInnerHTML={{ __html: renderBBCode(r.content) }} />
+                            ) : (
+                              <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>{r.content}</p>
+                            )}
                           </div>
                         </div>
                       ))
@@ -774,7 +779,9 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
   onListGrew?: (msgId: number) => void;
 }) {
   // 富文本消息：BBCode 渲染（旧 markdown 类型兼容展示）
-  const isRich = msg.type === 'bbcode' || msg.type === 'markdown';
+  // 兜底：type='text' 但内容含成对 BBCode 标签（早期表情包以 text 入库）也按 BBCode 渲染
+  const isRich = msg.type === 'bbcode' || msg.type === 'markdown'
+    || (msg.type === 'text' && hasBbcodeMarkup(msg.content));
   const richHtml = isRich ? renderBBCode(msg.content) : '';
   const time = msg.create_time_fmt.split(' ')[1] || '';
   const trigger = useMessageActionTrigger(onActionTrigger);
