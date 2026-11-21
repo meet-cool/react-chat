@@ -23,33 +23,65 @@ const colorMap: Record<ToastItem['type'], string> = {
 };
 
 export function Toast({ toast, exiting }: ToastProps) {
-  const { removeToast } = useApp();
+  const { removeToast, addToast } = useApp();
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const Icon = iconMap[toast.type];
   const color = colorMap[toast.type];
 
   const handleCopy = async () => {
-    try {
-      // 优先使用现代剪贴板 API
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(toast.message);
-      } else {
-        // 兜底：使用临时 textarea + execCommand
-        const ta = document.createElement('textarea');
-        ta.value = toast.message;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
+    const text = toast.message ?? '';
+    if (!text) return;
+    let ok = false;
+
+    // 1) 现代异步剪贴板 API（仅在安全上下文可用）
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      } catch {
+        ok = false;
       }
+    }
+
+    // 2) 兜底：textarea + execCommand（非安全上下文 / 旧浏览器）
+    if (!ok) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      // 放在视口内（top/left 0）但视觉隐藏：部分浏览器无法选中被移出视口的元素
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.width = '1px';
+      ta.style.height = '1px';
+      ta.style.padding = '0';
+      ta.style.border = 'none';
+      ta.style.opacity = '0';
+      ta.style.pointerEvents = 'none';
+      // 全局 CSS 对 * 设了 user-select:none，需在此显式允许选择，select() 才能生效
+      ta.style.userSelect = 'text';
+      ta.setAttribute('readonly', '');
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        ta.setSelectionRange(0, text.length);
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(ta);
+    }
+
+    if (ok) {
       setCopied(true);
+      setCopyFailed(false);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // 复制失败静默处理
+    } else {
+      // 复制失败不再静默吞掉：给出可见反馈，并提示可手动选中
+      setCopyFailed(true);
+      addToast('复制失败，请手动选中文字后复制', 'warning');
+      setTimeout(() => setCopyFailed(false), 1500);
     }
   };
 
@@ -66,15 +98,15 @@ export function Toast({ toast, exiting }: ToastProps) {
       <span
         className="flex-1 text-sm break-words"
         style={{ color: 'var(--color-text)', userSelect: 'text' }}
-        title="点击右侧复制按钮可复制本消息"
+        title="可手动选中文字复制，或点右侧复制按钮"
       >
         {toast.message}
       </span>
       <button
         onClick={handleCopy}
-        className="p-1 transition-colors"
-        style={{ color: copied ? 'var(--color-success)' : 'var(--color-text-muted)' }}
-        title={copied ? '已复制' : '复制消息'}
+        className="p-1.5 transition-colors"
+        style={{ color: copied ? 'var(--color-success)' : copyFailed ? 'var(--color-error)' : 'var(--color-text-muted)' }}
+        title={copied ? '已复制' : copyFailed ? '复制失败' : '复制消息'}
         aria-label="复制消息"
       >
         {copied ? <Check size={14} /> : <Copy size={14} />}
