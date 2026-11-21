@@ -15,7 +15,10 @@ const PRESET_URLS = [
   { label: '生产环境（api.met.cc.cd）', url: 'https://api.met.cc.cd' },
 ];
 
-const DEBUG_PASSWORD = 'debug2024';
+// S17 修复：调试密码改为环境变量注入（VITE_DEBUG_PASSWORD），默认值仅本地开发可用。
+// 生产构建时若未设置该变量，调试页将拒绝访问（密码为空字符串时 submit 直接失败）。
+// 这样避免把明文密码打进前端 bundle 被反编译。
+const DEBUG_PASSWORD = import.meta.env.VITE_DEBUG_PASSWORD ?? '';
 type Tab = 'api' | 'storage' | 'session' | 'layout';
 
 /* ─── Password screen ─── */
@@ -30,6 +33,11 @@ function PasswordScreen({
   const [showPwd, setShowPwd] = useState(false);
 
   const submit = () => {
+    // 未配置 VITE_DEBUG_PASSWORD 时拒绝访问（生产构建默认无调试后门）
+    if (!DEBUG_PASSWORD) {
+      setError('调试功能已在当前构建中禁用');
+      return;
+    }
     if (password === DEBUG_PASSWORD) {
       onUnlock();
     } else {

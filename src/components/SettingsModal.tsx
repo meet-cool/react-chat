@@ -20,7 +20,9 @@ interface SettingsModalProps {
 
 type Tab = 'profile' | 'password' | 'theme' | 'system';
 type DebugAuth = 'hidden' | 'needs-pwd' | 'authenticated';
-const DEBUG_PASSWORD = 'debug2024';
+// S17 修复：调试密码改为环境变量注入（VITE_DEBUG_PASSWORD），与 DebugPage.tsx 共用同一来源。
+// 生产构建未设置时密码为空字符串，submitDebugPassword 直接拒绝，避免明文密码打进 bundle。
+const DEBUG_PASSWORD = import.meta.env.VITE_DEBUG_PASSWORD ?? '';
 
 const themeOptions: { name: ThemeName; label: string; desc: string }[] = [
   { name: 'light', label: '浅色', desc: '护眼舒适' },
@@ -129,6 +131,11 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   }, []);
 
   const submitDebugPassword = () => {
+    // 未配置 VITE_DEBUG_PASSWORD 时拒绝访问（生产构建默认无调试后门）
+    if (!DEBUG_PASSWORD) {
+      setPwdError('调试功能已在当前构建中禁用');
+      return;
+    }
     if (debugPwd === DEBUG_PASSWORD) {
       setDebugMode(true);
       setDebugAuth('authenticated'); setDebugPwd(''); setPwdError('');
@@ -652,7 +659,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                           <button onClick={()=>{setDebugAuth('hidden');setDebugPwd('');setPwdError('');setDebugClickCount(0); setDebugProgress(0);}} className="btn btn-sm flex-1 justify-center">取消</button>
                         </div>
                         {pwdError && <p className="text-xs text-center" style={{color:'var(--color-error)'}}>{pwdError}</p>}
-                        <p className="text-xs text-center" style={{color:'var(--color-text-muted)'}}>提示：debug2024</p>
+                        {/* S17：不再在 UI 中展示明文密码；密码由 VITE_DEBUG_PASSWORD 环境变量注入 */}
                       </div>
                     )}
                   </div>
