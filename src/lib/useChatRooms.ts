@@ -61,7 +61,13 @@ export interface UseChatRoomsReturn {
  * 从 ChatPage.tsx 抽离，降低单文件复杂度。
  */
 export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
-  const { onError, onJoined, onLeft, onRecalled } = opts;
+  // opts 回调（onError 等）由调用方内联传入，每次渲染都是新引用。
+  // 若直接进入 useCallback 依赖，loadRooms 会每次渲染重建 → 初始化 effect
+  // [loadRooms] 每次渲染重跑 → 房间请求循环触发、roomsLoading 状态机被打乱卡死。
+  // 因此用 ref 持有最新 opts：回调体读 optsRef.current（永远是最新闭包），
+  // 而 useCallback 依赖保持稳定，回调身份不再随渲染变化。
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
@@ -103,12 +109,12 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '加载聊天室失败';
       const isAuth = message.includes('未登录') || message.includes('登录已过期');
-      onError(message, isAuth);
+      optsRef.current.onError(message, isAuth);
       return [];
     } finally {
       setRoomsLoading(false);
     }
-  }, [onError]);
+  }, []);
 
   // 加载消息（带竞态守卫）
   const loadMessages = useCallback(async (roomId: number) => {
@@ -126,13 +132,13 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       if (isStale()) return;
       const message = err instanceof Error ? err.message : '加载消息失败';
       const isAuth = message.includes('未登录') || message.includes('登录已过期');
-      onError(message, isAuth);
+      optsRef.current.onError(message, isAuth);
     } finally {
       if (!isStale()) {
         setMessagesLoading(false);
       }
     }
-  }, [onError]);
+  }, []);
 
   // Long Polling（顺序阻塞式）
   const pollFnRef = useRef<(ctx: LongPollContext) => Promise<ChatMessage[]>>(async () => []);
@@ -158,7 +164,7 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   pollFailRef.current = (err: unknown) => {
     const message = err instanceof Error ? err.message : '';
     if (message.includes('未登录') || message.includes('登录已过期')) {
-      onError(message, true);
+      optsRef.current.onError(message, true);
     }
   };
 
@@ -225,7 +231,7 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       const list = await loadRooms();
       const freshRoom = list.find((r) => r.id === room.id);
       if (!freshRoom) {
-        onError('房间不存在或已下线', false);
+        optsRef.current.onError('房间不存在或已下线', false);
         return;
       }
       if (freshRoom.joined) {
@@ -238,11 +244,11 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
         await loadMembers(freshRoom.id);
       } else {
         await roomApi.join(room.id);
-        onJoined?.(room);
+        optsRef.current.onJoined?.(room);
         const joinedList = await loadRooms();
         const joinedRoom = joinedList.find((r) => r.id === room.id);
         if (!joinedRoom) {
-          onError('加入成功，但房间状态未同步，请重新选择', false);
+          optsRef.current.onError('加入成功，但房间状态未同步，请重新选择', false);
           return;
         }
         lastLoadRoomRef.current = null;
@@ -256,11 +262,11 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '加入失败';
       const isAuth = message.includes('未登录') || message.includes('登录已过期');
-      onError(message, isAuth);
+      optsRef.current.onError(message, isAuth);
     } finally {
       joiningRef.current.delete(room.id);
     }
-  }, [loadRooms, loadMessages, loadMembers, onError, onJoined]);
+  }, [loadRooms, loadMessages, loadMembers]);
 
   // 退出房间
   const handleLeaveRoom = useCallback(async () => {
@@ -268,16 +274,16 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     if (!room) return;
     try {
       await roomApi.leave(room.id);
-      onLeft?.(room);
+      optsRef.current.onLeft?.(room);
       activeRoomRef.current = null;
       setActiveRoom(null);
       setMessages([]);
       setMembers([]);
       await loadRooms();
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : '退出失败', false);
+      optsRef.current.onError(err instanceof Error ? err.message : '退出失败', false);
     }
-  }, [loadRooms, onError, onLeft]);
+  }, [loadRooms]);
 
   // 发送消息
   const handleSend = useCallback(async (content: string, type: string) => {
@@ -290,11 +296,11 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       lastMessageIdRef.current = Math.max(lastMessageIdRef.current, msg.id);
       if (replyTo) setReplyTo(null);
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : '发送失败', false);
+      optsRef.current.onError(err instanceof Error ? err.message : '发送失败', false);
     } finally {
       setSending(false);
     }
-  }, [replyTo, onError]);
+  }, [replyTo]);
 
   // 摇骰子
   const handleDice = useCallback(() => {
@@ -321,9 +327,9 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       const res = await messageApi.react(room.id, msgId, emoji);
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, reactions: res.reactions } : m)));
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : '操作失败', false);
+      optsRef.current.onError(err instanceof Error ? err.message : '操作失败', false);
     }
-  }, [onError]);
+  }, []);
 
   // 撤回消息
   const handleRecall = useCallback(async (msg: ChatMessage) => {
@@ -334,11 +340,11 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       setMessages((prev) =>
         prev.map((m) => (m.id === msg.id ? { ...m, is_recalled: true, content: '' } : m))
       );
-      onRecalled?.();
+      optsRef.current.onRecalled?.();
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : '撤回失败', false);
+      optsRef.current.onError(err instanceof Error ? err.message : '撤回失败', false);
     }
-  }, [onError, onRecalled]);
+  }, []);
 
   // 房间更新
   const handleRoomUpdated = useCallback((updated: Room) => {
