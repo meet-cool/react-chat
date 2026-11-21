@@ -220,6 +220,18 @@ export function RoomChatView({
 
       {/* 右侧成员列表（桌面端） */}
       <aside className="hidden md:flex flex-col border-l w-60 flex-shrink-0 bg-[var(--color-card)] transition-all duration-200 ease-out" style={{ borderColor: 'var(--color-divider)', ...(rightCollapsed ? { width: 0, opacity: 0, pointerEvents: 'none' } : {}) }}>
+        {/* 收起成员列表按钮：成员列表上方 */}
+        <div className="flex items-center justify-end p-2 border-b flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
+          <button
+            className="btn btn-sm p-2"
+            onClick={onToggleRight}
+            title="收起成员列表"
+            aria-label="收起成员列表"
+            style={{ minHeight: 36, minWidth: 36, color: 'var(--color-text-muted)' }}
+          >
+            <PanelRightClose size={16} />
+          </button>
+        </div>
         <MemberList members={members} loading={membersLoading} onSelect={onOpenMemberProfile} />
       </aside>
 
