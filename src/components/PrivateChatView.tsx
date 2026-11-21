@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Conversation, PrivateMessage, MessageReaction } from '../types';
 import { conversationApi } from '../lib/api';
+import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
 import { Avatar } from './Avatar';
 import { useApp } from '../lib/AppContext';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
@@ -22,7 +23,6 @@ import { EmojiPicker } from './EmojiPicker';
 import { ForwardDialog } from './ForwardDialog';
 import { ReportDialog } from './ReportDialog';
 
-const POLL_INTERVAL = 3000;
 const PAGE_SIZE = 50;
 
 interface PrivateChatViewProps {
@@ -52,12 +52,9 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const [searchError, setSearchError] = useState('');
 
   const lastMsgIdRef = useRef<number>(0);
-  // 轮询并发防护：上一轮请求未返回时跳过本轮，避免慢响应乱序覆盖
-  const inFlightRef = useRef(false);
   // 消息滚动容器与近底状态（距底 <160px 才自动滚底）
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const listPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,29 +98,36 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     }
   }, [addToast]);
 
-  // 增量拉取新消息
-  const pollNewMessages = useCallback(async () => {
-    if (!activeConv || inFlightRef.current) return;
-    inFlightRef.current = true;
-    try {
-      const list = await conversationApi.messages(activeConv.id, { after_id: lastMsgIdRef.current });
-      if (list.length > 0) {
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id));
-          const fresh = list.filter((m) => !existingIds.has(m.id));
-          if (fresh.length === 0) return prev;
-          lastMsgIdRef.current = Math.max(lastMsgIdRef.current, fresh[fresh.length - 1].id);
-          const merged = [...prev, ...fresh];
-          merged.sort((a, b) => a.id - b.id); // 按 id 升序，防止乱序追加
-          return merged;
-        });
-      }
-    } catch {
-      // 静默
-    } finally {
-      inFlightRef.current = false;
-    }
-  }, [activeConv]);
+  // 增量拉取新消息（顺序阻塞式 Long Polling，替代原 3s 固定间隔 setInterval）
+  // pollFn / onMessage 以 ref 持有最新闭包，保证 hook 传入稳定引用
+  const pollFnRef = useRef<(ctx: LongPollContext) => Promise<PrivateMessage[]>>(async () => {
+    if (!activeConv) return [];
+    return conversationApi.messages(activeConv.id, { after_id: lastMsgIdRef.current });
+  });
+  const onMsgRef = useRef<(payload: PrivateMessage[], ctx: LongPollContext) => void>(() => {});
+  pollFnRef.current = async (ctx) => {
+    if (!activeConv) return [];
+    void ctx;
+    return conversationApi.messages(activeConv.id, { after_id: lastMsgIdRef.current });
+  };
+  onMsgRef.current = (list) => {
+    if (list.length === 0) return;
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m) => m.id));
+      const fresh = list.filter((m) => !existingIds.has(m.id));
+      if (fresh.length === 0) return prev;
+      lastMsgIdRef.current = Math.max(lastMsgIdRef.current, fresh[fresh.length - 1].id);
+      const merged = [...prev, ...fresh];
+      merged.sort((a, b) => a.id - b.id); // 按 id 升序，防止乱序追加
+      return merged;
+    });
+  };
+
+  useLongPolling<PrivateMessage[]>({
+    pollFn: (ctx) => pollFnRef.current(ctx),
+    deps: [activeConv?.id],
+    onMessage: (payload, ctx) => onMsgRef.current(payload, ctx),
+  });
 
   // 初始化
   useEffect(() => {
@@ -191,14 +195,6 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   };
 
   // 轮询当前会话新消息
-  useEffect(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    if (!activeConv) return;
-    pollNewMessages();
-    pollRef.current = setInterval(pollNewMessages, POLL_INTERVAL);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [activeConv, pollNewMessages]);
-
   // 定期刷新会话列表
   useEffect(() => {
     listPollRef.current = setInterval(loadConversations, 10000);

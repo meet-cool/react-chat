@@ -14,6 +14,7 @@ import {
 import type { ChatMessage, Room, RoomMember, UserInfo, Conversation, GroupInfo } from '../types';
 import { clearToken, messageApi, roomApi, conversationApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
+import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
 import { Avatar } from '../components/Avatar';
 import { ChatSidebarNav } from '../components/ChatSidebarNav';
 import { ChatSidebarContent } from '../components/ChatSidebarContent';
@@ -36,7 +37,6 @@ interface ChatPageProps {
   onLogout: () => void;
 }
 
-const POLL_INTERVAL = 8000;
 const HEARTBEAT_INTERVAL = 60000;
 const REFRESH_INTERVAL = 30000;
 const PAGE_SIZE = 50;
@@ -127,7 +127,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
   // refs
   const lastMessageIdRef = useRef<number>(0);
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joiningRef = useRef<Set<number>>(new Set());
@@ -217,33 +216,50 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     }
   }, [addToast, handleAuthError]);
 
-  // 轮询新消息
-  const pollNewMessages = useCallback(async () => {
-    if (!activeRoom) return;
-    try {
-      const list = await messageApi.list(activeRoom.id, { after_id: lastMessageIdRef.current });
-      if (list.length > 0) {
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id));
-          const fresh = list.filter((m) => !existingIds.has(m.id));
-          if (fresh.length > 0) {
-            lastMessageIdRef.current = Math.max(lastMessageIdRef.current, fresh[fresh.length - 1].id);
-            // 收到他人新消息时播放提示音（设置开关，默认关）
-            const hasOthers = fresh.some((m) => m.user_id !== currentUser.id && !m.is_recalled);
-            if (hasOthers && localStorage.getItem('arcle_sound') === '1') {
-              try { new Audio('/sound/typing.mp3').play().catch(() => {}); } catch { /* ignore */ }
-            }
-          }
-          return fresh.length > 0 ? [...prev, ...fresh] : prev;
-        });
+  // 轮询新消息（顺序阻塞式 Long Polling，替代原 8s 固定间隔 setInterval）
+  // pollFn / onMessage 以 ref 持有最新闭包，保证 hook 传入的是稳定引用（避免循环反复重启）
+  const pollFnRef = useRef<(ctx: LongPollContext) => Promise<ChatMessage[]>>(async () => {
+    if (!activeRoom) return [];
+    return messageApi.list(activeRoom.id, { after_id: lastMessageIdRef.current });
+  });
+  const onMsgRef = useRef<(payload: ChatMessage[], ctx: LongPollContext) => void>(() => {});
+  pollFnRef.current = async (ctx) => {
+    if (!activeRoom) return [];
+    // 透传 AbortSignal 无法直接用于 api 封装（request 内部自建 controller），
+    // 但会话切换时 hook 会 abort 旧 controller；此处仅做增量拉取
+    void ctx;
+    return messageApi.list(activeRoom.id, { after_id: lastMessageIdRef.current });
+  };
+  onMsgRef.current = (list) => {
+    if (list.length === 0) return;
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m) => m.id));
+      const fresh = list.filter((m) => !existingIds.has(m.id));
+      if (fresh.length > 0) {
+        lastMessageIdRef.current = Math.max(lastMessageIdRef.current, fresh[fresh.length - 1].id);
+        // 收到他人新消息时播放提示音（设置开关，默认关）
+        const hasOthers = fresh.some((m) => m.user_id !== currentUser.id && !m.is_recalled);
+        if (hasOthers && localStorage.getItem('arcle_sound') === '1') {
+          try { new Audio('/sound/typing.mp3').play().catch(() => {}); } catch { /* ignore */ }
+        }
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '';
-      if (message.includes('未登录') || message.includes('登录已过期')) {
-        handleAuthError();
-      }
+      return fresh.length > 0 ? [...prev, ...fresh] : prev;
+    });
+  };
+  // 401/鉴权失效：request 层已 clearToken + 广播，这里在 catch 里兜底跳转
+  const pollFailRef = useRef<(err: unknown) => void>(() => {});
+  pollFailRef.current = (err: unknown) => {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('未登录') || message.includes('登录已过期')) {
+      handleAuthError();
     }
-  }, [activeRoom, handleAuthError]);
+  };
+
+  useLongPolling<ChatMessage[]>({
+    pollFn: (ctx) => pollFnRef.current(ctx).catch((e: unknown) => { pollFailRef.current(e); throw e; }),
+    deps: [activeRoom?.id],
+    onMessage: (payload, ctx) => onMsgRef.current(payload, ctx),
+  });
 
   // 加载更多
   const loadMore = useCallback(async () => {
@@ -559,15 +575,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     conversationApi.list().then(setConversations).catch(() => {});
     refreshUnread();
   }, [refreshUnread]);
-
-  // 轮询消息
-  useEffect(() => {
-    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-    if (!activeRoom) return;
-    pollNewMessages();
-    pollTimerRef.current = setInterval(pollNewMessages, POLL_INTERVAL);
-    return () => { if (pollTimerRef.current) clearInterval(pollTimerRef.current); };
-  }, [activeRoom, pollNewMessages]);
 
   // 心跳
   useEffect(() => {

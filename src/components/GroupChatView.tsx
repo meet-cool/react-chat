@@ -2,12 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { UsersRound, LogOut, Megaphone, MicOff, Settings2, ChevronLeft, Loader2 } from 'lucide-react';
 import type { GroupInfo, ChatMessage, GroupMember } from '../types';
 import { groupApi } from '../lib/api';
+import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { HashAvatar } from './HashAvatar';
 import { GroupSettingsModal } from './GroupSettingsModal';
-
-const POLL_INTERVAL_MS = 3000;
 
 interface GroupChatViewProps {
   group: GroupInfo;
@@ -33,7 +32,6 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [mutedTip, setMutedTip] = useState(false);
   const lastIdRef = useRef(0);
-  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // @提及插入通道：由 MessageInput 注册实现（照搬 ChatPage 的 useRef 持有模式）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
 
@@ -79,44 +77,46 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
     loadMembersRef.current = loadMembers;
   });
 
-  // 初始化 + 长轮询
+  // 初始化（加载历史/详情/成员）
   useEffect(() => {
-    // 局部取消令牌：effect 清理后旧循环不再继续，杜绝僵尸轮询
-    let cancelled = false;
     const gid = group.id;
     loadHistoryRef.current(gid);
     refreshDetailRef.current(gid);
     loadMembersRef.current(gid);
-
-    const loop = async () => {
-      while (!cancelled) {
-        try {
-          const res = await groupApi.poll(gid, lastIdRef.current);
-          if (cancelled) break; // 清理后到达的旧响应直接丢弃
-          const incoming = res.messages || [];
-          if (incoming.length > 0) {
-            lastIdRef.current = incoming[incoming.length - 1].id;
-            setMessages((prev) => {
-              const known = new Set(prev.map((m) => m.id));
-              const merged = [...prev, ...incoming.filter((m) => !known.has(m.id))];
-              return merged;
-            });
-            // 系统消息（成员变动等）→ 刷新成员/详情
-            if (incoming.some((m) => m.type === 'system')) {
-              loadMembersRef.current(gid);
-              refreshDetailRef.current(gid);
-            }
-          }
-        } catch {
-          // 网络异常时退避
-          await new Promise((r) => setTimeout(r, 3000));
-        }
-      }
-    };
-    loop();
-
-    return () => { cancelled = true; };
   }, [group.id]);
+
+  // 长轮询新消息（顺序阻塞式，替代原 3s 固定间隔 while 循环 + setTimeout 退避）
+  // pollFn / onMessage 以 ref 持有最新闭包，保证 hook 传入稳定引用
+  const pollFnRef = useRef<(ctx: LongPollContext) => Promise<{ messages: ChatMessage[] }>>(async () => {
+    const res = await groupApi.poll(group.id, lastIdRef.current);
+    return { messages: res.messages || [] };
+  });
+  const onMsgRef = useRef<(payload: { messages: ChatMessage[] }, ctx: LongPollContext) => void>(() => {});
+  pollFnRef.current = async (ctx) => {
+    void ctx;
+    const res = await groupApi.poll(group.id, lastIdRef.current);
+    return { messages: res.messages || [] };
+  };
+  onMsgRef.current = ({ messages: incoming }) => {
+    if (incoming.length === 0) return;
+    lastIdRef.current = incoming[incoming.length - 1].id;
+    setMessages((prev) => {
+      const known = new Set(prev.map((m) => m.id));
+      const merged = [...prev, ...incoming.filter((m) => !known.has(m.id))];
+      return merged;
+    });
+    // 系统消息（成员变动等）→ 刷新成员/详情
+    if (incoming.some((m) => m.type === 'system')) {
+      loadMembersRef.current(group.id);
+      refreshDetailRef.current(group.id);
+    }
+  };
+
+  useLongPolling<{ messages: ChatMessage[] }>({
+    pollFn: (ctx) => pollFnRef.current(ctx),
+    deps: [group.id],
+    onMessage: (payload, ctx) => onMsgRef.current(payload, ctx),
+  });
 
   // @提及：把 "@username " 插入输入框光标处
   const handleMention = useCallback((username: string) => {
