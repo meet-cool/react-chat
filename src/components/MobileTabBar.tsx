@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
 import {
   Sparkles,
+  Hash,
+  UsersRound,
   BookUser,
   MoreHorizontal,
   LogOut,
@@ -8,62 +9,69 @@ import {
   Settings,
   BookOpen,
   X,
+  Heart,
+  SendHorizonal,
+  Camera,
+  Star,
+  Puzzle,
+  GraduationCap,
+  User,
 } from 'lucide-react';
 import type { SidebarCategory } from './chat-types';
 
 /**
- * 移动端底部 TabBar 组件
+ * 移动端底部 TabBar 组件（5 Tab）
  *
- * 三个 Tab（从左到右）：
- *   1. 弧光 (Sparkles)  → 切换到「最近聊天」视图 (category='recent')，收起通讯录面板
- *   2. 通讯录 (BookUser) → 展开/收起通讯录列表面板（含 4 子 Tab）
- *   3. 更多 (MoreHorizontal) → 打开底部 sheet 收纳功能
+ * 五个 Tab（从左到右）：
+ *   1. 弧光 (Sparkles)   → 最近聊天 (category='recent')
+ *   2. 聊天室 (Hash)     → 房间列表 (category='rooms')
+ *   3. 群聊 (UsersRound)  → 群聊列表 (category='groups')
+ *   4. 通讯录 (BookUser)  → 通讯录 (category='contacts')
+ *   5. 更多 (MoreHorizontal) → 底部 sheet 收纳 12 项次要功能
  *
- * 所有交互状态（contactsPanelOpen / moreSheetOpen / activeTab 等）由父组件管理，
- * 本组件纯展示 + 回调，避免内部 state 与 TabBar z-index 冲突。
+ * 所有交互状态由父组件管理，本组件纯展示 + 回调。
  */
 
-export type MobileTab = 'arcle' | 'contacts' | 'more';
+export type MobileTab = 'arcle' | 'rooms' | 'groups' | 'contacts' | 'more';
 
 export interface MobileTabBarProps {
-  /** 当前激活的 Tab（'arcle' | 'contacts' | 'more'） */
+  /** 当前激活的 Tab */
   activeTab: MobileTab;
-  /** 通讯录面板是否展开 */
-  contactsPanelOpen: boolean;
-  /** 通讯录面板当前子 Tab */
-  contactsSubTab: SidebarCategory;
-  /** 未读角标（可选） */
+  /** 各 Tab 的未读/角标（可选） */
   arcleBadge?: number;
+  roomsBadge?: number;
+  groupsBadge?: number;
   contactsBadge?: number;
   moreBadge?: number;
 
-  /** 切换到「弧光」Tab：设 category='recent'，收起通讯录面板 */
+  /** 切换到「弧光」Tab：设 category='recent'，收起其它面板 */
   onArcle: () => void;
-  /** 切换/收起通讯录面板 */
-  onContactsToggle: () => void;
-  /** 切换通讯录面板子 Tab */
-  onContactsSubTab: (tab: SidebarCategory) => void;
+  /** 切换到「聊天室」Tab：设 category='rooms' */
+  onRooms: () => void;
+  /** 切换到「群聊」Tab：设 category='groups' */
+  onGroups: () => void;
+  /** 切换到「通讯录」Tab：设 category='contacts' */
+  onContacts: () => void;
   /** 打开/关闭「更多」sheet */
   onMoreToggle: () => void;
 
-  /* 「更多」sheet 功能回调 */
+  /* 「更多」sheet 功能回调（12 项） */
+  onNavigateToConfession: () => void;
+  onNavigateToBottle: () => void;
+  onNavigateToMoments: () => void;
+  onNavigateToPoints: () => void;
+  onNavigateToAi: () => void;
+  onNavigateToPlugins: () => void;
+  onNavigateToEnglish: () => void;
   onNewRoom: () => void;
+  onNavigateToProfile: () => void;
   onOpenSettings: () => void;
   onOpenGuide: () => void;
   onLogout: () => void;
-  /** 通讯录面板列表面容（由 ChatPage 传入，根据 contactsSubTab 渲染对应 ChatSidebarContent） */
-  panelContent: ReactNode;
 }
 
-const CONTACTS_SUB_TABS: { key: SidebarCategory; label: string }[] = [
-  { key: 'rooms', label: '房间' },
-  { key: 'recent', label: '私聊' },
-  { key: 'contacts', label: '通讯录' },
-  { key: 'groups', label: '群聊' },
-];
-
 /**
- * 底部 Tab 按钮（≥44px 触摸区）
+ * 底部 Tab 按钮（≥44px 触摸区，flex-1 均分）
  */
 function TabButton({
   icon: Icon,
@@ -81,14 +89,13 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="relative flex flex-col items-center gap-1 px-3 py-2 min-h-[44px] min-w-[44px] justify-center cursor-pointer"
+      className="relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] cursor-pointer"
       style={{
         background: 'transparent',
         border: 'none',
         color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
         transition: 'color 0.2s ease',
         fontFamily: 'inherit',
-        fontSize: 12,
       }}
     >
       <div className="relative">
@@ -108,79 +115,88 @@ function TabButton({
           </span>
         )}
       </div>
-      <span>{label}</span>
+      <span style={{ fontSize: 10, lineHeight: 1.2 }}>{label}</span>
     </button>
   );
 }
 
+/** 「更多」sheet 功能项定义（图标 + 文字 + 回调 key） */
+interface MoreItem {
+  key:
+    | 'confession' | 'bottle' | 'moments' | 'points'
+    | 'ai' | 'plugins' | 'english' | 'newRoom'
+    | 'profile' | 'settings' | 'guide' | 'logout';
+  label: string;
+  icon: typeof Heart;
+  danger?: boolean;
+}
+
+const MORE_ITEMS: MoreItem[] = [
+  { key: 'confession', label: '表白墙', icon: Heart },
+  { key: 'bottle', label: '漂流瓶', icon: SendHorizonal },
+  { key: 'moments', label: '朋友圈', icon: Camera },
+  { key: 'points', label: '积分中心', icon: Star },
+  { key: 'ai', label: 'AI 广场', icon: Sparkles },
+  { key: 'plugins', label: '插件市场', icon: Puzzle },
+  { key: 'english', label: '英语学习', icon: GraduationCap },
+  { key: 'newRoom', label: '新建聊天室', icon: PlusCircle },
+  { key: 'profile', label: '个人主页', icon: User },
+  { key: 'settings', label: '设置', icon: Settings },
+  { key: 'guide', label: '新手指导', icon: BookOpen },
+  { key: 'logout', label: '退出登录', icon: LogOut, danger: true },
+];
+
 /**
- * 移动端底部 TabBar（含通讯录面板 + 更多 sheet）
+ * 移动端底部 TabBar（5 Tab + 更多 sheet，仅移动端显示）
  *
  * 渲染层次（从下到上 z-index）：
- *   - 通讯录面板内容区：z-40（固定在 TabBar 上方）
  *   - 更多 sheet 遮罩：z-40
  *   - 更多 sheet 主体：z-40
  *   - 底部 TabBar：z-50（始终可点）
  */
 export function MobileTabBar({
   activeTab,
-  contactsPanelOpen,
-  contactsSubTab,
   arcleBadge,
+  roomsBadge,
+  groupsBadge,
   contactsBadge,
   moreBadge,
   onArcle,
-  onContactsToggle,
-  onContactsSubTab,
+  onRooms,
+  onGroups,
+  onContacts,
   onMoreToggle,
+  onNavigateToConfession,
+  onNavigateToBottle,
+  onNavigateToMoments,
+  onNavigateToPoints,
+  onNavigateToAi,
+  onNavigateToPlugins,
+  onNavigateToEnglish,
   onNewRoom,
+  onNavigateToProfile,
   onOpenSettings,
   onOpenGuide,
   onLogout,
-  panelContent,
 }: MobileTabBarProps) {
+  // 构建回调映射表
+  const moreCallbacks: Record<MoreItem['key'], () => void> = {
+    confession: onNavigateToConfession,
+    bottle: onNavigateToBottle,
+    moments: onNavigateToMoments,
+    points: onNavigateToPoints,
+    ai: onNavigateToAi,
+    plugins: onNavigateToPlugins,
+    english: onNavigateToEnglish,
+    newRoom: onNewRoom,
+    profile: onNavigateToProfile,
+    settings: onOpenSettings,
+    guide: onOpenGuide,
+    logout: onLogout,
+  };
+
   return (
     <>
-      {/* ===== 通讯录列表面板（从 TabBar 上方升起，仅移动端）===== */}
-      {contactsPanelOpen && (
-        <div
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40"
-          style={{ background: 'var(--color-card)', borderTop: '1px solid var(--color-divider)' }}
-        >
-          {/* 子 Tab 栏 */}
-          <div
-            className="flex border-b flex-shrink-0"
-            style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)' }}
-          >
-            {CONTACTS_SUB_TABS.map((sub) => {
-              const active = contactsSubTab === sub.key;
-              return (
-                <button
-                  key={sub.key}
-                  onClick={() => onContactsSubTab(sub.key)}
-                  className="flex-1 py-2.5 text-xs font-medium transition-colors"
-                  style={{
-                    background: active ? 'var(--color-card)' : 'transparent',
-                    color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                    border: 'none',
-                    borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {sub.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* 列表面板内容区（由 ChatPage 通过 panelContent 传入） */}
-          <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: '45vh' }}>
-            {panelContent}
-          </div>
-        </div>
-      )}
-
       {/* ===== 更多 Sheet（仅移动端）===== */}
       {activeTab === 'more' && (
         <>
@@ -192,15 +208,16 @@ export function MobileTabBar({
           />
           {/* 底部 Sheet 主体（z-40，在遮罩之上但在 TabBar 之下，让 TabBar 始终可点） */}
           <div
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40"
+            className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-hidden"
             style={{
               background: 'var(--color-card)',
               borderTop: '1px solid var(--color-divider)',
+              maxHeight: '70vh',
             }}
           >
             {/* Sheet 头部 */}
             <div
-              className="flex items-center justify-between px-4 py-3 border-b"
+              className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
               style={{ borderColor: 'var(--color-divider)' }}
             >
               <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
@@ -215,53 +232,29 @@ export function MobileTabBar({
               </button>
             </div>
 
-            {/* 功能项列表 */}
-            <div className="py-2">
-              <button
-                onClick={() => { onNewRoom(); onMoreToggle(); }}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  color: 'var(--color-text)', fontFamily: 'inherit', fontSize: 14,
-                }}
-              >
-                <PlusCircle size={18} style={{ color: 'var(--color-primary)' }} />
-                新建聊天室
-              </button>
-              <button
-                onClick={() => { onOpenSettings(); onMoreToggle(); }}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  color: 'var(--color-text)', fontFamily: 'inherit', fontSize: 14,
-                }}
-              >
-                <Settings size={18} style={{ color: 'var(--color-primary)' }} />
-                设置
-              </button>
-              <button
-                onClick={() => { onOpenGuide(); onMoreToggle(); }}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  color: 'var(--color-text)', fontFamily: 'inherit', fontSize: 14,
-                }}
-              >
-                <BookOpen size={18} style={{ color: 'var(--color-primary)' }} />
-                新手指导
-              </button>
-              <div style={{ borderTop: '1px solid var(--color-divider)' }} />
-              <button
-                onClick={() => { onLogout(); onMoreToggle(); }}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  color: 'var(--color-error)', fontFamily: 'inherit', fontSize: 14,
-                }}
-              >
-                <LogOut size={18} />
-                退出登录
-              </button>
+            {/* 功能项列表（可滚动） */}
+            <div className="overflow-y-auto py-2">
+              {MORE_ITEMS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => { moreCallbacks[item.key](); onMoreToggle(); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: item.danger ? 'var(--color-error)' : 'var(--color-text)',
+                      fontFamily: 'inherit',
+                      fontSize: 14,
+                    }}
+                  >
+                    <Icon size={18} style={{ color: item.danger ? 'var(--color-error)' : 'var(--color-primary)' }} />
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </>
@@ -272,20 +265,34 @@ export function MobileTabBar({
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-sm"
         style={{ background: 'var(--nav-bg)', borderColor: 'var(--color-divider)' }}
       >
-        <div className="flex justify-around py-1.5 px-2">
+        <div className="flex py-1.5 px-2">
           <TabButton
             icon={Sparkles}
             label="弧光"
-            active={activeTab === 'arcle' && !contactsPanelOpen}
+            active={activeTab === 'arcle'}
             badge={arcleBadge}
             onClick={onArcle}
           />
           <TabButton
+            icon={Hash}
+            label="聊天室"
+            active={activeTab === 'rooms'}
+            badge={roomsBadge}
+            onClick={onRooms}
+          />
+          <TabButton
+            icon={UsersRound}
+            label="群聊"
+            active={activeTab === 'groups'}
+            badge={groupsBadge}
+            onClick={onGroups}
+          />
+          <TabButton
             icon={BookUser}
             label="通讯录"
-            active={activeTab === 'contacts' && contactsPanelOpen}
+            active={activeTab === 'contacts'}
             badge={contactsBadge}
-            onClick={onContactsToggle}
+            onClick={onContacts}
           />
           <TabButton
             icon={MoreHorizontal}

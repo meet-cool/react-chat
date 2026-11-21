@@ -57,10 +57,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [showLabels, setShowLabels] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState<SidebarCategory | 'members' | null>(null);
 
-  // 移动端底部 Tab 导航状态
+  // 移动端底部 Tab 导航状态（5 Tab：弧光/聊天室/群聊/通讯录/更多）
   const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>('arcle');
-  const [contactsPanelOpen, setContactsPanelOpen] = useState(false);
-  const [contactsSubTab, setContactsSubTab] = useState<SidebarCategory>('rooms');
 
   // 发送成功后触发 MessageList 瞬时滚到底部（自增即可，组件内 effect 监听该值）
   const [scrollSignal, setScrollSignal] = useState(0);
@@ -256,18 +254,17 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     else {
       setCategory(k);
       if (isMobile) {
-        // 移动端：切到「弧光」Tab，收起通讯录面板
-        setMobileActiveTab('arcle');
-        setContactsPanelOpen(false);
+        // 移动端：根据 category 映射到对应底部 Tab
+        setMobileActiveTab(k === 'rooms' ? 'rooms' : k === 'groups' ? 'groups' : k === 'contacts' ? 'contacts' : 'arcle');
+        setMobileView('list');
       }
     }
-  }, [navigate, isMobile]);
+  }, [navigate, isMobile, setMobileView]);
 
   // 移动端返回按钮
   const handleMobileBack = useCallback(() => {
     setMobileView('list');
     setMobileSidebar(null);
-    setContactsPanelOpen(false);
   }, [setMobileView]);
 
   const {
@@ -284,80 +281,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     return handleSend(content, type, () => setScrollSignal((s) => s + 1));
   }, [handleSend]);
 
-  // 移动端通讯录面板内容（根据 contactsSubTab 渲染对应 ChatSidebarContent）
-  const contactsPanelContent = (
-    <>
-      {contactsSubTab === 'rooms' ? (
-        <ChatSidebarContent
-          category="rooms"
-          rooms={rooms}
-          conversations={conversations}
-          activeRoomId={activeRoom?.id ?? null}
-          activeConvId={activeConv?.id ?? null}
-          roomsLoading={roomsLoading}
-          onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); setContactsPanelOpen(false); }}
-          onSelectConv={() => {}}
-          onCreateRoom={() => setShowCreateModal(true)}
-          onOpenRoomSettings={() => setShowRoomSettings(true)}
-          onOpenConversation={() => {}}
-          onNavigate={navigate}
-          onClose={() => setContactsPanelOpen(false)}
-        />
-      ) : contactsSubTab === 'recent' ? (
-        <ChatSidebarContent
-          category="recent"
-          rooms={rooms}
-          conversations={conversations}
-          activeRoomId={activeRoom?.id ?? null}
-          activeConvId={activeConv?.id ?? null}
-          roomsLoading={roomsLoading}
-          onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); setContactsPanelOpen(false); }}
-          onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setContactsPanelOpen(false); setMobileView('private'); }}
-          onCreateRoom={() => setShowCreateModal(true)}
-          onOpenRoomSettings={() => setShowRoomSettings(true)}
-          onOpenConversation={handleOpenConversation}
-          onNavigate={navigate}
-          onClose={() => setContactsPanelOpen(false)}
-        />
-      ) : contactsSubTab === 'contacts' ? (
-        <ChatSidebarContent
-          category="contacts"
-          rooms={[]}
-          conversations={[]}
-          activeRoomId={null}
-          activeConvId={null}
-          roomsLoading={false}
-          onSelectRoom={() => {}}
-          onSelectConv={() => {}}
-          onCreateRoom={() => {}}
-          onOpenRoomSettings={() => {}}
-          onOpenConversation={handleOpenConversation}
-          onNavigate={navigate}
-          onClose={() => setContactsPanelOpen(false)}
-        />
-      ) : (
-        <ChatSidebarContent
-          category="groups"
-          rooms={[]}
-          conversations={[]}
-          activeRoomId={null}
-          activeConvId={null}
-          roomsLoading={false}
-          onSelectRoom={() => {}}
-          onSelectConv={() => {}}
-          onCreateRoom={() => {}}
-          onOpenRoomSettings={() => {}}
-          onOpenConversation={() => {}}
-          onNavigate={navigate}
-          activeGroupId={activeGroup?.id ?? null}
-          onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); setContactsPanelOpen(false); }}
-          onGroupsChanged={() => setGroupListKey((k) => k + 1)}
-          onClose={() => setContactsPanelOpen(false)}
-        />
-      )}
-    </>
-  );
-
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
       {/* 顶部导航 */}
@@ -373,18 +296,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
               style={{ minHeight: 44, minWidth: 44 }}
             >
               <ArrowLeft size={18} />
-            </button>
-          ) : isMobile ? (
-            <button
-              className="md:hidden btn btn-sm p-2"
-              onClick={() => {
-                setMobileActiveTab('contacts');
-                setContactsPanelOpen(true);
-              }}
-              style={{ minHeight: 44, minWidth: 44 }}
-              title="通讯录"
-            >
-              <Bell size={18} />
             </button>
           ) : null}
           <div className="flex items-center gap-2">
@@ -485,30 +396,30 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
 
       {/* 主体布局 */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 左侧边栏 */}
+        {/* 左侧边栏（桌面端显示竖排导航 + 分类列表；移动端隐藏整个 aside，列表改由主区渲染） */}
         <aside
           className={`border-r flex flex-shrink-0 transition-all duration-200 ease-out md:relative md:z-10 overflow-hidden ${
             isMobile
-              ? mobileView !== 'list'
-                ? 'hidden'
-                : 'w-14'
+              ? 'hidden'
               : `w-64 md:w-14 ${leftCollapsed ? 'md:w-14' : showLabels ? 'md:w-[360px]' : 'md:w-64'}`
           }`}
           style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
         >
-          <ChatSidebarNav
-            category={category}
-            showLabels={showLabels}
-            indicatorTop={indicatorTop}
-            indicatorHeight={indicatorHeight}
-            categoryBtnRefs={categoryBtnRefs}
-            onCategoryClick={handleSidebarClick}
-            onToggleLabels={() => setShowLabels((v) => !v)}
-            onNavigateToProfile={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
-            onOpenSettings={() => setShowSettings(true)}
-            onOpenGuide={() => setShowGuide(true)}
-            onOpenMbti={() => navigate('/mbti')}
-          />
+          {!isMobile && (
+            <ChatSidebarNav
+              category={category}
+              showLabels={showLabels}
+              indicatorTop={indicatorTop}
+              indicatorHeight={indicatorHeight}
+              categoryBtnRefs={categoryBtnRefs}
+              onCategoryClick={handleSidebarClick}
+              onToggleLabels={() => setShowLabels((v) => !v)}
+              onNavigateToProfile={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
+              onOpenSettings={() => setShowSettings(true)}
+              onOpenGuide={() => setShowGuide(true)}
+              onOpenMbti={() => navigate('/mbti')}
+            />
+          )}
 
           <div
             className={`flex-1 flex flex-col overflow-hidden transition-[width] duration-200 relative ${
@@ -796,34 +707,46 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
         </main>
       </div>
 
-      {/* 移动端底部 Tab 导航（弧光 / 通讯录 / 更多） */}
+      {/* 移动端底部 5-Tab 导航（弧光/聊天室/群聊/通讯录/更多） */}
       {isMobile && (
         <MobileTabBar
           activeTab={mobileActiveTab}
-          contactsPanelOpen={contactsPanelOpen}
-          contactsSubTab={contactsSubTab}
           arcleBadge={notifUnread}
           onArcle={() => {
             setMobileActiveTab('arcle');
-            setContactsPanelOpen(false);
             setCategory('recent');
             setMobileView('list');
           }}
-          onContactsToggle={() => {
-            setMobileActiveTab('contacts');
-            setContactsPanelOpen((v) => !v);
+          onRooms={() => {
+            setMobileActiveTab('rooms');
+            setCategory('rooms');
             setMobileView('list');
           }}
-          onContactsSubTab={(tab) => setContactsSubTab(tab)}
-          onMoreToggle={() => {
-            setMobileActiveTab('more');
-            setContactsPanelOpen(false);
+          onGroups={() => {
+            setMobileActiveTab('groups');
+            setCategory('groups');
+            setMobileView('list');
           }}
+          onContacts={() => {
+            setMobileActiveTab('contacts');
+            setCategory('contacts');
+            setMobileView('list');
+          }}
+          onMoreToggle={() => {
+            setMobileActiveTab((prev) => (prev === 'more' ? 'arcle' : 'more'));
+          }}
+          onNavigateToConfession={() => navigate('/confessions')}
+          onNavigateToBottle={() => navigate('/bottles')}
+          onNavigateToMoments={() => navigate('/moments')}
+          onNavigateToPoints={() => navigate('/points')}
+          onNavigateToAi={() => navigate('/ai')}
+          onNavigateToPlugins={() => navigate('/plugins')}
+          onNavigateToEnglish={() => navigate('/english')}
           onNewRoom={() => setShowCreateModal(true)}
+          onNavigateToProfile={() => navigate(`/profile/${encodeURIComponent(currentUser.username || '')}`)}
           onOpenSettings={() => setShowSettings(true)}
           onOpenGuide={() => setShowGuide(true)}
           onLogout={handleLogout}
-          panelContent={contactsPanelContent}
         />
       )}
 
