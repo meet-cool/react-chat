@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { renderBBCode } from '../lib/bbcode';
+import { renderBBCode, resolveMessageType } from '../lib/bbcode';
 import { socialApi, type SearchResultItem } from '../lib/api';
 import {
   Loader2,
@@ -316,7 +316,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     if (!trimmed || !activeConv) return;
     setSending(true);
     try {
-      const msg = await conversationApi.send(activeConv.id, { content: trimmed, type: mode, reply_to: replyTo?.id || 0 });
+      const sendType = resolveMessageType(trimmed, mode);
+      const msg = await conversationApi.send(activeConv.id, { content: trimmed, type: sendType, reply_to: replyTo?.id || 0 });
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       setContent('');
@@ -636,9 +637,11 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                     <MemePicker
                       keyword=""
                       onPick={(url) => {
-                        // 表情包以 [img]url[/img] 插入：BBCode 模式渲染为 <img>（自动 no-referrer 防盗链）；
-                        // 纯文本模式保留原样
+                        // 表情包以 [img]url[/img] 插入，并切到 BBCode 模式：
+                        // 该标签只有 type='bbcode' 时前端才会渲染成 <img>（no-referrer 防盗链），
+                        // 留在纯文本模式会把标签原样显示成字面量。
                         insertEmoji(`[img]${url}[/img] `);
+                        setMode('bbcode');
                         setShowMeme(false);
                       }}
                       onClose={() => setShowMeme(false)}

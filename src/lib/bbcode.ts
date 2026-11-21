@@ -121,3 +121,33 @@ export function renderBBCode(input: string): string {
   html = html.replace(/\n/g, '<br/>');
   return html;
 }
+
+/**
+ * 检测文本是否包含「成对的」BBCode 标签（开标签 + 闭标签）。
+ *
+ * 用途：发送时自动判定消息类型——即使用户停在「纯文本」模式，
+ *      只要内容里真的写了 BBCode（如 [b]粗[/b]、[img]url[/img]），
+ *      就以 type='bbcode' 发送，避免前端按纯文本渲染成字面量。
+ *
+ * 只认「成对闭合」的标签，孤立的 `[b]`（未闭合）不算，避免误判。
+ */
+const BBCODE_PAIRED_TAGS = 'b|i|u|s|center|quote|code|list|url|img|color|size';
+
+const BBCODE_PAIR_RE = new RegExp(
+  `\\[(?:${BBCODE_PAIRED_TAGS})(?:=[^\\]]*)?\\][\\s\\S]*?\\[\\/(?:${BBCODE_PAIRED_TAGS})\\]`,
+  'i',
+);
+
+/** 文本是否含成对 BBCode 标签（用于发送时自动升级 type='bbcode'） */
+export function hasBbcodeMarkup(input: string): boolean {
+  if (!input) return false;
+  return BBCODE_PAIR_RE.test(input);
+}
+
+/**
+ * 决定消息最终 type：显式 bbcode 模式，或内容含成对 BBCode 标签时，都按 bbcode 发送。
+ * 集中在此，房间/群聊/私聊三处输入共用同一判定，避免各处逻辑漂移。
+ */
+export function resolveMessageType(content: string, mode: 'text' | 'bbcode'): 'text' | 'bbcode' {
+  return mode === 'bbcode' || hasBbcodeMarkup(content) ? 'bbcode' : 'text';
+}

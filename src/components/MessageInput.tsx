@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Send, Code2, Type, Loader2, Smile, X, Reply as ReplyIcon, Dices, Images } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import { MemePicker } from './MemePicker';
+import { resolveMessageType } from '../lib/bbcode';
 import type { MessageReply } from '../types';
 
 interface MessageInputProps {
@@ -51,8 +52,12 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || disabled) return;
+    // 消息类型判定：BBCode 模式，或内容里含成对 BBCode 标签（如表情包插入的 [img]url[/img]、
+    // 用户在纯文本模式下随手写的 [b]粗[/b]）时，都以 type='bbcode' 发送，
+    // 否则前端会按纯文本把标签原样显示出来（表现为「BBCode 无法被解析」）。
+    const sendType = resolveMessageType(trimmed, mode);
     // onSend 返回 Promise 时：成功才清空输入，失败保留内容；同步返回时行为不变
-    const p = onSend(trimmed, mode);
+    const p = onSend(trimmed, sendType);
     if (p && typeof p.then === 'function') {
       try {
         await p;
@@ -136,9 +141,11 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
             <MemePicker
               keyword=""
               onPick={(url) => {
-                // 表情包以 [img]url[/img] 插入：BBCode 模式渲染为 <img>（自动加 no-referrer 防盗链）；
-                // 纯文本模式保留原样（后端存储 type=text，展示时不渲染 BBCode）
+                // 表情包以 [img]url[/img] 插入，并切到 BBCode 模式：
+                // 该标签只有 type='bbcode' 时前端才会渲染成 <img>（自动 no-referrer 防盗链），
+                // 留在纯文本模式会把标签原样显示成字面量。
                 insertEmoji(`[img]${url}[/img] `);
+                setMode('bbcode');
                 setShowMeme(false);
               }}
               onClose={() => setShowMeme(false)}
