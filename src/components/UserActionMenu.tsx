@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserPlus, UserMinus, AtSign, MessageSquare, X, User, Ban } from 'lucide-react';
+import { UserPlus, UserMinus, AtSign, MessageSquare, X, User, Ban, Loader2 } from 'lucide-react';
 import type { FollowStatus } from '../types';
-import { followApi } from '../lib/api';
+import { followApi, socialApi } from '../lib/api';
 import { Avatar } from './Avatar';
 import { useApp } from '../lib/AppContext';
 
@@ -20,8 +20,10 @@ interface UserActionMenuProps {
   onMessage?: (userId: number) => void;
   onFollowChange?: (followed: boolean, mutual: boolean) => void;
   onViewProfile?: (username: string) => void;
-  /** 拉黑该用户 */
+  /** 拉黑该用户（可选；传则显示拉黑/取消拉黑按钮） */
   onBlock?: (userId: number, username: string) => void;
+  /** 拉黑状态变化后通知父级（isNowBlocked）；可选，不传则仅菜单内更新显示 */
+  onBlockedChange?: (isNowBlocked: boolean) => void;
 }
 
 export function UserActionMenu({
@@ -35,10 +37,13 @@ export function UserActionMenu({
   onFollowChange,
   onViewProfile,
   onBlock,
+  onBlockedChange,
 }: UserActionMenuProps) {
   const { addToast } = useApp();
   const [status, setStatus] = useState<FollowStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 不对自己显示菜单
@@ -60,6 +65,47 @@ export function UserActionMenu({
       cancelled = true;
     };
   }, [open, user.id, isSelf]);
+
+  // 拉取拉黑状态：查我的拉黑列表是否含该用户，决定按钮显示「拉黑」还是「取消拉黑」
+  useEffect(() => {
+    if (!open || isSelf) return;
+    let cancelled = false;
+    socialApi
+      .blocks()
+      .then((list) => {
+        if (!cancelled) setIsBlocked(list.some((b) => b.user_id === user.id));
+      })
+      .catch(() => {
+        // 静默
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, user.id, isSelf]);
+
+  // 拉黑 / 取消拉黑：菜单内自洽（按当前 isBlocked 调 block/unblock），成功后
+  // 通过 onBlockedChange 通知父级刷新（不再复用 onBlock，避免父级无条件再 block 一次）。
+  const handleBlockToggle = async () => {
+    if (blockBusy) return;
+    setBlockBusy(true);
+    try {
+      if (isBlocked) {
+        await socialApi.unblock(user.id);
+        setIsBlocked(false);
+        addToast(`已取消拉黑 ${user.username}`, 'success');
+        onBlockedChange?.(false);
+      } else {
+        await socialApi.block(user.id);
+        setIsBlocked(true);
+        addToast(`已拉黑 ${user.username}`, 'success');
+        onBlockedChange?.(true);
+      }
+    } catch {
+      addToast(isBlocked ? '取消拉黑失败' : '拉黑失败', 'error');
+    } finally {
+      setBlockBusy(false);
+    }
+  };
 
   // 点击外部关闭
   useEffect(() => {
@@ -259,14 +305,24 @@ export function UserActionMenu({
 
       {onBlock && user.id !== currentUserId && (
         <button
-          onClick={() => { onBlock?.(user.id, user.username); onClose(); }}
+          onClick={() => { void handleBlockToggle(); onClose(); }}
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
           style={{ color: 'var(--color-error)' }}
           onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          <Ban size={15} />
-          <span>拉黑该用户</span>
+          {isBlocked ? (
+            <>
+              <Ban size={15} style={{ color: 'var(--color-success)' }} />
+              <span style={{ color: 'var(--color-success)' }}>取消拉黑</span>
+            </>
+          ) : (
+            <>
+              <Ban size={15} />
+              <span>拉黑该用户</span>
+            </>
+          )}
+          {blockBusy && <Loader2 size={13} className="animate-spin ml-auto" style={{ color: 'var(--color-text-muted)' }} />}
         </button>
       )}
     </div>
