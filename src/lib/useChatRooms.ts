@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Room, ChatMessage, RoomMember } from '../types';
 import { roomApi, messageApi, socialApi } from '../lib/api';
 import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
+import { playMessageSound } from './sound';
 
 const PAGE_SIZE = 50;
 
@@ -152,6 +153,8 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   };
   onMsgRef.current = (list: ChatMessage[]) => {
     if (list.length === 0) return;
+    // 收到他人消息时播放提示音（自己发的已在 handleSend 乐观插入，不重复响）
+    if (list.some((m) => !m.is_self)) playMessageSound();
     setMessages((prev) => {
       const existingIds = new Set(prev.map((m) => m.id));
       const fresh = list.filter((m) => !existingIds.has(m.id));

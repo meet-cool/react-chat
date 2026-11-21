@@ -6,6 +6,7 @@ import { socialApi, type BlockItem } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import { userApi, systemApi } from '../lib/api';
 import { getApiBaseUrl, getToken, clearToken, setApiBaseUrl } from '../lib/api';
+import { isSoundEnabled, setSoundEnabled } from '../lib/sound';
 import { Avatar } from './Avatar';
 import type { ThemeName, UserInfo, SystemInfo } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -182,10 +183,10 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
   const setTrans = (on: boolean) => { persistTrans(on); setTransState(on); };
   const setColorBg = (on: boolean) => { persistColorBg(on); setColorBgState(on); };
 
-  // 消息提示音（默认关）
-  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('arcle_sound') === '1');
+  // 消息提示音（默认开，与 lib/sound.ts 的 isSoundEnabled 口径一致：仅显式 '0' 才静音）
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const toggleSound = (on: boolean) => {
-    localStorage.setItem('arcle_sound', on ? '1' : '0');
+    setSoundEnabled(on);
     setSoundOn(on);
     if (on) { try { new Audio('/sound/typing.mp3').play().catch(() => {}); } catch { /* ignore */ } }
   };
@@ -333,8 +334,8 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                 {/* 黑名单面板 */}
                 {blockPanel && (
                   <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setBlockPanel(false)}>
-                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12, maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
-                      <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-divider)' }}>
+                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+                      <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--color-divider)' }}>
                         <span className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>黑名单管理</span>
                         <button onClick={() => setBlockPanel(false)} className="text-xs" style={{ color: 'var(--color-text-muted)' }}>关闭</button>
                       </div>
@@ -359,7 +360,7 @@ export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsMod
                 {/* 注销确认面板 */}
                 {deactivateStep && (
                   <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={() => setDeactivateStep(false)}>
-                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-sm flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0 }} onClick={(e) => e.stopPropagation()}>
                       <div className="px-5 py-4">
                         <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-error)' }}>⚠️ 确认注销账号</p>
                         <p className="text-xs leading-5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>

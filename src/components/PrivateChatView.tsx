@@ -19,6 +19,7 @@ import {
 import type { Conversation, PrivateMessage, MessageReaction } from '../types';
 import { conversationApi } from '../lib/api';
 import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
+import { playMessageSound } from '../lib/sound';
 import { Avatar } from './Avatar';
 import { useApp } from '../lib/AppContext';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
@@ -131,6 +132,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   };
   onMsgRef.current = (list) => {
     if (list.length === 0) return;
+    // 收到对方消息时播放提示音（自己发的由 handleSend 处理，不重复响）
+    if (list.some((m) => m.sender_id !== currentUserId)) playMessageSound();
     setMessages((prev) => {
       const existingIds = new Set(prev.map((m) => m.id));
       const fresh = list.filter((m) => !existingIds.has(m.id));
@@ -744,7 +747,7 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
           </div>
         )}
         {msg.is_recalled ? (
-          <div className="px-3 py-1.5 text-xs" style={{ background: 'var(--color-card-alt)', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border-light)', borderRadius: 8, fontStyle: 'italic' }}>
+          <div className="px-3 py-1.5 text-xs" style={{ background: 'var(--color-card-alt)', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border-light)', borderRadius: 3, fontStyle: 'italic' }}>
             {msg.is_self ? '你' : msg.username}撤回了一条消息
           </div>
         ) : msg.type === 'pat' ? (

@@ -3,6 +3,7 @@ import { UsersRound, LogOut, Megaphone, MicOff, Settings2, ChevronLeft, Loader2 
 import type { GroupInfo, ChatMessage, GroupMember } from '../types';
 import { groupApi } from '../lib/api';
 import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
+import { playMessageSound } from '../lib/sound';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { HashAvatar } from './HashAvatar';
@@ -100,6 +101,8 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   onMsgRef.current = ({ messages: incoming }) => {
     if (incoming.length === 0) return;
     lastIdRef.current = incoming[incoming.length - 1].id;
+    // 收到他人群消息时播放提示音（自己刚发的已在 handleSend 插入，不重复响）
+    if (incoming.some((m) => m.user_id !== currentUserId)) playMessageSound();
     setMessages((prev) => {
       const known = new Set(prev.map((m) => m.id));
       const merged = [...prev, ...incoming.filter((m) => !known.has(m.id))];
