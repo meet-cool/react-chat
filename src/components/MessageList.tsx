@@ -40,14 +40,42 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
   const bottomRef = useRef<HTMLDivElement>(null);
   // 是否处于距底部 <160px 的近底状态（决定新消息是否自动滚底）
   const nearBottomRef = useRef(true);
+  // 是否完成过「首次置底」。首次进入聊天室时列表高度尚未定型（消息气泡 + 图片后加载），
+  // 若用 smooth 滚动，动画会被后续布局变化打断而停在中途 → 表现为「刚进入不在最底端」。
+  // 首次加载改用 auto（瞬时置底），并挂 MutationObserver 在内容变高（图片加载完成）时重新贴底；
+  // 一旦用户手动滚动离开底部，observer 与自动滚底一并停用，不再打断翻阅。
+  const didInitialScrollRef = useRef(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [menu, setMenu] = useState<MenuState>({ open: false, anchor: null, user: { id: 0, username: '' } });
   const [actionMenu, setActionMenu] = useState<ActionMenuState>({ open: false, pos: null, msg: null });
 
   // 仅当用户停留在近底位置时才自动滚底，避免打断向上翻阅
   useEffect(() => {
-    if (bottomRef.current && nearBottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (bottomRef.current && nearBottomRef.current) {
+      // 首次加载：瞬时置底（不带动画，避免被打断）
+      const behavior: ScrollBehavior = didInitialScrollRef.current ? 'smooth' : 'auto';
+      bottomRef.current.scrollIntoView({ behavior });
+      didInitialScrollRef.current = true;
+    }
   }, [messages.length]);
+
+  // 首次进入时：内容高度变化（图片后加载、消息渲染完成）且用户仍近底 → 保持贴底。
+  // 用户一旦上翻（nearBottomRef 为 false），observer 不再触发滚动。
+  useEffect(() => {
+    if (didInitialScrollRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const reposition = () => {
+      if (nearBottomRef.current) {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+      } else {
+        observer.disconnect();
+      }
+    };
+    const observer = new MutationObserver(reposition);
+    observer.observe(el, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   const handleScroll = () => {
     const el = containerRef.current;

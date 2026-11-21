@@ -224,11 +224,26 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   }, [loadConversations]);
 
   // 自动滚动：仅当用户停留在近底位置时才滚底，避免打断向上翻阅
+  // 首次加载用 auto（瞬时）：smooth 动画会被后加载的图片/布局变化打断，停在列表中间
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
     if (bottomRef.current && nearBottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      const behavior: ScrollBehavior = didInitialScrollRef.current ? 'smooth' : 'auto';
+      bottomRef.current.scrollIntoView({ behavior });
+      didInitialScrollRef.current = true;
     }
   }, [messages.length]);
+
+  // 富文本气泡内容后加载（表情包 <img> 懒加载撑高）导致列表变高时：
+  // 若用户仍在近底，重新贴底；否则不动（不打断翻阅）。
+  const handleBubbleGrew = useCallback((msgId: number) => {
+    void msgId;
+    if (nearBottomRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, []);
+  const handleBubbleGrewRef = useRef(handleBubbleGrew);
+  handleBubbleGrewRef.current = handleBubbleGrew;
 
   const handleMessagesScroll = () => {
     const el = scrollContainerRef.current;
@@ -581,6 +596,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                       currentUserId={currentUserId}
                       onActionTrigger={(x, y) => setActionMenu({ open: true, pos: { x, y }, msg: m })}
                       onReact={(emoji) => handleReact(m.id, emoji)}
+                      onListGrew={handleBubbleGrewRef.current}
                     />
                   );
                 })
@@ -714,12 +730,13 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   );
 }
 
-function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReact }: {
+function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReact, onListGrew }: {
   msg: PrivateMessage;
   showAvatar: boolean;
   currentUserId: number;
   onActionTrigger: (x: number, y: number) => void;
   onReact: (emoji: string) => void;
+  onListGrew?: (msgId: number) => void;
 }) {
   // 富文本消息：BBCode 渲染（旧 markdown 类型兼容展示）
   const isRich = msg.type === 'bbcode' || msg.type === 'markdown';
@@ -761,13 +778,14 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
             <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>点</span>
           </div>
         ) : (
-          <div className="px-3 py-2 text-sm" style={msg.is_self ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}>
-            {isRich ? (
-              <div className="bbcode-body break-words" dangerouslySetInnerHTML={{ __html: richHtml }} />
-            ) : (
-              <span className="break-words whitespace-pre-wrap">{msg.content}</span>
-            )}
-          </div>
+          <RichBubble
+            isSelf={msg.is_self}
+            isRich={isRich}
+            richHtml={richHtml}
+            text={msg.content}
+            msgId={msg.id}
+            onGrew={onListGrew}
+          />
         )}
         {msg.reactions && msg.reactions.length > 0 && (
           <div className={`flex flex-wrap gap-1 mt-1 ${msg.is_self ? 'justify-end' : 'justify-start'}`}>
@@ -777,6 +795,53 @@ function PrivateBubble({ msg, showAvatar, currentUserId, onActionTrigger, onReac
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * 富文本/普通消息气泡内容。
+ * 首次渲染后若内容高度增大（BBCode 里的 <img> 表情包是懒加载，图片到达才撑高），
+ * 通过 onGrew(msgId) 上抛，父级在「仍在近底」时重新贴底，
+ * 解决「刚进入私聊停在列表中间」的问题。
+ */
+function RichBubble({ isSelf, isRich, richHtml, text, msgId, onGrew }: {
+  isSelf: boolean;
+  isRich: boolean;
+  richHtml: string;
+  text: string;
+  msgId: number;
+  onGrew?: (msgId: number) => void;
+}) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const heightRef = useRef(0);
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const growCb = onGrew;
+    if (!growCb) return;
+    const measure = () => {
+      const h = el.offsetHeight;
+      if (h > heightRef.current) {
+        heightRef.current = h;
+        growCb(msgId);
+      }
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    // onGrew 每次渲染都是新闭包（父级经 ref 间接调用），只订阅一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div
+      className="px-3 py-2 text-sm"
+      style={isSelf ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: 'var(--color-card-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)' }}
+    >
+      {isRich ? (
+        <div ref={innerRef} className="bbcode-body break-words" dangerouslySetInnerHTML={{ __html: richHtml }} />
+      ) : (
+        <span className="break-words whitespace-pre-wrap">{text}</span>
+      )}
     </div>
   );
 }
