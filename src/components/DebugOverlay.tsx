@@ -52,8 +52,12 @@ export function DebugOverlay() {
   const { debugMode, debugInfo } = useDebug();
   const [elements, setElements] = useState<ElementInfo[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [positions, setPositions] = useState<{ top: number; left: number; w: number; h: number }[]>([]);
   const countersRef = useRef<Map<HTMLElement, number>>(new Map());
   const location = useLocation();
+  // 用 ref 持有最新 elements，避免 effect 因 elements 变化而反复重建（编号漂移根因）
+  const elementsRef = useRef<ElementInfo[]>([]);
+  elementsRef.current = elements;
 
   // 查找所有可交互元素
   const findInteractiveElements = (): HTMLElement[] => {
@@ -71,6 +75,64 @@ export function DebugOverlay() {
     return Array.from(document.querySelectorAll(selectors.join(', '))) as HTMLElement[];
   };
 
+  // 统一位置刷新：单一 rAF 循环批量计算所有 badge 的视口坐标。
+  // 监听 window scroll（capture，catch 内部滚动容器）+ resize + mousemove，
+  // 任何滚动/缩放/布局变化下一帧即同步，badge 不再漂移。
+  useEffect(() => {
+    if (!debugMode) return;
+    let rafId = 0;
+    const refresh = () => {
+      const els = elementsRef.current;
+      if (els.length === 0) {
+        setPositions([]);
+        return;
+      }
+      const next = els.map(({ element }) => {
+        const r = element.getBoundingClientRect();
+        // 视口外（被滚动隐藏）的元素不显示 badge，避免叠在 top:0
+        const inViewport =
+          r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
+        return inViewport
+          ? { top: r.top, left: r.left, w: r.width, h: r.height }
+          : { top: 0, left: 0, w: 0, h: 0 };
+      });
+      setPositions((prev) => {
+        // 快速比较，避免无变化时触发重渲染
+        if (prev.length === next.length) {
+          let same = true;
+          for (let i = 0; i < next.length; i++) {
+            const a = prev[i];
+            const b = next[i];
+            if (a.top !== b.top || a.left !== b.left || a.w !== b.w || a.h !== b.h) { same = false; break; }
+          }
+          if (same) return prev;
+        }
+        return next;
+      });
+    };
+    const loop = () => {
+      rafId = 0;
+      refresh();
+    };
+    const schedule = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(loop);
+    };
+    // 触发条件：window 滚动（capture 捕获到内部 div 滚动冒泡不到 window，故单独监听 document scroll）
+    window.addEventListener('scroll', schedule, true);
+    document.addEventListener('scroll', schedule, true);
+    window.addEventListener('resize', schedule);
+    // 首帧定位
+    schedule();
+    return () => {
+      window.removeEventListener('scroll', schedule, true);
+      document.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('resize', schedule);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [debugMode, elements]);
+
+  // DOM 结构变化时重扫元素（仅 debugMode/路由变化时重建，不依赖 elements/hoveredIndex）
   useEffect(() => {
     if (!debugMode) {
       setElements([]);
@@ -79,17 +141,17 @@ export function DebugOverlay() {
     }
 
     const updateElements = () => {
-      const elements = findInteractiveElements();
+      const found = findInteractiveElements();
       const pageName = getPageName(location.pathname);
-      const info: ElementInfo[] = elements.map((el, index) => ({
+      const info: ElementInfo[] = found.map((el, index) => ({
         element: el,
         index,
         path: buildPath(el),
         pageName,
       }));
+      elementsRef.current = info;
       setElements(info);
-
-      // 更新计数器
+      countersRef.current.clear();
       info.forEach(({ element, index }) => {
         countersRef.current.set(element, index + 1);
       });
@@ -97,30 +159,33 @@ export function DebugOverlay() {
 
     updateElements();
 
-    // 监听 DOM 变化
+    // 监听 DOM 结构变化（不含 attributes，降低重扫频率）
     const observer = new MutationObserver(() => {
       updateElements();
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     // 鼠标命中检测：badge 本体 pointer-events:none（不挡按钮），
-    // 故高亮改由顶层 mousemove 命中谁的可交互元素驱动，命中谁就点亮谁的编号。
+    // 故高亮改由顶层 mousemove 命中谁的可交互元素驱动。用 ref 读最新 elements。
     const INTERACTIVE = 'button, a[href], input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"])';
-    let rafId = 0;
+    let mouseRaf = 0;
     const handleMouseMove = (e: MouseEvent) => {
-      if (rafId) return; // 节流：一帧最多算一次
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
+      if (mouseRaf) return;
+      mouseRaf = requestAnimationFrame(() => {
+        mouseRaf = 0;
         const t = e.target as HTMLElement;
-        // 调试工具自身（悬浮按钮）不算页面元素
         if (t.closest?.('[data-debug-widget]')) {
-          if (hoveredIndex !== null) setHoveredIndex(null);
+          setHoveredIndex((cur) => (cur === null ? cur : null));
           return;
         }
         const interactive = t.closest(INTERACTIVE) as HTMLElement | null;
-        const idx = interactive ? elements.findIndex((el) => el.element === interactive) : -1;
-        if (idx !== -1 && idx !== hoveredIndex) setHoveredIndex(idx);
-        else if (idx === -1 && hoveredIndex !== null) setHoveredIndex(null);
+        const idx = interactive
+          ? elementsRef.current.findIndex((el) => el.element === interactive)
+          : -1;
+        setHoveredIndex((cur) => {
+          if (idx === -1) return cur === null ? cur : null;
+          return cur === idx ? cur : idx;
+        });
       });
     };
     document.addEventListener('mousemove', handleMouseMove);
@@ -128,9 +193,9 @@ export function DebugOverlay() {
     return () => {
       observer.disconnect();
       document.removeEventListener('mousemove', handleMouseMove);
-      if (rafId) cancelAnimationFrame(rafId);
+      if (mouseRaf) cancelAnimationFrame(mouseRaf);
     };
-  }, [debugMode, location.pathname, elements, hoveredIndex]);
+  }, [debugMode, location.pathname]);
 
   return (
     <>
@@ -148,6 +213,7 @@ export function DebugOverlay() {
             element={element}
             number={index + 1}
             isHovered={hoveredIndex === index}
+            position={positions[index] || { top: 0, left: 0, w: 0, h: 0 }}
           />
         ))}
       </div>
@@ -200,44 +266,19 @@ function DebugBadge({
   element,
   number,
   isHovered,
+  position,
 }: {
   element: HTMLElement;
   number: number;
   isHovered: boolean;
+  /** 由 DebugOverlay 顶层统一计算的视口坐标（单一 rAF 批量刷新，含内部滚动容器） */
+  position: { top: number; left: number; w: number; h: number };
 }) {
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-
-  // 用 ResizeObserver 监听元素自身尺寸变化（布局变化时自动跟随，避免标签漂移）
-  useEffect(() => {
-    const updatePosition = () => {
-      const rect = element.getBoundingClientRect();
-      setPosition({
-        top: rect.top,
-        left: rect.left,
-      });
-    };
-
-    updatePosition();
-
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    // 布局/尺寸变化时重新定位；无 ResizeObserver 的浏览器直接跳过
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(updatePosition);
-      ro.observe(element);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-      if (ro) ro.disconnect();
-    };
-  }, [element]);
-
   // 是否高亮（由 DebugOverlay 顶层的鼠标命中检测驱动，badge 本体 pointer-events:none）
   const hovered = isHovered;
+
+  // 元素不在视口内（w/h 为 0）→ 不渲染，避免 badge 叠在左上角
+  if (position.w === 0 && position.h === 0) return null;
 
   return (
     <div
@@ -246,8 +287,8 @@ function DebugBadge({
       style={{
         top: position.top,
         left: position.left,
-        width: element.offsetWidth || 40,
-        height: element.offsetHeight || 24,
+        width: position.w,
+        height: position.h,
         // 完全透明：调试层不阻挡任何真实交互（按钮可正常点击/输入）。
         // hover 高亮由 DebugOverlay 顶层的鼠标命中检测驱动 isHovered。
         pointerEvents: 'none',
