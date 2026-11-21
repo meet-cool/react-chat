@@ -92,6 +92,10 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   // 消息加载竞态守卫
   const loadMessagesRequestIdRef = useRef(0);
   const activeRoomRef = useRef<Room | null>(null);
+  // 轮询门闩：历史消息加载完成前不放行轮询（避免把历史当新消息响铃）
+  const pollReadyRef = useRef(false);
+  // 进入房间时的消息基线：只播 id 大于基线的他人消息
+  const baselineIdRef = useRef(0);
   useEffect(() => {
     activeRoomRef.current = activeRoom;
   }, [activeRoom]);
@@ -123,17 +127,23 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     const isStale = () =>
       requestId !== loadMessagesRequestIdRef.current || roomId !== activeRoomRef.current?.id;
     setMessagesLoading(true);
+    // 历史加载完成前轮询不拉取/不响铃（避免把历史消息当新消息播放提示音）
+    pollReadyRef.current = false;
     try {
       const list = await messageApi.list(roomId, { limit: PAGE_SIZE });
       if (isStale()) return;
       setMessages(list);
       lastMessageIdRef.current = list.length > 0 ? list[list.length - 1].id : 0;
+      // 进入房间时的基线：只有 id 大于它的他人消息才算「新」并响铃
+      baselineIdRef.current = lastMessageIdRef.current;
       setHasMore(list.length >= PAGE_SIZE);
+      pollReadyRef.current = true; // 历史就位，放行轮询
     } catch (err: unknown) {
       if (isStale()) return;
       const message = err instanceof Error ? err.message : '加载消息失败';
       const isAuth = message.includes('未登录') || message.includes('登录已过期');
       optsRef.current.onError(message, isAuth);
+      pollReadyRef.current = true; // 加载失败也放行，避免永久卡住
     } finally {
       if (!isStale()) {
         setMessagesLoading(false);
@@ -149,12 +159,12 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   pollFnRef.current = async () => {
     const room = activeRoomRef.current;
     if (!room) return [];
+    // 历史未加载完成前不拉取：避免用旧 lastMessageIdRef 把历史消息当新消息返回
+    if (!pollReadyRef.current) return [];
     return messageApi.list(room.id, { after_id: lastMessageIdRef.current });
   };
   onMsgRef.current = (list: ChatMessage[]) => {
     if (list.length === 0) return;
-    // 收到他人消息时播放提示音（自己发的已在 handleSend 乐观插入，不重复响）
-    if (list.some((m) => !m.is_self)) playMessageSound();
     setMessages((prev) => {
       const existingIds = new Set(prev.map((m) => m.id));
       const fresh = list.filter((m) => !existingIds.has(m.id));
@@ -163,6 +173,15 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
       }
       return fresh.length > 0 ? [...prev, ...fresh] : prev;
     });
+    // 提示音：仅对「真正新于基线 且 他人发送」的消息响（进入时加载的历史不响；
+    // 自己发的乐观插入也不响）。基线在 loadMessages 完成时设定，自己发消息会推进 lastMessageId。
+    const hasGenuineNew = list.some((m) => !m.is_self && m.id > baselineIdRef.current);
+    if (hasGenuineNew) {
+      // 把基线推进到最新，后续长轮询只响更新的消息
+      const maxNew = list.reduce((mx, m) => Math.max(mx, m.id), baselineIdRef.current);
+      baselineIdRef.current = maxNew;
+      playMessageSound();
+    }
   };
   pollFailRef.current = (err: unknown) => {
     const message = err instanceof Error ? err.message : '';

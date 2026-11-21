@@ -60,6 +60,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const [searchError, setSearchError] = useState('');
 
   const lastMsgIdRef = useRef<number>(0);
+  // 进入会话的消息基线：只播 id 大于基线的对方消息（进入时拉取的历史不响铃）
+  const baselineMsgIdRef = useRef<number>(0);
   // 消息滚动容器与近底状态（距底 <160px 才自动滚底）
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
@@ -110,6 +112,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
       if (isStale()) return;
       setMessages(list);
       lastMsgIdRef.current = list.length > 0 ? list[list.length - 1].id : 0;
+      // 基线：进入会话时设定，只比它新的对方消息才响铃
+      baselineMsgIdRef.current = lastMsgIdRef.current;
     } catch (err) {
       if (isStale()) return;
       addToast(err instanceof Error ? err.message : '加载私聊消息失败', 'error');
@@ -134,8 +138,6 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   };
   onMsgRef.current = (list) => {
     if (list.length === 0) return;
-    // 收到对方消息时播放提示音（自己发的由 handleSend 处理，不重复响）
-    if (list.some((m) => m.sender_id !== currentUserId)) playMessageSound();
     setMessages((prev) => {
       const existingIds = new Set(prev.map((m) => m.id));
       const fresh = list.filter((m) => !existingIds.has(m.id));
@@ -145,6 +147,13 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
       merged.sort((a, b) => a.id - b.id); // 按 id 升序，防止乱序追加
       return merged;
     });
+    // 提示音：仅「真正新于基线 且 对方发送」的消息才响（进入时拉取的历史不响；
+    // 自己发的不响）。响铃后把基线推进到最新，后续只响更新的消息。
+    const hasGenuineNew = list.some((m) => m.sender_id !== currentUserId && m.id > baselineMsgIdRef.current);
+    if (hasGenuineNew) {
+      baselineMsgIdRef.current = list.reduce((mx, m) => Math.max(mx, m.id), baselineMsgIdRef.current);
+      playMessageSound();
+    }
   };
 
   useLongPolling<PrivateMessage[]>({

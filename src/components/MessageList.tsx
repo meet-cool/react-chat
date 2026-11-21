@@ -70,23 +70,27 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
     }
   }, [messages.length]);
 
-  // 首次进入时：内容高度变化（图片后加载、消息渲染完成）且用户仍近底 → 保持贴底。
-  // 用户一旦上翻（nearBottomRef 为 false），observer 不再触发滚动。
+  // 首次进入 / 消息追加时：内容高度变化（表情包 <img> 后加载把气泡撑高、新消息渲染完成）
+  // 且用户仍近底 → 保持贴底。
+  // 图片加载完成是网络事件、不产生 DOM childList 变化，MutationObserver 捕获不到；
+  // 改用 ResizeObserver 监听容器内每个消息分组子节点高度（图片撑高气泡 → 分组高度变 → 触发贴底）。
+  // 随 messages.length 变化重新挂载（新追加的分组节点需 observe）。
+  // 用户一旦上翻（nearBottomRef 为 false），observer 只断开、不再打断翻阅。
   useEffect(() => {
-    if (didInitialScrollRef.current) return;
     const el = containerRef.current;
-    if (!el) return;
-    const reposition = () => {
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
       if (nearBottomRef.current) {
         bottomRef.current?.scrollIntoView({ behavior: 'auto' });
       } else {
         observer.disconnect();
       }
-    };
-    const observer = new MutationObserver(reposition);
-    observer.observe(el, { childList: true, subtree: true });
+    });
+    // 监听容器自身 + 所有直接子节点（消息分组）；新消息/图片撑高都会反映为高度变化
+    observer.observe(el);
+    Array.from(el.children).forEach((child) => observer.observe(child));
     return () => observer.disconnect();
-  }, []);
+  }, [messages.length]);
 
   const handleScroll = () => {
     const el = containerRef.current;

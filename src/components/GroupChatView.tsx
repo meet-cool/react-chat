@@ -37,6 +37,8 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [mutedTip, setMutedTip] = useState(false);
   const lastIdRef = useRef(0);
+  // 进入群的消息基线：只播 id 大于基线的他人消息（进入时拉取的历史不响铃）
+  const baselineIdRef = useRef(0);
   // @提及插入通道：由 MessageInput 注册实现（照搬 ChatPage 的 useRef 持有模式）
   const insertTextRef = useRef<((text: string) => void) | null>(null);
 
@@ -50,6 +52,7 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
       const list = await groupApi.messages(gid);
       setMessages(list);
       lastIdRef.current = list.length > 0 ? list[list.length - 1].id : 0;
+      baselineIdRef.current = lastIdRef.current;
       setHasMore(list.length >= 50);
     } catch (e: any) {
       onToast(e.message || '消息加载失败');
@@ -105,8 +108,13 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   onMsgRef.current = ({ messages: incoming }) => {
     if (incoming.length === 0) return;
     lastIdRef.current = incoming[incoming.length - 1].id;
-    // 收到他人群消息时播放提示音（自己刚发的已在 handleSend 插入，不重复响）
-    if (incoming.some((m) => m.user_id !== currentUserId)) playMessageSound();
+    // 提示音：仅「真正新于基线 且 他人发送」的消息响（进入群时拉取的历史不响；
+    // 自己刚发的不响）。响铃后推进基线。
+    const hasGenuineNew = incoming.some((m) => m.user_id !== currentUserId && m.id > baselineIdRef.current);
+    if (hasGenuineNew) {
+      baselineIdRef.current = incoming.reduce((mx, m) => Math.max(mx, m.id), baselineIdRef.current);
+      playMessageSound();
+    }
     setMessages((prev) => {
       const known = new Set(prev.map((m) => m.id));
       const merged = [...prev, ...incoming.filter((m) => !known.has(m.id))];
