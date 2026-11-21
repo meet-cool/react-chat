@@ -601,7 +601,8 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
               <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>
               <button onClick={() => setShowQrSlug(null)} style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
-            <img src={`${getApiBaseUrl()}/chat/qrcode/confession/${encodeURIComponent(showQrSlug)}`} alt="QR" className="w-full" />
+            <img src={confessionApi.qrCode(showQrSlug)} alt="QR" className="w-full"
+                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
             <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看表白</p>
           </div>
         </div>

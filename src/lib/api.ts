@@ -399,7 +399,13 @@ export const confessionApi = {
     patch<null>('/chat/confessions/wall/move', data),
 
   // QR码
-  qrCode: (slug: string) => `${getApiBaseUrl()}/chat/qrcode/confession/${encodeURIComponent(slug)}`,
+  /** 分享二维码：同源相对路径（走 Vite 代理），并带上前端 origin（base_url）让后端
+   *  把二维码编码为「前端可访问的 SPA 域名 + /confessions/{slug}」，而非后端裸路径。 */
+  qrCode: (slug: string) => {
+    const base = typeof window !== 'undefined' ? window.location.origin : '';
+    const originParam = encodeURIComponent(base);
+    return `/chat/qrcode/confession/${encodeURIComponent(slug)}?base_url=${originParam}`;
+  },
 };
 
 // ============ 积分 / 签到 API ============
