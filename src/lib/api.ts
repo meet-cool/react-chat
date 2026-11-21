@@ -36,9 +36,14 @@ import type {
   MomentSaveResult,
 } from '../types';
 
-// 默认 API 基址：生产指向线上后端；本地开发可用 VITE_API_BASE_URL 覆盖
-// 或通过 Debug 页/设置页手动切换（localStorage 优先）
-const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.met.cc.cd';
+// 默认 API 基址：
+// - 开发环境（.env 中 VITE_API_BASE_URL 显式置空）→ 保留空串，请求走"同源相对路径"，
+//   由 Vite 代理转发到本地后端（任意 origin：localhost / 127.0.0.1 / 局域网 IP 均可用）；
+// - 生产构建（.env.production 提供 https://ke.l.cd 等）→ 使用构建期注入值；
+// - 仅当变量完全未定义时回退线上默认值。
+// 注意：必须用 ?? 而非 ||——空字符串是合法的"走同源代理"语义，
+// 用 || 会把空串吞掉回退到生产地址，导致局域网 IP 打开的页面请求打向 api.met.cc.cd 而 Failed to fetch。
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://api.met.cc.cd';
 const API_STORAGE_KEY = 'arcle_api_base';
 
 export function getApiBaseUrl(): string {

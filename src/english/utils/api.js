@@ -11,8 +11,12 @@ import axios from 'axios';
 /** 与主站 lib/api.ts 的 getApiBaseUrl() 等价（JS 版） */
 export function getApiBaseUrl() {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('arcle_api_base') : null;
-    // 默认生产 API：与主站 lib/api.ts 的 DEFAULT_API_BASE 保持一致
-    return stored || import.meta.env.VITE_API_BASE_URL || 'https://api.met.cc.cd';
+    // 默认 API：与主站 lib/api.ts 保持一致。
+    // 注意用 ?? 而非 ||：VITE_API_BASE_URL 在开发 .env 中显式置空（走 Vite 同源代理）时
+    // 必须保留空串语义，否则回退到生产地址会导致非 localhost origin 下请求 Failed to fetch。
+    const def = import.meta.env.VITE_API_BASE_URL ?? 'https://api.met.cc.cd';
+    // 开发环境 def 为 ''（空串=走同源代理），stored 为空时返回 '' 而非生产地址
+    return stored || def;
 }
 
 /** 主站接口实例（/chat/*，登录注册资料积分） */
