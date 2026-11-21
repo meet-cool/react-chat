@@ -44,6 +44,7 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { DebugPage } from './pages/DebugPage';
 import EnglishRoutes from './english/EnglishRoutes';
 import { MbtiPage } from './pages/MbtiPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -226,6 +227,12 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
           <Route
             path="/mbti"
             element={user ? <MbtiPage /> : <Navigate to="/" replace />}
+          />
+
+          {/* 综合反馈页（举报用户 / bug / 功能建议）- 需登录 */}
+          <Route
+            path="/feedback"
+            element={user ? <FeedbackPage onBack={() => navigate('/chat')} /> : <Navigate to="/login" replace />}
           />
 
           {/* AI 广场 */}

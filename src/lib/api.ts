@@ -893,3 +893,63 @@ export const socialApi = {
   /** 账号注销（不可逆） */
   deactivate: (password: string) => post<{ deactivated: boolean }>('/chat/auth/deactivate', { password }),
 };
+
+// ============================================================
+// 综合反馈 API（举报用户 / bug / 功能建议）
+// ============================================================
+
+/** 反馈类型 */
+export type FeedbackType = 'user_report' | 'bug' | 'feature';
+
+/** 聊天上下文条目（被举报消息前后各 5 条，前端截断 content 到 100 字） */
+export interface FeedbackEvidenceItem {
+  id: number;
+  username: string;
+  content: string;
+  create_time_fmt: string;
+  is_self: boolean;
+}
+
+/** 提交反馈入参 */
+export interface FeedbackSubmitPayload {
+  type: FeedbackType;
+  /** user_report 时必填 */
+  target_user_id?: number;
+  /** 被举报消息所在的会话类型 */
+  context_type?: '' | 'room' | 'private' | 'group';
+  /** 对应 room_id / conv_id / group_id */
+  context_id?: number;
+  /** 举报原因 / 建议标题（≤255） */
+  reason?: string;
+  /** 详细描述（≤2000） */
+  detail?: string;
+  /** 聊天上下文 JSON 数组字符串（前后各 5 条） */
+  evidence?: string;
+}
+
+/** 反馈记录（后端返回） */
+export interface FeedbackRecord {
+  id: number;
+  type: FeedbackType;
+  reporter_id: number;
+  target_user_id: number;
+  target_username: string;
+  context_type: string;
+  context_id: number;
+  reason: string;
+  detail: string;
+  evidence: FeedbackEvidenceItem[];
+  status: number;
+  handle_note: string;
+  create_time: number;
+}
+
+export const feedbackApi = {
+  /** 提交综合反馈（需登录） */
+  submit: (data: FeedbackSubmitPayload) =>
+    post<{ id: number }>('/chat/feedback', data),
+
+  /** 查询自己提交的反馈记录（需登录，按 id desc 最多 50 条） */
+  list: () =>
+    get<FeedbackRecord[]>('/chat/feedback'),
+};

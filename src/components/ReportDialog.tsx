@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Flag, X, Loader2 } from 'lucide-react';
+import { Flag, X, Loader2, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { type ThemeKey, THEMES } from '../lib/themes';
 
 interface ReportDialogProps {
@@ -8,6 +9,8 @@ interface ReportDialogProps {
   onConfirm: (reason: string) => void;
   submitting?: boolean;
   theme?: ThemeKey;
+  /** 跳转到综合反馈页时携带的上下文（被举报人、聊天上下文等），不传则跳空表单 */
+  feedbackJump?: { targetUser?: string; context?: unknown[] };
 }
 
 const REASONS = [
@@ -25,10 +28,12 @@ export function ReportDialog({
   onConfirm,
   submitting,
   theme = 'default',
+  feedbackJump,
 }: ReportDialogProps) {
   const [reason, setReason] = useState('');
   const [custom, setCustom] = useState('');
   const T = THEMES[theme];
+  const navigate = useNavigate();
 
   if (!open) return null;
 
@@ -145,6 +150,24 @@ export function ReportDialog({
         >
           <button className="btn btn-sm" onClick={onClose} style={{ background: 'transparent', border: 'none', color: T.textMuted }}>
             取消
+          </button>
+          <button
+            className="btn btn-sm"
+            style={{ background: 'transparent', border: `1px solid ${T.cardBorder}`, color: T.primary }}
+            onClick={() => {
+              const targetUser = feedbackJump?.targetUser;
+              const context = feedbackJump?.context;
+              navigate('/feedback', {
+                state: {
+                  type: 'user_report',
+                  targetUser,
+                  context,
+                },
+              });
+              onClose();
+            }}
+          >
+            <ExternalLink size={14} /> 跳转到综合反馈页
           </button>
           <button
             className="btn btn-sm btn-error"
