@@ -181,12 +181,6 @@ export function ConfessionDetail() {
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
   const canDelete = isOwner || isAdmin;
 
-  const THEMES_LIST: { key: ThemeKey; label: string }[] = [
-    { key: 'pink', label: '粉色' },
-    { key: 'ocean', label: '海洋' },
-    { key: 'default', label: '默认' },
-  ];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: T.cardBg }}>
@@ -229,23 +223,6 @@ export function ConfessionDetail() {
         <h1 className="text-base font-bold flex-1 min-w-0 truncate" style={{ color: T.text }}>
           表白详情
         </h1>
-        <select
-          value={theme}
-          onChange={(e) => setTheme(e.target.value as ThemeKey)}
-          className="text-xs px-1 py-0.5 shrink-0"
-          style={{
-            background: T.labelBg,
-            border: `1px solid ${T.cardBorder}`,
-            color: T.text,
-            borderRadius: '3px',
-            outline: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          {THEMES_LIST.map((t) => (
-            <option key={t.key} value={t.key}>{t.label}</option>
-          ))}
-        </select>
       </div>
 
       {/* 内容区 */}
