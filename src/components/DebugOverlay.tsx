@@ -75,16 +75,23 @@ export function DebugOverlay() {
     return Array.from(document.querySelectorAll(selectors.join(', '))) as HTMLElement[];
   };
 
-  // 统一位置刷新：单一 rAF 循环批量计算所有 badge 的视口坐标。
-  // 监听 window scroll（capture，catch 内部滚动容器）+ resize + mousemove，
-  // 任何滚动/缩放/布局变化下一帧即同步，badge 不再漂移。
+  // 统一位置刷新：常驻 rAF 循环 + 脏标记。
+  // 平时空转（零开销）；检测到 scroll/resize/DOM 结构变化/mousemove 时置脏，
+  // 下一帧才重算所有 badge 视口坐标 —— 弹窗打开/Tab 切换/滚动任何布局变化
+  // 都因触发 MutationObserver/scroll 而置脏，badge 立即贴合，不再漂移或停留旧位置。
   useEffect(() => {
-    if (!debugMode) return;
+    if (!debugMode) {
+      setPositions([]);
+      return;
+    }
     let rafId = 0;
-    const refresh = () => {
+    let running = true;
+    let dirty = true; // 首帧必算
+    const compute = () => {
+      dirty = false;
       const els = elementsRef.current;
       if (els.length === 0) {
-        setPositions([]);
+        setPositions((prev) => (prev.length === 0 ? prev : []));
         return;
       }
       const next = els.map(({ element }) => {
@@ -97,7 +104,6 @@ export function DebugOverlay() {
           : { top: 0, left: 0, w: 0, h: 0 };
       });
       setPositions((prev) => {
-        // 快速比较，避免无变化时触发重渲染
         if (prev.length === next.length) {
           let same = true;
           for (let i = 0; i < next.length; i++) {
@@ -110,27 +116,34 @@ export function DebugOverlay() {
         return next;
       });
     };
-    const loop = () => {
-      rafId = 0;
-      refresh();
+    const tick = () => {
+      if (!running) return;
+      rafId = requestAnimationFrame(tick);
+      if (dirty) compute();
     };
-    const schedule = () => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(loop);
-    };
-    // 触发条件：window 滚动（capture 捕获到内部 div 滚动冒泡不到 window，故单独监听 document scroll）
-    window.addEventListener('scroll', schedule, true);
-    document.addEventListener('scroll', schedule, true);
-    window.addEventListener('resize', schedule);
-    // 首帧定位
-    schedule();
+    rafId = requestAnimationFrame(tick);
+
+    // 置脏条件：任何可能引起布局变化的事件
+    const markDirty = () => { dirty = true; };
+    window.addEventListener('scroll', markDirty, true);
+    document.addEventListener('scroll', markDirty, true);
+    window.addEventListener('resize', markDirty);
+    window.addEventListener('mousemove', markDirty);
+    // 字体/图片加载引起的位移也会触发 resize 兜底；DOM 结构变化由下方
+    // 元素重扫 effect 的 MutationObserver 触发 setElements → 这里用独立 observer 置脏
+    const layoutObserver = new MutationObserver(markDirty);
+    layoutObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
+
     return () => {
-      window.removeEventListener('scroll', schedule, true);
-      document.removeEventListener('scroll', schedule, true);
-      window.removeEventListener('resize', schedule);
+      running = false;
       if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', markDirty, true);
+      document.removeEventListener('scroll', markDirty, true);
+      window.removeEventListener('resize', markDirty);
+      window.removeEventListener('mousemove', markDirty);
+      layoutObserver.disconnect();
     };
-  }, [debugMode, elements]);
+  }, [debugMode]);
 
   // DOM 结构变化时重扫元素（仅 debugMode/路由变化时重建，不依赖 elements/hoveredIndex）
   useEffect(() => {
