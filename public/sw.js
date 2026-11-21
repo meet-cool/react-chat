@@ -85,9 +85,12 @@ self.addEventListener('fetch', (event) => {
           caches.open(SHELL_CACHE).then((c) => c.put('/index.html', copy)).catch(() => undefined);
           return res;
         })
-        .catch(() =>
-          caches.match('/index.html').then((r) => r || caches.match('/'))
-        )
+        .catch(async () => {
+          // 离线回退：先查 shell 缓存；都没有则直连网络重试。
+          // 绝不返回 undefined——否则导航请求永不完成，页面挂起（ERR_RESULT_CODE_HUNG）。
+          const cached = (await caches.match('/index.html')) || (await caches.match('/'));
+          return cached || fetch(req);
+        })
     );
     return;
   }
