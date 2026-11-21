@@ -62,9 +62,45 @@ export function ChatSidebarNav({
   onOpenGuide,
   onOpenMbti,
 }: ChatSidebarNavProps) {
-  // 底部菜单栏（个人主页 / 设置 / 新手指导）
+  // 底部菜单栏（个人主页 / 设置 / 新手指导 + 屏幕放不下时收纳的「其他分类」）
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  // 按可用高度自动决定左侧直接显示几个分类（超出部分收进「菜单」下拉），
+  // 屏幕太矮时不再撑出/裁切。窗口 resize / 展开收起标签时重算。
+  const [visibleCount, setVisibleCount] = useState(CATEGORIES.length);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const calc = () => {
+      const host = nav.parentElement;
+      const totalH = host && host.clientHeight > 0 ? host.clientHeight : window.innerHeight;
+      // 采样实际尺寸（避免写死）：分类行高 / 收起行 / 菜单行
+      const sample = nav.querySelector<HTMLElement>('[data-cat-btn]');
+      const rowH = sample ? sample.offsetHeight : 40;
+      const gap = 8; // gap-2
+      const collapseH = nav.querySelector<HTMLElement>('[data-nav-collapse]')?.offsetHeight ?? 38;
+      const menuH = nav.querySelector<HTMLElement>('[data-nav-menu]')?.offsetHeight ?? 44;
+      const pad = 32; // py-4
+      // 可用高度：总高 − 上下 padding − 收起行 − 菜单行 − 间隔
+      const avail = totalH - pad - collapseH - menuH - gap * 2;
+      const n = Math.max(3, Math.min(CATEGORIES.length, Math.floor((avail + gap) / (rowH + gap))));
+      setVisibleCount(n);
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(nav);
+    if (nav.parentElement) ro.observe(nav.parentElement);
+    window.addEventListener('resize', calc);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', calc);
+    };
+  }, [showLabels]);
+
+  // 屏幕放不下、收进「菜单」下拉的分类
+  const overflowCats = CATEGORIES.slice(visibleCount);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -90,6 +126,7 @@ export function ChatSidebarNav({
 
   return (
     <div
+      ref={navRef}
       className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200"
       style={{
         borderColor: 'var(--color-divider)',
@@ -111,13 +148,14 @@ export function ChatSidebarNav({
         }}
       />
 
-      {/* 分类按钮 */}
-      {CATEGORIES.map((c) => {
+      {/* 分类按钮（按屏幕高度自动决定直接显示几个，放不下的收进「菜单」下拉） */}
+      {CATEGORIES.slice(0, visibleCount).map((c) => {
         const Icon = c.icon;
         const isActive = category === c.k;
         return (
           <button
             key={c.k}
+            data-cat-btn=""
             ref={(el) => {
               if (el) {
                 (categoryBtnRefs as React.RefObject<Map<string, HTMLButtonElement>>).current?.set(c.k, el);
@@ -155,6 +193,7 @@ export function ChatSidebarNav({
 
       {/* 切换标签显示 */}
       <button
+        data-nav-collapse=""
         onClick={onToggleLabels}
         className={`flex items-center gap-2 px-2 py-2 rounded-sm transition-all duration-150 w-full text-xs ${
           showLabels ? 'justify-start' : 'justify-center'
@@ -174,8 +213,8 @@ export function ChatSidebarNav({
       <div ref={menuRef} className="relative w-full flex justify-center">
         {menuOpen && (
           <div
-            className="fixed bottom-16 left-2 w-44 shadow-[var(--shadow-lg)] overflow-hidden"
-            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--app-radius)', zIndex: 200 }}
+            className="fixed bottom-16 left-2 w-44 shadow-[var(--shadow-lg)]"
+            style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--app-radius)', zIndex: 200, maxHeight: '60vh', overflowY: 'auto' }}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-divider)' }}>
               <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>菜单</span>
@@ -199,9 +238,48 @@ export function ChatSidebarNav({
                 </button>
               );
             })}
+            {/* 屏幕高度放不下、收进菜单的其它分类（随窗口高度自动增减） */}
+            {overflowCats.length > 0 && (
+              <>
+                <div
+                  className="px-3 pt-2 pb-1 text-[11px] font-medium"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  其它分类
+                </div>
+                {overflowCats.map((c) => {
+                  const Icon = c.icon;
+                  const isActive = category === c.k;
+                  return (
+                    <button
+                      key={c.k}
+                      ref={(el) => {
+                        if (el) {
+                          (categoryBtnRefs as React.RefObject<Map<string, HTMLButtonElement>>).current?.set(c.k, el);
+                        }
+                      }}
+                      onClick={() => { setMenuOpen(false); onCategoryClick(c.k); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors text-left"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: isActive ? 'var(--color-primary)' : 'var(--color-text)',
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-hover-bg)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Icon size={16} style={{ color: 'var(--color-primary)' }} />
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
         )}
         <button
+          data-nav-menu=""
           onClick={() => setMenuOpen((v) => !v)}
           className={`flex items-center gap-3 px-2 py-2.5 rounded-sm transition-all duration-150 w-full ${
             showLabels ? 'justify-start' : 'justify-center'
