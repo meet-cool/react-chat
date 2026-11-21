@@ -10,6 +10,12 @@ const htmlBypass = (req: { headers: { accept?: string } }) => {
   }
 };
 
+// 后端入口：当前用单实例 http://127.0.0.1:8000（_restart_backend.ps1 的 backend.pid 方式）。
+// 注意：必须用 127.0.0.1 而非 localhost——Windows 下 Node 把 localhost 解析为 IPv6 ::1，
+// 而 php -S 0.0.0.0:8000 只监听 IPv4，用 localhost 会 ECONNREFUSED（代理 500）。
+// Nginx :8080 多 worker 栈（start-nginx-stack.ps1）待 agent-3 收尾验证后再切。
+const backendTarget = 'http://127.0.0.1:8000';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -21,21 +27,29 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5174,
+    // 放行 Cloudflare 隧道域名（web.met.cc.cd → 本机 5174），否则 Vite 默认 403
+    allowedHosts: ['web.met.cc.cd'],
     proxy: {
       '/chat': {
-        target: 'http://localhost:8000',
+        target: backendTarget, // fallback: 'http://localhost:8000'（旧单实例 php -S）
         changeOrigin: true,
         bypass: htmlBypass,
       },
       // english 英语学习模块（ThinkPHP 多应用 english）
       '/english': {
-        target: 'http://localhost:8000',
+        target: backendTarget, // fallback: 'http://localhost:8000'
         changeOrigin: true,
         bypass: htmlBypass,
       },
       // moments 朋友圈模块（ThinkPHP 多应用 moments）
       '/moments': {
-        target: 'http://localhost:8000',
+        target: backendTarget, // fallback: 'http://localhost:8000'
+        changeOrigin: true,
+        bypass: htmlBypass,
+      },
+      // 表情包搜索（根路由 /meme/search，外部 xiaoapi 代理 + 60s 缓存）
+      '/meme': {
+        target: backendTarget,
         changeOrigin: true,
         bypass: htmlBypass,
       },

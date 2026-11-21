@@ -725,6 +725,33 @@ export const giftApi = {
 };
 
 // ============================================================
+// 表情包搜索 API（外部 xiaoapi 代理 + 后端 60s 缓存，免鉴权）
+// ============================================================
+export interface MemeItem {
+  url: string;
+  width: number | null;
+  height: number | null;
+  size: number | null;
+}
+
+export interface MemeSearchResult {
+  list: MemeItem[];
+  total: number;
+  page: number;
+  num: number;
+}
+
+export const memeApi = {
+  /** 搜索表情包（msg 1-50 字符；后端校验并降级，前端按 Promise 异常走空态） */
+  search: (msg: string, page = 1, num = 20) =>
+    get<MemeSearchResult>(
+      `/meme/search?msg=${encodeURIComponent(msg)}&page=${page}&num=${num}`,
+      { timeoutMs: 15000 },
+    ),
+};
+
+
+// ============================================================
 // 群聊 API（严格管理：审批入群 / 角色 / 禁言 / 转让 / 解散）
 // ============================================================
 import type { GroupInfo, GroupMember, GroupRequest } from '../types';

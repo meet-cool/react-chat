@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Code2,
   Type,
+  Images,
 } from 'lucide-react';
 import type { Conversation, PrivateMessage, MessageReaction } from '../types';
 import { conversationApi } from '../lib/api';
@@ -22,6 +23,7 @@ import { Avatar } from './Avatar';
 import { useApp } from '../lib/AppContext';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
 import { EmojiPicker } from './EmojiPicker';
+import { MemePicker } from './MemePicker';
 import { ForwardDialog } from './ForwardDialog';
 import { ReportDialog } from './ReportDialog';
 
@@ -70,6 +72,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   }, [activeConv]);
 
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showMeme, setShowMeme] = useState(false);
   const [replyTo, setReplyTo] = useState<PrivateMessage | null>(null);
   const [forwardMsg, setForwardMsg] = useState<PrivateMessage | null>(null);
   const [reportMsg, setReportMsg] = useState<PrivateMessage | null>(null);
@@ -611,12 +614,35 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                 <button onClick={() => setShowEmoji((s) => !s)} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="表情" type="button">
                   <Smile size={18} />
                 </button>
+                <button
+                  onClick={() => setShowMeme((s) => !s)}
+                  className="btn flex-shrink-0"
+                  style={{ minHeight: 44, minWidth: 44 }}
+                  title="表情包"
+                  type="button"
+                >
+                  <Images size={18} />
+                </button>
                 <button onClick={handleDice} disabled={sending} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="摇骰子" type="button">
                   <Dices size={18} />
                 </button>
                 {showEmoji && (
                   <div className="absolute z-50" style={{ bottom: 72, left: 12 }}>
                     <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />
+                  </div>
+                )}
+                {showMeme && (
+                  <div className="absolute z-50" style={{ bottom: 72, left: 60 }}>
+                    <MemePicker
+                      keyword=""
+                      onPick={(url) => {
+                        // 表情包以 [img]url[/img] 插入：BBCode 模式渲染为 <img>（自动 no-referrer 防盗链）；
+                        // 纯文本模式保留原样
+                        insertEmoji(`[img]${url}[/img] `);
+                        setShowMeme(false);
+                      }}
+                      onClose={() => setShowMeme(false)}
+                    />
                   </div>
                 )}
                 <textarea

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Code2, Type, Loader2, Smile, X, Reply as ReplyIcon, Dices } from 'lucide-react';
+import { Send, Code2, Type, Loader2, Smile, X, Reply as ReplyIcon, Dices, Images } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
+import { MemePicker } from './MemePicker';
 import type { MessageReply } from '../types';
 
 interface MessageInputProps {
@@ -18,6 +19,7 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
   const [content, setContent] = useState('');
   const [mode, setMode] = useState<'text' | 'bbcode'>('text');
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showMeme, setShowMeme] = useState(false);
   // 窄屏（手机/窄面板）下使用短占位符，避免长提示文字折行被裁切
   const [compact, setCompact] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
@@ -102,6 +104,16 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
         <button onClick={() => setShowEmoji((s) => !s)} className="btn flex-shrink-0" style={{ minHeight: 44, minWidth: 44 }} title="表情" type="button">
           <Smile size={18} />
         </button>
+        <button
+          onClick={() => { if (!disabled) setShowMeme((s) => !s); }}
+          className="btn flex-shrink-0"
+          style={{ minHeight: 44, minWidth: 44 }}
+          title="表情包"
+          type="button"
+          disabled={disabled}
+        >
+          <Images size={18} />
+        </button>
         {onDice && (
           <button
             onClick={() => { if (!disabled && !sending) onDice(); }}
@@ -117,6 +129,20 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
         {showEmoji && (
           <div className="absolute z-50" style={{ bottom: 72, left: 12 }}>
             <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />
+          </div>
+        )}
+        {showMeme && (
+          <div className="absolute z-50" style={{ bottom: 72, left: 60 }}>
+            <MemePicker
+              keyword=""
+              onPick={(url) => {
+                // 表情包以 [img]url[/img] 插入：BBCode 模式渲染为 <img>（自动加 no-referrer 防盗链）；
+                // 纯文本模式保留原样（后端存储 type=text，展示时不渲染 BBCode）
+                insertEmoji(`[img]${url}[/img] `);
+                setShowMeme(false);
+              }}
+              onClose={() => setShowMeme(false)}
+            />
           </div>
         )}
         <textarea
