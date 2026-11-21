@@ -477,12 +477,14 @@ function LayoutDebugTab({
           </div>
           <div className="p-3 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>
             <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>快捷键</div>
-            <div className="text-sm font-bold mt-1" style={{ color: 'var(--color-text)' }}>Shift+Click</div>
+            <div className="text-sm font-bold mt-1" style={{ color: 'var(--color-text)' }}>Shift+Click / Ctrl+Click</div>
           </div>
         </div>
         {debugMode && (
-          <p className="mt-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            开启后页面上每个按钮会显示编号，按住 Shift 点击可复制元素路径。
+          <p className="mt-3 text-xs leading-5" style={{ color: 'var(--color-text-muted)' }}>
+            开启后页面上每个按钮会显示编号：<br />
+            · 按住 <code className="px-1 py-0.5 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>Shift</code> 点击 → 复制该元素路径<br />
+            · 按住 <code className="px-1 py-0.5 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>Ctrl</code> 点击 → 复制整页布局（所有可交互元素）
           </p>
         )}
       </div>
@@ -534,8 +536,9 @@ function LayoutDebugTab({
         </h3>
         <div className="space-y-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
           <p>• 开启布局调试模式后，页面上每个按钮会显示黄色编号</p>
-          <p>• 按住 <code className="px-1 py-0.5 rounded" style={{ background: 'var(--color-input-bg)' }}>Shift</code> 并点击页面元素，路径自动复制到剪贴板</p>
-          <p>• 将路径提供给 AI，例如：</p>
+          <p>• 按住 <code className="px-1 py-0.5 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>Shift</code> 点击某元素 → 复制该元素路径</p>
+          <p>• 按住 <code className="px-1 py-0.5 rounded-sm" style={{ background: 'var(--color-input-bg)' }}>Ctrl</code> 点击 → 复制整页布局（全部可交互元素），适合整页交给 AI 分析</p>
+          <p>• 将复制内容提供给 AI，例如：</p>
           <div className="p-2 rounded-sm font-mono text-xs" style={{ background: 'var(--color-input-bg)', color: 'var(--color-text-muted)' }}>
             {`修改 #header > button.nav-btn 的样式`}
           </div>

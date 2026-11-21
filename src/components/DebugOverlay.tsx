@@ -238,7 +238,7 @@ export function DebugOverlay() {
 }
 
 /** 已复制提示条：key={timestamp} 随每次复制重新挂载，显示 2.5s 后淡出 0.3s 隐藏 */
-function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string; url?: string; timestamp: number } }) {
+function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string; url?: string; timestamp: number; layoutElements?: string[]; isLayoutSnapshot?: boolean } }) {
   const [fading, setFading] = useState(false);
   const [gone, setGone] = useState(false);
 
@@ -252,6 +252,8 @@ function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string;
   }, []);
 
   if (gone) return null;
+
+  const isSnapshot = !!debugInfo.isLayoutSnapshot;
 
   return (
     <div
@@ -267,7 +269,9 @@ function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string;
       }}
     >
       <span style={{ color: 'var(--color-success)' }}>✓</span>
-      <span style={{ color: 'var(--color-text)' }}>已复制路径</span>
+      <span style={{ color: 'var(--color-text)' }}>
+        {isSnapshot ? `已复制布局（${(debugInfo.layoutElements || []).length} 个元素）` : '已复制路径'}
+      </span>
       <span style={{ color: 'var(--color-text-muted)' }} className="max-w-[300px] truncate font-mono text-xs" title={debugInfo.url || ''}>
         {debugInfo.pageName} · {debugInfo.url || ''}
       </span>

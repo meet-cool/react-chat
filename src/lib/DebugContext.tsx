@@ -11,6 +11,10 @@ interface DebugInfo {
   pageName: string;
   /** 复制元素路径时记录当前页面地址（window.location.href） */
   url?: string;
+  /** 自动捕获的页面布局快照：该页面所有可交互元素的 CSS 路径列表（跳转时自动复制） */
+  layoutElements?: string[];
+  /** 是否为「页面跳转自动复制」（而非 Shift+Click 单元素） */
+  isLayoutSnapshot?: boolean;
 }
 
 interface DebugContextValue {
@@ -87,17 +91,9 @@ export function DebugProvider({ children }: { children: ReactNode }) {
     }
   }, [debugMode, location.pathname]);
 
-  // 从 localStorage 恢复上次复制的信息
-  useEffect(() => {
-    const saved = localStorage.getItem(INFO_KEY);
-    if (saved) {
-      try {
-        setDebugInfoState(JSON.parse(saved));
-      } catch {
-        // ignore
-      }
-    }
-  }, []);
+  // 说明：debugInfo 不再从 localStorage 恢复（避免刷新/跳转页面时 CopyToast 自动弹出，
+  // 误以为在自动复制）。它只由「本次会话内」的 Ctrl+C / Shift+Click 复制动作驱动，
+  // 复制内容仍写入 storage（INFO_KEY）供调试页展示历史记录，但不影响 CopyToast 的弹出。
 
   const setDebugInfo = useCallback((info: DebugInfo | null) => {
     setDebugInfoState(info);
@@ -154,6 +150,80 @@ export function DebugProvider({ children }: { children: ReactNode }) {
       document.body.removeChild(ta);
     });
   }, []);
+
+  /**
+   * 捕获当前页面的布局快照：收集所有可交互元素的 CSS 路径，写成多行文本复制到剪贴板。
+   * 由 Ctrl+C（调试模式下）触发——把「这个页面有哪些按钮/控件、分别在哪」一次性交给 AI。
+   */
+  const captureLayoutForPage = useCallback((pageName: string) => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const sel = 'button, a[href], input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"])';
+    const paths: string[] = [];
+    document.querySelectorAll(sel).forEach((el) => {
+      const he = el as HTMLElement;
+      if (he.closest('[data-debug-widget]')) return; // 跳过调试层自身
+      const p = buildElementPath(he);
+      if (p && !paths.includes(p)) paths.push(p);
+    });
+
+    const copyText = [
+      `页面: ${pageName}`,
+      `URL: ${url}`,
+      `可交互元素（${paths.length}）:`,
+      ...paths.map((p, i) => `  ${i + 1}. ${p}`),
+    ].join('\n');
+
+    const info: DebugInfo = {
+      path: `[layout-snapshot] ${pageName}`,
+      tag: '',
+      className: '',
+      id: '',
+      index: ++counterRef.current,
+      timestamp: Date.now(),
+      pageName,
+      url,
+      layoutElements: paths,
+      isLayoutSnapshot: true,
+    };
+    setDebugInfo(info);
+
+    navigator.clipboard.writeText(copyText).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = copyText;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
+    return true;
+  }, []);
+
+  const captureLayoutForPageRef = useRef(captureLayoutForPage);
+  captureLayoutForPageRef.current = captureLayoutForPage;
+
+  // Ctrl + 鼠标左键点击（调试模式下）→ 复制「当前页面完整布局快照」（所有可交互元素路径）。
+  // 与 Shift+Click（复制单个元素路径）互补：Ctrl+Click 拿整页布局。
+  // 焦点在输入框/可编辑元素时不拦截，避免影响正常操作。
+  useEffect(() => {
+    if (!debugMode) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.button !== 0) return; // 仅 Ctrl + 左键
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      // 点的是调试工具自身（badge / 悬浮按钮）→ 不拦截，让它正常处理
+      if (target && target.closest('[data-debug-widget]')) return;
+      const pageName = (window as any).__debugPageName || '未知页面';
+      if (captureLayoutForPageRef.current(pageName)) {
+        e.preventDefault(); // 阻止 Ctrl+Click 默认的「多选」行为
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown, true); // 捕获阶段，先于元素自身 onClick
+    return () => document.removeEventListener('mousedown', handleMouseDown, true);
+  }, [debugMode]);
 
   // Shift+Click 监听 - 使用捕获阶段确保在元素自己的点击处理之前执行
   useEffect(() => {
