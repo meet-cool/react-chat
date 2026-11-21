@@ -141,12 +141,12 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
             <MemePicker
               keyword=""
               onPick={(url) => {
-                // 表情包以 [img]url[/img] 插入，并切到 BBCode 模式：
-                // 该标签只有 type='bbcode' 时前端才会渲染成 <img>（自动 no-referrer 防盗链），
-                // 留在纯文本模式会把标签原样显示成字面量。
-                insertEmoji(`[img]${url}[/img] `);
-                setMode('bbcode');
-                setShowMeme(false);
+                // 表情包点击后直接作为一条 bbcode 消息发送（不再插入输入框等待手动发）。
+                // [img]url[/img] 以 type='bbcode' 发送，前端渲染成 <img>（no-referrer 防盗链）。
+                if (!disabled) {
+                  void onSend(`[img]${url}[/img]`, 'bbcode');
+                  setShowMeme(false);
+                }
               }}
               onClose={() => setShowMeme(false)}
             />

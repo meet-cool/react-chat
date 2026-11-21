@@ -363,6 +363,36 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     }
   };
 
+  // 直接发送一条表情包（独立消息，不走输入框）：点 MemePicker 即发
+  const sendMeme = async (url: string) => {
+    if (!activeConv || sendingRef.current) return;
+    const c = `[img]${url}[/img]`;
+    sendingRef.current = true;
+    setSending(true);
+    try {
+      const msg = await conversationApi.send(activeConv.id, { content: c, type: 'bbcode', reply_to: replyTo?.id || 0 });
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
+      // 贴底
+      nearBottomRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+      if (replyTo) setReplyTo(null);
+      setConversations((prev) =>
+        prev.map((x) =>
+          x.id === activeConv.id
+            ? { ...x, last_message: c, last_message_time: msg.create_time, last_message_fmt: new Date(msg.create_time * 1000).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-') }
+            : x,
+        ),
+      );
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '发送失败', 'error');
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
+      if (onMessageSent) onMessageSent();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -664,11 +694,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
                     <MemePicker
                       keyword=""
                       onPick={(url) => {
-                        // 表情包以 [img]url[/img] 插入，并切到 BBCode 模式：
-                        // 该标签只有 type='bbcode' 时前端才会渲染成 <img>（no-referrer 防盗链），
-                        // 留在纯文本模式会把标签原样显示成字面量。
-                        insertEmoji(`[img]${url}[/img] `);
-                        setMode('bbcode');
+                        // 表情包点击后直接作为一条 bbcode 消息发送（不再插入输入框等待手动发）。
+                        void sendMeme(url);
                         setShowMeme(false);
                       }}
                       onClose={() => setShowMeme(false)}

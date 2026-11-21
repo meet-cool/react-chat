@@ -159,15 +159,34 @@ export function DebugProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!debugMode) return;
 
+    const INTERACTIVE_SELECTOR = 'button, a[href], input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"])';
+
+    const isDebugWidget = (n: Node | null): boolean => {
+      // 调试工具自身（数字标签 / 悬浮按钮）的 DOM 节点：Shift+Click 落在其上不算「点页面元素」
+      const el = (n as HTMLElement | null)?.closest?.('[data-debug-widget]');
+      return !!el;
+    };
+
     const handleClick = (e: MouseEvent) => {
       if (!e.shiftKey) return;
+
+      const target = e.target as HTMLElement;
+      // 点的是调试工具自身（badge / 悬浮按钮）→ 不当作复制，也不拦截真实点击
+      if (isDebugWidget(target)) return;
+
+      // 从 target 向上找最近的「可交互元素」——点中图标/SVG/文本 span 时能归到真正可交互的父级，
+      // 避免 e.target 是非交互节点（或调试层）导致赋值错乱
+      const interactive = target.closest(INTERACTIVE_SELECTOR) as HTMLElement | null;
+      if (!interactive) return;
+
+      // preventDefault + 捕获阶段：阻止按钮真实 onClick / 链接跳转 / 表单提交，
+      // 让 Shift+Click 只用于「复制路径」，不会顺带触发被点击按钮的功能
       e.preventDefault();
       e.stopPropagation();
 
-      const el = e.target as HTMLElement;
       // 从全局获取当前页面名
       const pageName = (window as any).__debugPageName || '未知页面';
-      copyElementPath(el, pageName);
+      copyElementPath(interactive, pageName);
     };
 
     document.addEventListener('click', handleClick, true);

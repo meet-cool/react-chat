@@ -103,10 +103,34 @@ export function DebugOverlay() {
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
+    // 鼠标命中检测：badge 本体 pointer-events:none（不挡按钮），
+    // 故高亮改由顶层 mousemove 命中谁的可交互元素驱动，命中谁就点亮谁的编号。
+    const INTERACTIVE = 'button, a[href], input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"])';
+    let rafId = 0;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (rafId) return; // 节流：一帧最多算一次
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        const t = e.target as HTMLElement;
+        // 调试工具自身（悬浮按钮）不算页面元素
+        if (t.closest?.('[data-debug-widget]')) {
+          if (hoveredIndex !== null) setHoveredIndex(null);
+          return;
+        }
+        const interactive = t.closest(INTERACTIVE) as HTMLElement | null;
+        const idx = interactive ? elements.findIndex((el) => el.element === interactive) : -1;
+        if (idx !== -1 && idx !== hoveredIndex) setHoveredIndex(idx);
+        else if (idx === -1 && hoveredIndex !== null) setHoveredIndex(null);
+      });
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+
     return () => {
       observer.disconnect();
+      document.removeEventListener('mousemove', handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [debugMode, location.pathname]);
+  }, [debugMode, location.pathname, elements, hoveredIndex]);
 
   return (
     <>
@@ -123,11 +147,7 @@ export function DebugOverlay() {
             key={`${index}-${path}`}
             element={element}
             number={index + 1}
-            path={path}
-            pageName={pageName}
             isHovered={hoveredIndex === index}
-            onHover={() => setHoveredIndex(index)}
-            onLeave={() => setHoveredIndex(null)}
           />
         ))}
       </div>
@@ -179,19 +199,11 @@ function CopyToast({ debugInfo }: { debugInfo: { pageName: string; path: string;
 function DebugBadge({
   element,
   number,
-  path,
-  pageName,
   isHovered,
-  onHover,
-  onLeave,
 }: {
   element: HTMLElement;
   number: number;
-  path: string;
-  pageName: string;
   isHovered: boolean;
-  onHover: () => void;
-  onLeave: () => void;
 }) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
@@ -224,32 +236,35 @@ function DebugBadge({
     };
   }, [element]);
 
+  // 是否高亮（由 DebugOverlay 顶层的鼠标命中检测驱动，badge 本体 pointer-events:none）
+  const hovered = isHovered;
+
   return (
     <div
+      data-debug-widget="badge"
       className="absolute"
       style={{
         top: position.top,
         left: position.left,
         width: element.offsetWidth || 40,
         height: element.offsetHeight || 24,
-        // 覆盖元素本体才能接收 hover（父容器仍保持 pointer-events:none，不阻挡 Shift+Click 复制）
-        pointerEvents: 'auto',
+        // 完全透明：调试层不阻挡任何真实交互（按钮可正常点击/输入）。
+        // hover 高亮由 DebugOverlay 顶层的鼠标命中检测驱动 isHovered。
+        pointerEvents: 'none',
       }}
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
     >
-      {/* 边框：仅 hover 时显示 */}
+      {/* 边框：hover 时显示 */}
       <div
         className="absolute inset-0"
         style={{
-          border: isHovered ? '2px solid var(--color-success)' : '1px solid transparent',
-          opacity: isHovered ? 1 : 0,
-          transition: 'opacity 0.15s ease, border-color 0.15s ease',
+          border: hovered ? '2px solid var(--color-success)' : '2px solid transparent',
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 0.15s ease',
           zIndex: 5,
         }}
       />
 
-      {/* 数字标签：仅 hover 时显示 */}
+      {/* 数字标签：hover 时显示 */}
       <div
         className="flex items-center justify-center font-mono text-xs font-bold select-none"
         style={{
@@ -264,7 +279,7 @@ function DebugBadge({
           boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
           zIndex: 10,
           lineHeight: '16px',
-          opacity: isHovered ? 1 : 0,
+          opacity: hovered ? 1 : 0,
           transition: 'opacity 0.15s ease',
         }}
       >
@@ -276,21 +291,23 @@ function DebugBadge({
 
 function DebugButton() {
   const navigate = useNavigate();
+  const [hovered, setHovered] = useState(false);
 
   return (
     <button
+      data-debug-widget="debug-button"
       onClick={() => navigate('/debug')}
       className="fixed bottom-16 right-4 z-[9999] max-md:hidden flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all"
       style={{
-        background: 'var(--color-primary)',
+        background: hovered ? 'var(--color-primary-hover)' : 'var(--color-primary)',
         color: '#fff',
         border: 'none',
         cursor: 'pointer',
         borderRadius: '0',
         boxShadow: 'var(--shadow-md)',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-primary-hover)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-primary)')}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       title="开发者调试选项"
     >
       <Settings size={14} />

@@ -221,8 +221,8 @@ function SessionTab() {
           <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--color-text)' }}>{token ? '已登录' : '未登录'}</p>
         </div>
         {token
-          ? <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80' }}>活跃</span>
-          : <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>无 token</span>
+          ? <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', minWidth: 72, textAlign: 'center' }}>活跃</span>
+          : <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', minWidth: 72, textAlign: 'center' }}>无 token</span>
         }
       </div>
       {token && (
