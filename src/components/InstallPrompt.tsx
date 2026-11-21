@@ -139,9 +139,10 @@ export function InstallPrompt({ variant = 'card' }: { variant?: 'card' | 'topbar
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[45] w-[calc(100%-2rem)] max-w-md"
       role="dialog"
       aria-label="安装弧光应用"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div
         className="flex items-center gap-3 px-4 py-3 shadow-[var(--shadow-lg)]"
@@ -172,7 +173,7 @@ export function InstallPrompt({ variant = 'card' }: { variant?: 'card' | 'topbar
             onClick={install}
             disabled={installing}
             className="btn btn-primary btn-sm flex-shrink-0"
-            style={{ minHeight: 34, borderRadius: 8 }}
+            style={{ borderRadius: 3 }}
           >
             <Download size={14} />
             {installing ? '安装中…' : '安装'}
@@ -181,7 +182,7 @@ export function InstallPrompt({ variant = 'card' }: { variant?: 'card' | 'topbar
         <button
           onClick={dismiss}
           aria-label="关闭安装提示"
-          className="p-1 flex-shrink-0"
+          className="-m-2 p-2 min-w-[44px] min-h-[44px] inline-flex items-center justify-center flex-shrink-0"
           style={{ color: 'var(--color-text-muted)' }}
         >
           <X size={16} />

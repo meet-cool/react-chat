@@ -47,20 +47,23 @@ function StatCard({
 }) {
   return (
     <div
-      className="p-5 flex items-start gap-4 transition-all duration-200 hover:scale-105"
+      className="p-4 sm:p-5 flex items-start gap-3 sm:gap-4 min-w-0 transition-colors duration-200"
       style={{
         background: 'var(--color-card)',
         border: '1px solid var(--color-border)',
       }}
     >
       <div
-        className="w-12 h-12 flex items-center justify-center flex-shrink-0"
+        className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0"
         style={{ background: color, color: '#FFFFFF' }}
       >
         <Icon size={24} />
       </div>
-      <div>
-        <div className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>
+      <div className="flex-1 min-w-0">
+        <div
+          className="text-2xl sm:text-3xl font-bold tabular-nums truncate"
+          style={{ color: 'var(--color-text)' }}
+        >
           {value}
         </div>
         <div className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
@@ -190,9 +193,10 @@ export function PortalPage() {
           </p>
           <button
             onClick={() => setNoticeDismissed(true)}
-            className="p-1 rounded-full hover:opacity-80 transition-opacity"
+            className="-m-2.5 p-2.5 min-w-[44px] min-h-[44px] inline-flex items-center justify-center hover:opacity-80 transition-opacity"
             style={{ color: 'var(--color-primary)' }}
             title="关闭公告"
+            aria-label="关闭公告"
           >
             <X size={14} />
           </button>
@@ -224,14 +228,12 @@ export function PortalPage() {
             <button
               onClick={() => navigate('/login')}
               className="btn btn-outline btn-sm"
-              style={{ minHeight: 36 }}
             >
               登录
             </button>
             <button
               onClick={() => navigate('/login')}
               className="btn btn-primary btn-sm"
-              style={{ minHeight: 36 }}
             >
               免费注册
             </button>
@@ -315,7 +317,7 @@ export function PortalPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
@@ -325,7 +327,7 @@ export function PortalPage() {
               ))}
             </div>
           ) : stats ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <StatCard
                 icon={Users}
                 label="总用户数"
@@ -364,7 +366,7 @@ export function PortalPage() {
       </section>
 
       {/* 功能特性 */}
-      <section id="features" className="py-16 px-4">
+      <section id="features" className="py-16 px-4 scroll-mt-16 sm:scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>

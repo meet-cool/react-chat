@@ -305,11 +305,14 @@ export default function LearnModule({ module }) {
         submittingRef.current = true;
 
         let isCorrect = false;
+        let submittedText = '';
         if (meta.input === 'text') {
+            submittedText = normalizeInput(userAnswer).trim();
             isCorrect = slotAssist
                 ? rebuildAnswer().toLowerCase() === currentWord.word.toLowerCase()
-                : normalizeInput(userAnswer).trim().toLowerCase() === currentWord.word.toLowerCase();
+                : submittedText.toLowerCase() === currentWord.word.toLowerCase();
         } else {
+            submittedText = selectedOption || '';
             isCorrect = selectedOption === (meta.choiceOf === 'word' ? currentWord.word : defTextOf(currentWord));
         }
 
@@ -320,6 +323,8 @@ export default function LearnModule({ module }) {
                 await api.post('/api/submit_answer.php', {
                     session_id: sessionId,
                     word_id: currentWord.id,
+                    /* 服务端权威判分：必须提交答案原文，is_correct 仅作兼容旧版留存 */
+                    selected: submittedText,
                     is_correct: 0,
                     question_type: module,
                 });
@@ -341,6 +346,8 @@ export default function LearnModule({ module }) {
             const r = await api.post('/api/submit_answer.php', {
                 session_id: sessionId,
                 word_id: currentWord.id,
+                /* 服务端权威判分：必须提交答案原文，is_correct 仅作兼容旧版留存 */
+                selected: submittedText,
                 is_correct: isCorrect ? 1 : 0,
                 question_type: module,
             });
