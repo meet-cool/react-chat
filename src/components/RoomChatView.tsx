@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Hash, Users, LogOut, PanelRightClose, PanelRightOpen, Search, X, ChevronLeft } from 'lucide-react';
+import { Hash, Users, LogOut, PanelRightClose, PanelRightOpen, Search, X, ChevronLeft, Settings } from 'lucide-react';
 import type { Room, RoomMember, ChatMessage } from '../types';
 import { socialApi, type SearchResultItem } from '../lib/api';
 import { renderBBCode } from '../lib/bbcode';
@@ -46,6 +46,8 @@ interface RoomChatViewProps {
   onConfirmReport: (reason: string) => void;
   onViewProfile: (username: string) => void;
   onOpenMemberProfile: (username: string) => void;
+  /** 打开房间设置（顶栏右上角齿轮） */
+  onOpenRoomSettings?: () => void;
 }
 
 export function RoomChatView({
@@ -53,7 +55,7 @@ export function RoomChatView({
   rightCollapsed, mobileSidebar, replyTo, forwardMsg, reportMsg, forwarding, reporting,
   currentUserId, insertTextRef, scrollSignal, onToggleRight, onMobileMembers, onLeaveRoom, onLoadMore,
   onSend, onMention, onReact, onReply, onForward, onReport, onRecall, onDice, onCancelReply,
-  onConfirmForward, onConfirmReport, onViewProfile, onOpenMemberProfile, onBlock,
+  onConfirmForward, onConfirmReport, onViewProfile, onOpenMemberProfile, onBlock, onOpenRoomSettings,
 }: RoomChatViewProps) {
   // 房间内消息搜索
   const [searchOpen, setSearchOpen] = useState(false);
@@ -136,6 +138,17 @@ export function RoomChatView({
             <button className="btn btn-sm md:hidden p-2" onClick={onMobileMembers} title="成员列表" style={{ minHeight: 36, minWidth: 36 }}>
               <Users size={16} />
             </button>
+            {onOpenRoomSettings && (
+              <button
+                className="btn btn-sm p-2"
+                onClick={onOpenRoomSettings}
+                title="房间设置"
+                aria-label="房间设置"
+                style={{ minHeight: 36, minWidth: 36 }}
+              >
+                <Settings size={16} />
+              </button>
+            )}
             <button onClick={onLeaveRoom} className="btn btn-sm btn-outline" style={{ minHeight: 36 }}>
               <LogOut size={14} /><span className="hidden sm:inline ml-1">退出</span>
             </button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Hash, Plus, Search, Users, LogOut, X, Lock, Globe, Check, Settings } from 'lucide-react';
+import { Hash, Plus, Search, Users, LogOut, X, Lock, Globe, Check } from 'lucide-react';
 import type { ContactUser, Room } from '../types';
 import { Avatar } from './Avatar';
 import { HashAvatar } from './HashAvatar';
@@ -41,16 +41,6 @@ export function RoomList({ rooms, activeRoomId, onSelect, onCreate, loading, onO
                 aria-label="收起"
               >
                 <X size={16} />
-              </button>
-            )}
-            {onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="btn btn-sm"
-                title="房间设置"
-                disabled={activeRoomId === null}
-              >
-                <Settings size={14} />
               </button>
             )}
             <button

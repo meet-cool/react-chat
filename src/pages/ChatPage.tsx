@@ -558,6 +558,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 onRecall={chat.handleRecall}
                 onDice={chat.handleDice}
                 onBlock={handleBlock}
+                onOpenRoomSettings={() => setShowRoomSettings(true)}
               />
             ) : mobileView === 'private' || showPrivate ? (
               <PrivateChatView
@@ -705,6 +706,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   onRecall={chat.handleRecall}
                   onDice={chat.handleDice}
                   onBlock={handleBlock}
+                  onOpenRoomSettings={() => setShowRoomSettings(true)}
                 />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
