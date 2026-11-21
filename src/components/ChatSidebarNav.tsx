@@ -91,7 +91,12 @@ export function ChatSidebarNav({
   return (
     <div
       className="flex flex-col items-center py-4 gap-2 border-r flex-shrink-0 relative transition-all duration-200"
-      style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card-alt)', width: 56 }}
+      style={{
+        borderColor: 'var(--color-divider)',
+        background: 'var(--color-card-alt)',
+        // 展开标签时加宽到 160px 显示完整中文标签，收起时 56px 仅图标
+        width: showLabels ? 160 : 56,
+      }}
     >
       {/* 左侧活跃指示条 */}
       <div
