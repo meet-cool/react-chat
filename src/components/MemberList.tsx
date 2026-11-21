@@ -24,9 +24,10 @@ export function MemberList({ members, loading, onSelect }: MemberListProps) {
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: 'var(--color-card)' }}>
       <div className="flex-shrink-0 p-3 border-b" style={{ borderColor: 'var(--color-divider)' }}>
-        <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-          <Users size={15} /> 成员
-          <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>
+        <h3 className="text-sm font-semibold flex items-center gap-1.5 min-w-0" style={{ color: 'var(--color-text)' }}>
+          <Users size={15} className="flex-shrink-0" />
+          <span>成员</span>
+          <span className="text-xs font-normal truncate" style={{ color: 'var(--color-text-muted)' }}>
             ({online.length} 在线 / {members.length})
           </span>
         </h3>

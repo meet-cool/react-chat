@@ -126,9 +126,23 @@ export function RoomChatView({
             >
               {searchOpen ? <X size={15} /> : <Search size={15} />}
             </button>
-            <button className="btn btn-sm hidden md:flex items-center gap-1" onClick={onToggleRight} title={rightCollapsed ? '展开右侧栏' : '折叠右侧栏'} style={{ minHeight: 36 }}>
+            <button className="btn btn-sm hidden md:flex items-center gap-1 relative" onClick={onToggleRight} title={rightCollapsed ? '展开右侧栏' : '折叠右侧栏'} style={{ minHeight: 36 }}>
               {rightCollapsed ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
               <span className="hidden lg:inline">成员</span>
+              {/* 成员数角标：定位在按钮内右上角（relative 父级 + 内嵌，不再飘出按钮） */}
+              {(activeRoom.member_count ?? 0) > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold leading-none"
+                  style={{
+                    background: 'var(--color-primary)',
+                    color: '#fff',
+                    border: '1px solid var(--color-card)',
+                    borderRadius: 3,
+                  }}
+                >
+                  {activeRoom.member_count}
+                </span>
+              )}
             </button>
             <button className="btn btn-sm md:hidden p-2" onClick={onMobileMembers} title="成员列表" style={{ minHeight: 36, minWidth: 36 }}>
               <Users size={16} />
