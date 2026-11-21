@@ -25,6 +25,8 @@ interface RoomChatViewProps {
   reporting: boolean;
   currentUserId: number;
   insertTextRef: React.RefObject<((text: string) => void) | null>;
+  /** 外部滚到底部信号（发送成功后自增） */
+  scrollSignal?: number;
   onToggleRight: () => void;
   onMobileMembers: () => void;
   onLeaveRoom: () => void;
@@ -48,7 +50,7 @@ interface RoomChatViewProps {
 export function RoomChatView({
   activeRoom, messages, messagesLoading, hasMore, members, membersLoading, sending,
   rightCollapsed, mobileSidebar, replyTo, forwardMsg, reportMsg, forwarding, reporting,
-  currentUserId, insertTextRef, onToggleRight, onMobileMembers, onLeaveRoom, onLoadMore,
+  currentUserId, insertTextRef, scrollSignal, onToggleRight, onMobileMembers, onLeaveRoom, onLoadMore,
   onSend, onMention, onReact, onReply, onForward, onReport, onRecall, onDice, onCancelReply,
   onConfirmForward, onConfirmReport, onViewProfile, onOpenMemberProfile, onBlock,
 }: RoomChatViewProps) {
@@ -179,7 +181,8 @@ export function RoomChatView({
         {/* 消息列表 */}
         <MessageList
           messages={messages} loading={messagesLoading} hasMore={hasMore} onLoadMore={onLoadMore}
-          currentUserId={currentUserId} onMention={onMention} onMessage={() => {}}
+          currentUserId={currentUserId} scrollSignal={scrollSignal}
+          onMention={onMention} onMessage={() => {}}
           onReact={onReact} onReply={onReply} onForward={onForward} onReport={onReport}
           onViewProfile={onViewProfile}
           onRecall={onRecall}

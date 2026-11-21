@@ -46,6 +46,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  // 发送 in-flight 守卫（ref 同步判断，避免快速双击 Enter/点「发送」连发两条）
+  const sendingRef = useRef(false);
   const [content, setContent] = useState('');
   const [mode, setMode] = useState<'text' | 'bbcode'>('text');
   const [listLoading, setListLoading] = useState(false);
@@ -332,6 +334,8 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || !activeConv) return;
+    if (sendingRef.current) return; // 正在发送，忽略重复触发
+    sendingRef.current = true;
     setSending(true);
     try {
       const sendType = resolveMessageType(trimmed, mode);
@@ -339,6 +343,9 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       setContent('');
+      // 发送后强制贴底：恢复近底标记并瞬时滚到底部（避免 smooth 动画被后加载图片打断而停在中途）
+      nearBottomRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'auto' });
       if (replyTo) setReplyTo(null);
       setConversations((prev) =>
         prev.map((c) =>
@@ -350,6 +357,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     } catch (err) {
       addToast(err instanceof Error ? err.message : '发送失败', 'error');
     } finally {
+      sendingRef.current = false;
       setSending(false);
       if (onMessageSent) onMessageSent();
     }

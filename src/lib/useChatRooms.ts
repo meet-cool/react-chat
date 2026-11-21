@@ -36,7 +36,7 @@ export interface UseChatRoomsReturn {
   loadMembers: (roomId: number) => Promise<void>;
   handleJoinRoom: (room: Room) => Promise<void>;
   handleLeaveRoom: () => Promise<void>;
-  handleSend: (content: string, type: string) => Promise<void>;
+  handleSend: (content: string, type: string, onSent?: (msgId: number) => void) => Promise<void>;
   handleReact: (msgId: number, emoji: string) => Promise<void>;
   handleRecall: (msg: ChatMessage) => Promise<void>;
   handleDice: () => void;
@@ -296,18 +296,26 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   }, [loadRooms]);
 
   // 发送消息
-  const handleSend = useCallback(async (content: string, type: string) => {
+  // 发送成功（后端确认插入）时调用 onSent —— 供调用方做「滚到底部」等后置动作；
+  // 防重入：in-flight 期间（网络往返未结束）拒绝重复发送，避免快速双击 Enter / 点两次「发送」
+  // 造成同一条内容连发两条。
+  const sendingRef = useRef(false);
+  const handleSend = useCallback(async (content: string, type: string, onSent?: (msgId: number) => void) => {
+    if (sendingRef.current) return;
     const room = activeRoomRef.current;
     if (!room) return;
+    sendingRef.current = true;
     setSending(true);
     try {
       const msg = await messageApi.send(room.id, { content, type, reply_to: replyTo?.id || 0 });
       setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
       lastMessageIdRef.current = Math.max(lastMessageIdRef.current, msg.id);
       if (replyTo) setReplyTo(null);
+      onSent?.(msg.id);
     } catch (err: unknown) {
       optsRef.current.onError(err instanceof Error ? err.message : '发送失败', false);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }, [replyTo]);

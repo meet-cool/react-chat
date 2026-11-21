@@ -12,6 +12,8 @@ interface MessageListProps {
   hasMore: boolean;
   onLoadMore: () => void;
   currentUserId: number;
+  /** 外部触发「滚到底部」信号（每次自增即滚底，用于发送成功后强制贴底） */
+  scrollSignal?: number;
   onMention?: (username: string) => void;
   onMessage?: (userId: number) => void;
   onViewProfile?: (username: string) => void;
@@ -35,7 +37,7 @@ interface ActionMenuState {
   msg: ChatMessage | null;
 }
 
-export function MessageList({ messages, loading, hasMore, onLoadMore, currentUserId, onMention, onMessage, onViewProfile, onReact, onReply, onForward, onReport, onRecall, onBlock }: MessageListProps) {
+export function MessageList({ messages, loading, hasMore, onLoadMore, currentUserId, scrollSignal, onMention, onMessage, onViewProfile, onReact, onReply, onForward, onReport, onRecall, onBlock }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // 是否处于距底部 <160px 的近底状态（决定新消息是否自动滚底）
@@ -48,6 +50,15 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [menu, setMenu] = useState<MenuState>({ open: false, anchor: null, user: { id: 0, username: '' } });
   const [actionMenu, setActionMenu] = useState<ActionMenuState>({ open: false, pos: null, msg: null });
+
+  // 外部触发滚底（发送消息后）：瞬时滚到底部并恢复「近底」状态，
+  // 这样后续新消息/图片后加载仍会保持贴底，不再因动画被打断而停在中间。
+  useEffect(() => {
+    if (scrollSignal === undefined) return;
+    nearBottomRef.current = true;
+    bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollSignal]);
 
   // 仅当用户停留在近底位置时才自动滚底，避免打断向上翻阅
   useEffect(() => {

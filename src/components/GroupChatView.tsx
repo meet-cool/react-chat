@@ -28,6 +28,10 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [sending, setSending] = useState(false);
+  // 发送 in-flight 守卫（ref 同步判断，避免快速双击连发两条）
+  const sendingRef = useRef(false);
+  // 发送成功后触发滚到底部（MessageList 内 effect 监听该值）
+  const [scrollSignal, setScrollSignal] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -143,15 +147,19 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
       setTimeout(() => setMutedTip(false), 2000);
       return;
     }
+    if (sendingRef.current) return; // 正在发送，忽略重复触发
+    sendingRef.current = true;
     setSending(true);
     try {
       const msg = await groupApi.send(group.id, { content, type, reply_to: replyTo?.id || 0 });
       setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
       lastIdRef.current = Math.max(lastIdRef.current, msg.id);
       setReplyTo(null);
+      setScrollSignal((s) => s + 1); // 发送成功 → 滚到底部
     } catch (e: any) {
       onToast(e.message || '发送失败');
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }, [group.id, isMuted, replyTo]);
@@ -241,6 +249,7 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
             hasMore={hasMore}
             onLoadMore={handleLoadMore}
             currentUserId={currentUserId}
+            scrollSignal={scrollSignal}
             onMention={handleMention}
             onReply={setReplyTo}
             onViewProfile={(username) => { window.open(`/profile/${encodeURIComponent(username)}`, '_self'); }}

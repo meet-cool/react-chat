@@ -56,6 +56,9 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
   const [showLabels, setShowLabels] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState<SidebarCategory | 'members' | null>(null);
 
+  // 发送成功后触发 MessageList 瞬时滚到底部（自增即可，组件内 effect 监听该值）
+  const [scrollSignal, setScrollSignal] = useState(0);
+
   // 群聊状态
   const [activeGroup, setActiveGroup] = useState<GroupInfo | null>(null);
   const [groupListKey, setGroupListKey] = useState(0);
@@ -257,6 +260,11 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
     handleMention, handleReact, handleReply,
     insertTextRef,
   } = chat;
+
+  // 包装 handleSend：成功插入后递增 scrollSignal，强制贴底（避免发送后停在中途）
+  const wrappedHandleSend = useCallback((content: string, type: string) => {
+    return handleSend(content, type, () => setScrollSignal((s) => s + 1));
+  }, [handleSend]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
@@ -588,7 +596,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 onMobileMembers={() => setMobileSidebar((prev) => prev === 'members' ? null : 'members')}
                 onLeaveRoom={() => { handleLeaveRoom(); setMobileView('list'); }}
                 onLoadMore={loadMore}
-                onSend={handleSend}
+                scrollSignal={scrollSignal}
+                onSend={wrappedHandleSend}
                 onMention={handleMention}
                 onReact={handleReact}
                 onReply={handleReply}
@@ -734,7 +743,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                   }}
                   onLeaveRoom={handleLeaveRoom}
                   onLoadMore={loadMore}
-                  onSend={handleSend}
+                  scrollSignal={scrollSignal}
+                  onSend={wrappedHandleSend}
                   onMention={handleMention}
                   onReact={handleReact}
                   onReply={handleReply}
