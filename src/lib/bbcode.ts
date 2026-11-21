@@ -29,10 +29,12 @@ function safeSize(v: string): string | null {
   return null;
 }
 
-/** 安全链接：仅允许 http(s) / 相对路径 */
+/** 安全链接：仅允许 http(s) 外链或站内绝对路径，拒绝 //（协议相对）与 /\ 等可被解析为外域的形式 */
 function safeUrl(v: string): string | null {
   const t = v.trim();
-  if (/^(https?:\/\/|\/)[^\s"'<>]*$/i.test(t)) return t;
+  if (t.startsWith('//')) return null;
+  if (/^https?:\/\/[^\s"'<>]+$/i.test(t)) return t;
+  if (/^\/[^\s"'<>]+$/.test(t)) return t;   // 仅站内绝对路径（不含 //）
   return null;
 }
 
@@ -78,7 +80,7 @@ export function renderBBCode(input: string): string {
     [/\[img\]([\s\S]*?)\[\/img\]/gi, (_m, p1) => {
       const u = safeUrl(p1);
       return u
-        ? '<img src="' + u + '" alt="图片" class="bbcode-img" loading="lazy" />'
+        ? '<img src="' + u + '" alt="图片" class="bbcode-img" loading="lazy" referrerpolicy="no-referrer" />'
         : p1;
     }],
     // [quote] 与 [quote=作者]

@@ -23,7 +23,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const { addToast } = useApp();
   const navigate = useNavigate();
   // 登录/注册成功后的回跳地址（支持 english 等模块 SSO 跳入）
-  const redirect = new URLSearchParams(useLocation().search).get('redirect') || '/chat';
+  // 安全加固（H2 开放重定向）：只放行站内相对路径，拒绝 //、/\ 等协议相对/转义形式，防止凭据钓鱼
+  const raw = new URLSearchParams(useLocation().search).get('redirect') || '/chat';
+  const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : '/chat';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
