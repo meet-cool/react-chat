@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Crown, Star, Calendar, Shield, ShieldCheck, Pencil } from 'lucide-react';
 import { authApi, userApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { UserInfo } from '../types';
 import { Avatar } from '../components/Avatar';
+import { SettingsModal } from '../components/SettingsModal';
 
 const LEVEL_COLORS = ['#94a3b8', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#10b981', '#ec4899'];
 
@@ -27,6 +28,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingVisible, setUpdatingVisible] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -176,6 +178,16 @@ export function ProfilePage({ user }: ProfilePageProps) {
               <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 {info.bio}
               </p>
+            )}
+            {isSelf && (
+              <button
+                onClick={() => setShowEdit(true)}
+                className="mt-3 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-sm transition-all"
+                style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}
+              >
+                <Pencil size={13} />
+                编辑资料
+              </button>
             )}
           </div>
         </div>
@@ -349,6 +361,19 @@ export function ProfilePage({ user }: ProfilePageProps) {
           </div>
         )}
       </div>
+
+      {/* 本人：编辑资料弹窗（默认定位到个人资料 Tab，保存后刷新主页数据） */}
+      {isSelf && info && (
+        <SettingsModal
+          open={showEdit}
+          onClose={() => setShowEdit(false)}
+          user={info}
+          initialTab="profile"
+          onUserUpdate={(u) => {
+            setInfo((prev) => (prev ? { ...prev, ...u } : prev));
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -17,6 +17,8 @@ interface SettingsModalProps {
   onClose: () => void;
   user: UserInfo;
   onUserUpdate: (u: UserInfo) => void;
+  /** 打开时定位到的 Tab（默认 profile） */
+  initialTab?: Tab;
 }
 
 type Tab = 'profile' | 'password' | 'theme' | 'system';
@@ -35,11 +37,11 @@ const themeOptions: { name: ThemeName; label: string; desc: string }[] = [
 const QQ_AVATAR_BASE = 'https://q1.qlogo.cn/g?b=qq&s=640&nk=';
 const buildQqAvatar = (qq: string) => `${QQ_AVATAR_BASE}${qq}`;
 
-export function SettingsModal({ open, onClose, user, onUserUpdate }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, user, onUserUpdate, initialTab }: SettingsModalProps) {
   const { theme, setTheme, addToast } = useApp();
   const navigate = useNavigate();
   const { debugMode, setDebugMode, debugInfo } = useDebug();
-  const [tab, setTab] = useState<Tab>('profile');
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'profile');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [systemLoading, setSystemLoading] = useState(false);
   const [systemError, setSystemError] = useState<string | null>(null);

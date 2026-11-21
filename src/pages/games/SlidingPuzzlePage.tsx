@@ -207,7 +207,7 @@ export function SlidingPuzzlePage({ onBack }: Props) {
 
       {/* 提示 */}
       <p className="text-center text-xs pb-4" style={{ color: 'var(--color-text-muted)' }}>
-        点击方块移到空格 | 方向键移动 | 将关羽移至右上角即可通关
+        点击方块移到空格 | 方向键移动 | 带金色边框的是关羽主将，移到右上角即可通关
       </p>
     </div>
   );
@@ -217,17 +217,17 @@ function Tile({ value, row, col, size, isKing, canMove, onClick }: {
   value: number; row: number; col: number; size: number;
   isKing: boolean; canMove: boolean; onClick: () => void;
 }) {
-  const colors: Record<number, { bg: string; fg: string }> = {
-    1: { bg: '#DC2626', fg: '#fff' },   // 关羽 - 红
-    2: { bg: '#0077CC', fg: '#fff' },   // 张飞 - 蓝
-    3: { bg: '#16A34A', fg: '#fff' },   // 马超 - 绿
-    4: { bg: '#D97706', fg: '#fff' },   // 黄忠 - 橙
-    5: { bg: '#7C3AED', fg: '#fff' },   // 赵云 - 紫
-    6: { bg: '#DC2626', fg: '#fff' },   // 关羽(下)
-    7: { bg: '#0077CC', fg: '#fff' },   // 张飞(下)
-    8: { bg: '#6B7280', fg: '#fff' },   // 小兵 - 灰
+  const colors: Record<number, { bg: string; fg: string; name: string }> = {
+    1: { bg: '#DC2626', fg: '#fff', name: '关羽' },   // 关羽（主将，2x2，红+金边）
+    2: { bg: '#0077CC', fg: '#fff', name: '张飞' },   // 竖将
+    3: { bg: '#16A34A', fg: '#fff', name: '马超' },   // 竖将
+    4: { bg: '#D97706', fg: '#fff', name: '黄忠' },   // 竖将
+    5: { bg: '#7C3AED', fg: '#fff', name: '赵云' },   // 竖将
+    6: { bg: '#DC2626', fg: '#fff', name: '关羽' },   // 关羽（下半块）
+    7: { bg: '#0077CC', fg: '#fff', name: '张飞' },   // 张飞（下半块）
+    8: { bg: '#6B7280', fg: '#fff', name: '兵' },     // 小卒
   };
-  const color = colors[value] ?? { bg: 'var(--color-primary)', fg: '#fff' };
+  const c = colors[value] ?? { bg: 'var(--color-primary)', fg: '#fff', name: String(value) };
   return (
     <button
       onClick={onClick}
@@ -238,17 +238,37 @@ function Tile({ value, row, col, size, isKing, canMove, onClick }: {
         top: row * size,
         width: size - 2,
         height: size - 2,
-        background: color.bg,
-        color: color.fg,
-        fontSize: isKing ? 20 : 16,
+        background: c.bg,
+        color: c.fg,
         cursor: canMove ? 'pointer' : 'default',
         opacity: canMove ? 1 : 0.7,
         borderRadius: 3,
-        border: 'none',
+        // 关羽主将（isKing）加金色描边高亮，一眼可辨
+        border: isKing ? '3px solid #FDE68A' : 'none',
         outline: 'none',
       }}
     >
-      {value}
+      {/* 武将名（上）+ 编号（下）：让「哪个是关羽」清晰可辨 */}
+      <span className="flex flex-col items-center justify-center leading-tight" style={{ pointerEvents: 'none' }}>
+        <span
+          style={{
+            fontSize: isKing ? 14 : 12,
+            fontWeight: 700,
+            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+          }}
+        >
+          {c.name}
+        </span>
+        <span
+          style={{
+            fontSize: isKing ? 12 : 10,
+            opacity: 0.85,
+            marginTop: 1,
+          }}
+        >
+          #{value}
+        </span>
+      </span>
     </button>
   );
 }
