@@ -12,9 +12,10 @@ import {
   MoreVertical,
   ArrowLeft,
   MapPin,
+  Download,
 } from 'lucide-react';
 import { X } from 'lucide-react';
-import { confessionApi, getApiBaseUrl } from '../lib/api';
+import { confessionApi } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import { type ThemeKey, THEMES } from '../lib/themes';
 import type { Confession } from '../types';
@@ -49,7 +50,7 @@ function ConfessionCard({
   onClick: (id: number) => void;
   addToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   theme: ThemeKey;
-  onShare?: (slug: string) => void;
+  onShare?: (c: Confession) => void;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -183,7 +184,7 @@ function ConfessionCard({
         <div className="flex items-center gap-1">
           {isLogged && onShare && (
             <button
-              onClick={() => onShare(c.slug)}
+              onClick={() => onShare(c)}
               className="btn btn-sm"
               style={{ minWidth: 28, padding: '2px 4px', color: T.textMuted, background: 'transparent', border: 'none' }}
               title="分享"
@@ -271,10 +272,80 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
   const [viewMode] = useState<ViewMode>('card');
   const [isLogged, setIsLogged] = useState(false);
   const [bgImage, setBgImage] = useState('');
-  const [showQrSlug, setShowQrSlug] = useState<string | null>(null);
-  const handleShare = useCallback(async (slug: string) => {
-    setShowQrSlug(slug);
+  const [showQrItem, setShowQrItem] = useState<Confession | null>(null);
+  const handleShare = useCallback((c: Confession) => {
+    setShowQrItem(c);
   }, []);
+
+  // 保存到本地：把二维码 + 「谁对谁」文案 + 内容摘要 合成一张 PNG 下载
+  const [saving, setSaving] = useState(false);
+  const handleSaveQr = useCallback(async (item: Confession) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      // 拉取二维码 PNG
+      const qrResp = await fetch(confessionApi.qrCode(item.slug));
+      if (!qrResp.ok) throw new Error('二维码加载失败');
+      const qrBlob = await qrResp.blob();
+      const qrUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = reject;
+        fr.readAsDataURL(qrBlob);
+      });
+      const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('二维码解码失败'));
+        img.src = qrUrl;
+      });
+
+      // 文案：谁 对 谁（匿名显示「我」）
+      const whoFrom = item.anonymous ? '我' : item.username;
+      const whoTo = item.target_name || '某人';
+      const title = `${whoFrom} 对 ${whoTo} 说：`;
+      const content = item.content.length > 40 ? item.content.slice(0, 40) + '…' : item.content;
+
+      // 画布：白底卡片，顶部标题+内容，底部二维码
+      const qrSize = 260;
+      const pad = 32;
+      const titleBlockH = 96;
+      const canvas = document.createElement('canvas');
+      canvas.width = qrSize + pad * 2;
+      canvas.height = titleBlockH + qrSize + pad * 2;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('canvas 不支持');
+      // 背景
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 标题 + 内容（深色文字，白底保证可读）
+      ctx.fillStyle = '#0A1628';
+      ctx.font = 'bold 22px -apple-system, "PingFang SC", sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText(title, pad, pad, canvas.width - pad * 2);
+      ctx.fillStyle = '#4A6A85';
+      ctx.font = '16px -apple-system, "PingFang SC", sans-serif';
+      ctx.fillText(content, pad, pad + 36, canvas.width - pad * 2);
+      // 二维码
+      ctx.drawImage(qrImg, pad, pad + titleBlockH, qrSize, qrSize);
+      // 底部提示
+      ctx.fillStyle = '#8AA0B8';
+      ctx.font = '13px -apple-system, "PingFang SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('扫码查看完整表白 · 弧光', canvas.width / 2, pad + titleBlockH + qrSize + 16, canvas.width - pad * 2);
+
+      // 下载
+      const link = document.createElement('a');
+      link.download = `表白_${whoTo}_${item.slug}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      addToast('二维码已保存到本地', 'success');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '保存失败', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, addToast]);
   const [theme, setTheme] = useState<ThemeKey>(() => {
     const saved = localStorage.getItem('confession_theme');
     return (saved === 'ocean' || saved === 'pink' || saved === 'default') ? saved : 'pink';
@@ -591,19 +662,53 @@ export function ConfessionWall({ isMainPage = false }: ConfessionWallProps) {
         )}
       </div>
 
-      {/* QR码弹窗 */}
-      {showQrSlug && (
+      {/* QR码弹窗（美化：卡片衬底 + 「谁对谁」文案 + 内容摘要 + 保存按钮） */}
+      {showQrItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setShowQrSlug(null)}>
-          <div className="w-full max-w-xs" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, padding: 20 }}
+          onClick={() => setShowQrItem(null)}>
+          <div className="w-full max-w-xs flex flex-col items-center" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 0, padding: 24 }}
             onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
+            <div className="w-full flex items-center justify-between mb-3">
               <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>
-              <button onClick={() => setShowQrSlug(null)} style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              <button onClick={() => setShowQrItem(null)} aria-label="关闭" style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', minHeight: 44, minWidth: 44 }}><X size={18} /></button>
             </div>
-            <img src={confessionApi.qrCode(showQrSlug)} alt="QR" className="w-full"
-                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-            <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看表白</p>
+
+            {/* 「谁 对 谁」文案 + 内容摘要 */}
+            <div className="w-full text-center mb-3" style={{ padding: '12px 16px', background: 'var(--color-card-alt)', borderRadius: 3, border: '1px solid var(--color-divider)' }}>
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-primary)' }}>
+                {showQrItem.anonymous ? '我' : showQrItem.username} 对 {showQrItem.target_name || '某人'} 说
+              </p>
+              <p className="text-xs line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                {showQrItem.content.length > 50 ? showQrItem.content.slice(0, 50) + '…' : showQrItem.content}
+              </p>
+            </div>
+
+            {/* 二维码（白底衬底保证可扫） */}
+            <div style={{ background: '#fff', padding: 12, borderRadius: 3, lineHeight: 0 }}>
+              <img src={confessionApi.qrCode(showQrItem.slug)} alt="QR" style={{ width: 180, height: 180, display: 'block' }}
+                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+
+            {/* 保存按钮 */}
+            <button
+              onClick={() => handleSaveQr(showQrItem)}
+              disabled={saving}
+              className="w-full mt-4 flex items-center justify-center gap-2 text-sm font-medium transition-all"
+              style={{
+                minHeight: 44,
+                background: 'var(--color-primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 3,
+                opacity: saving ? 0.6 : 1,
+                cursor: saving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <Download size={16} />
+              {saving ? '正在生成…' : '保存二维码到本地'}
+            </button>
+
+            <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看完整表白</p>
           </div>
         </div>
       )}
