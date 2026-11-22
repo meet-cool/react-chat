@@ -300,24 +300,32 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     if (!activeConv) return;
     try {
       const r = await socialApi.pat(activeConv.id);
-      setMessages((prev) => [...prev, {
-        id: Date.now(),
-        conversation_id: activeConv.id,
-        sender_id: currentUserId,
-        content: '',
-        type: 'pat',
-        is_read: 0,
-        create_time: r.pat_time,
-        create_time_fmt: '',
-        reply_to: 0,
-        status: 0,
-        is_self: true,
-        reactions: [],
-        reply: null,
-        is_recalled: false,
-        username: '',
-        avatar: '',
-      } as any]);
+      if (r.message) {
+        // 后端返回真实 DB id 的消息对象：插入后增量拉取按 id 去重，不会重复渲染
+        const msg = r.message;
+        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+        lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
+      } else {
+        // 兜底（旧后端无 message 字段）：乐观插入，等增量拉取按内容重合后由刷新收敛
+        setMessages((prev) => [...prev, {
+          id: Date.now(),
+          conversation_id: activeConv.id,
+          sender_id: currentUserId,
+          content: '',
+          type: 'pat',
+          is_read: 0,
+          create_time: r.pat_time,
+          create_time_fmt: '',
+          reply_to: 0,
+          status: 0,
+          is_self: true,
+          reactions: [],
+          reply: null,
+          is_recalled: false,
+          username: '',
+          avatar: '',
+        } as any]);
+      }
     } catch (e) {
       addToast(e instanceof Error ? e.message : '拍一拍失败', 'error');
     }

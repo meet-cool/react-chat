@@ -1028,8 +1028,9 @@ export const socialApi = {
       `/chat/conversations/${convId}/messages/search?keyword=${encodeURIComponent(keyword)}`
     ),
 
-  /** 拍一拍对方 */
-  pat: (convId: number) => post<{ pat_time: number }>(`/chat/conversations/${convId}/pat`, {}),
+  /** 拍一拍对方（message 为后端返回的真实消息对象，前端按真实 id 插入以避免重复） */
+  pat: (convId: number) =>
+    post<{ pat_time: number; message?: PrivateMessage }>(`/chat/conversations/${convId}/pat`, {}),
 
   /** 拉黑 / 解除 / 列表 */
   block: (userId: number) => post<{ blocked: boolean; username: string }>(`/chat/user/block/${userId}`, {}),
