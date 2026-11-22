@@ -87,11 +87,43 @@ interface RequestOptions extends RequestInit {
   timeoutMs?: number;
 }
 
+/**
+ * 把 fetch 网络层异常（TypeError: Failed to fetch / TimeoutError 等）翻译成带上下文的具体错误：
+ * 报出「哪个请求、打到哪个域、可能是哪类网络问题」，toast/面板直接可读，便于定位。
+ * 仅处理网络层异常；HTTP 状态码类业务错误不经过这里。
+ */
+function describeNetworkError(e: unknown, method: string, fullUrl: string): Error {
+  const raw = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  let origin = fullUrl;
+  let pathname = fullUrl;
+  try {
+    const u = new URL(fullUrl);
+    origin = u.origin;
+    pathname = u.pathname;
+  } catch {
+    /* 解析失败（相对路径等）时原样展示 */
+  }
+  const hints: string[] = [];
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    hints.push('设备当前无网络');
+  }
+  if (typeof location !== 'undefined' && location.protocol === 'https:' && origin.startsWith('http://')) {
+    hints.push('HTTPS 页面被禁止请求 HTTP 接口（混合内容）');
+  }
+  if (typeof location !== 'undefined' && origin && location.origin !== origin) {
+    hints.push('跨域请求可能被 CORS 拦截');
+  }
+  hints.push('DNS 解析失败 / 连接被重置 / 服务器不可达');
+  return new Error(`${method} ${pathname} 网络请求失败：${raw}（可能原因：${hints.join('；')}）`);
+}
+
 async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
   const { timeoutMs = 15000, ...init } = options;
+  const method = (init.method || 'GET').toUpperCase();
+  const fullUrl = `${getApiBaseUrl()}${path}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string>),
@@ -108,11 +140,13 @@ async function request<T>(
 
   let res: Response;
   try {
-    res = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers, signal: controller.signal });
+    res = await fetch(fullUrl, { ...init, headers, signal: controller.signal });
   } catch (e) {
     clearTimeout(timer);
-    if (controller.signal.aborted) throw new Error('请求超时');
-    throw e;
+    if (controller.signal.aborted) {
+      throw new Error(`请求超时（${method} ${path}，${Math.round(timeoutMs / 1000)}s 无响应）`);
+    }
+    throw describeNetworkError(e, method, fullUrl);
   }
   clearTimeout(timer);
 
@@ -130,7 +164,7 @@ async function request<T>(
     } catch {
       json = undefined; // 非 JSON 响应
     }
-    throw new Error(json?.msg || `服务器错误(HTTP ${res.status})`);
+    throw new Error(json?.msg || `服务器错误（HTTP ${res.status}，${method} ${path}）`);
   }
 
   const json: ApiResponse<T> = await res.json();
@@ -562,7 +596,7 @@ export const aiApi = {
     } catch (e) {
       clearTimeout(timer);
       if (controller.signal.aborted) throw new Error('AI 响应超时（60s），请稍后再试');
-      throw new Error('网络错误：无法连接到 AI 服务（Failed to fetch）');
+      throw describeNetworkError(e, 'POST', `${getApiBaseUrl()}/chat/ai/chat/stream`);
     }
     clearTimeout(timer);
     // SSE 开启前的校验错误：HTTP 200 + body JSON（code 400/404）或 !res.ok + JSON。
@@ -826,9 +860,17 @@ async function memeDirectSearch(msg: string, page: number, num: number): Promise
   if (hit && Date.now() - hit.at < MEME_DIRECT_TTL) return hit.result;
 
   const qs = `msg=${encodeURIComponent(msg)}&page=${page}&num=${num}`;
-  const res = await fetch(`https://xiaoapi.cn/v1/meme.php?${qs}`, {
-    signal: AbortSignal.timeout(10_000),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`https://xiaoapi.cn/v1/meme.php?${qs}`, {
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      throw new Error('表情包直连超时（10s，xiaoapi.cn 无响应）');
+    }
+    throw describeNetworkError(e, 'GET', 'https://xiaoapi.cn/v1/meme.php');
+  }
   if (!res.ok) throw new Error(`表情包直连失败（HTTP ${res.status}）`);
   const j = await res.json();
   if (j?.code !== 200 || !Array.isArray(j?.data)) throw new Error('表情包直连返回异常');
