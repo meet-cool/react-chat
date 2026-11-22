@@ -5,6 +5,23 @@ import './index.css';
 import { AppProvider } from './lib/AppContext.tsx';
 import { loadAppearance } from './lib/appearance.ts';
 
+// ===== 兼容性 polyfill：AbortSignal.timeout =====
+// QQ/微信等内嵌 webview（旧 Chromium 内核）不支持 AbortSignal.timeout() 静态方法，
+// 表情包直连搜索等调用会直接抛 "AbortSignal.timeout is not a function"。
+// 用 AbortController + setTimeout 补一个等价实现（abort reason 为 TimeoutError），
+// 仅在缺失时注入，不覆盖原生实现。
+if (typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout !== 'function') {
+  (AbortSignal as any).timeout = function (ms: number): AbortSignal {
+    const ctrl = new AbortController();
+    const reason =
+      typeof DOMException !== 'undefined'
+        ? new DOMException('The operation timed out', 'TimeoutError')
+        : new Error('The operation timed out');
+    setTimeout(() => ctrl.abort(reason), ms);
+    return ctrl.signal;
+  };
+}
+
 // 渲染前恢复外观自定义（圆角/透明），避免首帧闪回默认样式
 loadAppearance();
 
