@@ -240,7 +240,7 @@ export function RoomChatView({
       {/* 右侧成员列表（移动端抽屉） */}
       <aside className={`md:hidden fixed inset-y-0 right-0 z-50 w-60 h-full border-l bg-[var(--color-card)] transition-transform duration-200 ease-out ${mobileSidebar === 'members' ? 'translate-x-0' : 'translate-x-full'}`} style={{ borderColor: 'var(--color-divider)' }}>
         {activeRoom && (
-          <div className="flex flex-col h-full w-60 relative">
+          <div className="flex flex-col h-full w-60 relative" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 56px)' }}>
             <button className="absolute top-3 right-3 z-10 btn btn-sm p-2" onClick={onMobileMembers} style={{ minHeight: 36, minWidth: 36 }}>
               <span className="text-lg">×</span>
             </button>

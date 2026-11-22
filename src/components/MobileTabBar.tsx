@@ -100,7 +100,7 @@ function TabButton({
     >
       <div className="relative">
         <Icon size={18} />
-        {badge && badge > 0 && (
+        {badge != null && badge > 0 && (
           <span
             className="absolute -top-1 -right-1 flex items-center justify-center text-[9px] text-white"
             style={{
