@@ -451,7 +451,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 activeRoomId={activeRoom?.id ?? null}
                 activeConvId={activeConv?.id ?? null}
                 roomsLoading={roomsLoading}
-                onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); if (isMobile) { setMobileView('room'); setMobileSidebar(null); } }}
                 onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setMobileSidebar(null); if (isMobile) { setMobileView('private'); } }}
                 onCreateRoom={() => setShowCreateModal(true)}
                 onOpenRoomSettings={() => setShowRoomSettings(true)}
@@ -466,7 +466,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                 activeRoomId={activeRoom?.id ?? null}
                 activeConvId={activeConv?.id ?? null}
                 roomsLoading={roomsLoading}
-                onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); if (isMobile) { setMobileView('room'); setMobileSidebar(null); } }}
                 onSelectConv={() => {}}
                 onCreateRoom={() => setShowCreateModal(true)}
                 onOpenRoomSettings={() => setShowRoomSettings(true)}
@@ -579,7 +579,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     activeRoomId={activeRoom?.id ?? null}
                     activeConvId={activeConv?.id ?? null}
                     roomsLoading={roomsLoading}
-                    onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                    onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); if (isMobile) { setMobileView('room'); setMobileSidebar(null); } }}
                     onSelectConv={(conv) => { setShowPrivate(false); setPrivateTarget(null); setActiveRoom(null); setActiveGroup(null); setActiveConv(conv); setMobileSidebar(null); if (isMobile) { setMobileView('private'); } }}
                     onCreateRoom={() => setShowCreateModal(true)}
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
@@ -595,7 +595,7 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     activeRoomId={activeRoom?.id ?? null}
                     activeConvId={activeConv?.id ?? null}
                     roomsLoading={roomsLoading}
-                    onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); }}
+                    onSelectRoom={(room) => { setShowPrivate(false); setPrivateTarget(null); setActiveConv(null); setActiveGroup(null); handleJoinRoom(room); if (isMobile) { setMobileView('room'); setMobileSidebar(null); } }}
                     onSelectConv={() => {}}
                     onCreateRoom={() => setShowCreateModal(true)}
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
