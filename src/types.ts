@@ -360,6 +360,10 @@ export interface AiChat {
   update_time_fmt?: string;
   pinned?: number;
   archived?: number;
+  /** 会话状态（P0+P1 后端新增）：0=active 1=archived（列表/详情为数字；status 端点入参为 'active'|'archived'） */
+  status?: number | string;
+  /** 标题锁定标记：手动改名 / 自动标题后为 1，后端不再覆盖 */
+  title_locked?: number;
 }
 
 export interface AiMsg {
@@ -369,6 +373,12 @@ export interface AiMsg {
   mode: string;
   deep_thinking: number;
   create_time: number;
+  /** 消息反馈：0 无 / 1 赞 / 2 踩（P0+P1 后端新增） */
+  feedback?: number;
+  /** 该助手回复是否失败留痕（1=failed，可重试） */
+  failed?: number;
+  /** 变体来源：>0 表示这是某条助手回复的再生成版本 */
+  variant_of?: number;
 }
 
 export interface AiConfig {
@@ -377,6 +387,24 @@ export interface AiConfig {
   temperature: number;
   max_tokens: number;
   has_api_key: boolean;
+  /** 快捷提问提示词（点击填入输入框），可为空数组 */
+  quick_prompts?: string[];
+  /** 每日调用上限，0=不限 */
+  daily_call_limit?: number;
+}
+
+/** AI 广场配额仪表盘（GET /chat/ai/dashboard） */
+export interface AiDashboard {
+  chat_count: number;
+  msg_count: number;
+  total_calls: number;
+  today_calls: number;
+  /** 每日调用上限，0=不限 */
+  daily_limit: number;
+  /** 今日剩余调用次数，null=不限 */
+  remaining: number | null;
+  /** 累计 token 估算值 */
+  tokens_est: number;
 }
 
 // ============ 管理后台 ============

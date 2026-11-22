@@ -4,11 +4,12 @@ import {
   Sparkles, Zap, MessageSquare, Trash2, Pencil,
   ArrowLeft, Bot, CheckCircle, AlertCircle, Menu,
   Plus, Search, X, ChevronDown, ChevronUp,
-  User, Settings, Share2, Copy, Download,
-  Edit3, Pin, Archive, RefreshCw, Star, Brain
+  Settings, Share2, Copy,
+  Pin, PinOff, Archive, ArchiveRestore, Eraser,
+  RefreshCw, ThumbsUp, ThumbsDown, MoreVertical, Brain
 } from 'lucide-react';
 import { aiApi } from '../lib/api';
-import type { AiChat, AiMsg, AiConfig } from '../types';
+import type { AiChat, AiMsg, AiConfig, AiDashboard } from '../types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../lib/AppContext';
@@ -25,7 +26,11 @@ const QUICK_PROMPTS = [
   { label: '检查问题', prompt: '请检查前面的结论是否存在遗漏、风险或不准确之处。' },
 ];
 
-type SidebarFilter = 'all' | 'pinned' | 'archived';
+type SidebarFilter = 'all' | 'pinned';
+
+// 列表/详情行的 status 为数字（0=active 1=archived）；status 端点入参为 'active'|'archived'
+const isArchived = (chat: AiChat) =>
+  chat.status === 1 || chat.status === 'archived';
 
 export function AiPanelPage({ }: AiPanelPageProps) {
   const navigate = useNavigate();
@@ -39,11 +44,16 @@ export function AiPanelPage({ }: AiPanelPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [filter, setFilter] = useState<SidebarFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [clearNonce, setClearNonce] = useState(0);
+  // 草稿会话模式（新建对话未发首条消息前）；null=未处于草稿态
+  const [draftMode, setDraftMode] = useState<'fast' | 'professional' | null>(null);
 
-  const loadChats = useCallback(async () => {
+  // 会话管理：统一拉全量（含已归档），前端按 status 分组渲染
+  const loadChats = useCallback(async (includeArchived = true) => {
     try {
-      const list = await aiApi.listChats();
+      const list = await aiApi.listChats(includeArchived);
       setChats(list);
     } catch {
     } finally {
@@ -64,6 +74,25 @@ export function AiPanelPage({ }: AiPanelPageProps) {
     loadConfig();
   }, [loadChats, loadConfig]);
 
+  // 把自动生成的标题同步到侧边栏列表
+  const updateChatTitle = useCallback((id: number, title: string) => {
+    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
+  }, []);
+
+  // 配额仪表盘：进页面加载，每次对话 end 后由 AiChatView 触发刷新
+  const [dashboard, setDashboard] = useState<AiDashboard | null>(null);
+  const loadDashboard = useCallback(async () => {
+    try {
+      setDashboard(await aiApi.dashboard());
+    } catch {
+      // 静默：仪表盘不可用不影响主流程
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
   const handleDelete = async (id: number) => {
     try {
       await aiApi.deleteChat(id);
@@ -75,15 +104,13 @@ export function AiPanelPage({ }: AiPanelPageProps) {
     }
   };
 
-  const handleCreateChat = async (chatMode: 'fast' | 'professional') => {
-    try {
-      const result = await aiApi.createChat(chatMode);
-      setActiveChatId(result.id);
-      setMobileMenuOpen(false);
-      loadChats();
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : '创建失败', 'error');
-    }
+  // 新建对话：进入草稿视图（chatId=0），首条消息以 conv_id=0 发送，
+  // 由后端流式建会话并落库 user 消息（start 事件返回新 conv_id），
+  // 这样「自动标题 / 重新生成」才有已落库的 user 前驱可用。
+  const handleCreateChat = (chatMode: 'fast' | 'professional') => {
+    setActiveChatId(null);
+    setDraftMode(chatMode);
+    setMobileMenuOpen(false);
   };
 
   const handleRename = async (id: number, title: string) => {
@@ -97,13 +124,67 @@ export function AiPanelPage({ }: AiPanelPageProps) {
     }
   };
 
-  const filteredChats = chats.filter((chat) => {
+  const handleTogglePin = async (chat: AiChat) => {
+    const next = !chat.pinned;
+    try {
+      await aiApi.pinChat(chat.id, next);
+      addToast(next ? '已置顶' : '已取消置顶', 'success');
+      loadChats();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '操作失败', 'error');
+    }
+  };
+
+  const handleToggleArchive = async (chat: AiChat) => {
+    const archived = isArchived(chat);
+    try {
+      await aiApi.setChatStatus(chat.id, archived ? 'active' : 'archived');
+      addToast(archived ? '已恢复' : '已归档', 'success');
+      loadChats();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '操作失败', 'error');
+    }
+  };
+
+  const handleDuplicate = async (chat: AiChat) => {
+    try {
+      const result = await aiApi.duplicateChat(chat.id);
+      addToast('会话已复制', 'success');
+      await loadChats();
+      setActiveChatId(result.id);
+      setMobileMenuOpen(false);
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '复制失败', 'error');
+    }
+  };
+
+  const handleClear = async (chat: AiChat) => {
+    if (!window.confirm(`确定清空「${chat.title || '未命名对话'}」的全部消息？清空后不可恢复。`)) return;
+    try {
+      await aiApi.clearChat(chat.id);
+      addToast('会话已清空', 'success');
+      if (activeChatId === chat.id) setClearNonce((n) => n + 1);
+      loadChats();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : '清空失败', 'error');
+    }
+  };
+
+  const activeChats = chats.filter((c) => !isArchived(c));
+  const archivedChats = chats.filter((c) => isArchived(c));
+
+  const filteredChats = activeChats.filter((chat) => {
     const matchesSearch = chat.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'all' || 
-      (filter === 'pinned' && chat.pinned) ||
-      (filter === 'archived' && chat.archived);
+    const matchesFilter = filter === 'all' ||
+      (filter === 'pinned' && chat.pinned);
     return matchesSearch && matchesFilter;
   });
+
+  // 已归档分组（默认折叠，前端按 status 分组渲染）
+  const filteredArchived = showArchived
+    ? archivedChats.filter((chat) =>
+        chat.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : [];
 
   return (
     <div className="h-screen flex flex-row overflow-hidden" style={{ background: 'var(--color-bg-page)' }}>
@@ -183,7 +264,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
             />
           </div>
           <div className="flex gap-1 text-xs">
-            {(['all', 'pinned', 'archived'] as SidebarFilter[]).map((f) => (
+            {(['all', 'pinned'] as SidebarFilter[]).map((f) => (
               <button
                 key={f}
                 className={`flex-1 py-1 px-2 rounded transition-all duration-150 ${
@@ -198,7 +279,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
                 }}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? '全部' : f === 'pinned' ? '置顶' : '归档'}
+                {f === 'all' ? '全部' : '置顶'}
               </button>
             ))}
           </div>
@@ -214,7 +295,7 @@ export function AiPanelPage({ }: AiPanelPageProps) {
               />
               <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>加载中...</span>
             </div>
-          ) : filteredChats.length === 0 ? (
+          ) : filteredChats.length === 0 && archivedChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 px-4 text-center">
               <div 
                 className="w-12 h-12 rounded-sm flex items-center justify-center"
@@ -232,101 +313,105 @@ export function AiPanelPage({ }: AiPanelPageProps) {
               </div>
             </div>
           ) : (
-            filteredChats.map((chat) => (
-              <div
-                key={chat.id}
-                className={`px-3 py-2.5 cursor-pointer transition-all duration-150 group ${
-                  activeChatId === chat.id ? 'active' : 'hover:bg-[var(--color-hover-bg)]'
-                }`}
-                style={activeChatId === chat.id ? {
-                  background: 'var(--color-primary-light)',
-                  borderLeft: '3px solid var(--color-primary)',
-                } : {}}
-                onClick={() => {
-                  setActiveChatId(chat.id);
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <div className="flex items-start gap-2">
-                  <Sparkles 
-                    size={14} 
-                    style={{ 
-                      color: 'var(--color-primary)', 
-                      marginTop: 2, 
-                      flexShrink: 0,
-                      opacity: activeChatId === chat.id ? 1 : 0.7
-                    }} 
-                  />
-                  <div className="flex-1 min-w-0">
-                    {editingTitle === chat.id ? (
-                      <input
-                        type="text"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        onBlur={() => handleRename(chat.id, newTitle)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRename(chat.id, newTitle);
-                          if (e.key === 'Escape') setEditingTitle(null);
-                        }}
-                        className="text-sm w-full p-0.5 px-1"
-                        style={{ 
-                          background: 'var(--color-card)', 
-                          border: '1px solid var(--color-primary)', 
-                          color: 'var(--color-text)', 
-                          fontSize: '13px',
-                          borderRadius: 'var(--radius-sm, 3px)'
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <div 
-                        className="text-sm truncate font-medium"
-                        style={{ color: 'var(--color-text)' }}
-                      >
-                        {chat.title || '未命名对话'}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        {chat.message_count} 条消息
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>·</span>
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        {chat.mode === 'professional' ? '专业' : '快速'}
-                      </span>
-                      {chat.pinned && (
-                        <span className="text-xs" style={{ color: 'var(--color-warning)' }}>置顶</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      className="p-1 hover:bg-[var(--color-hover-bg)] transition-colors"
-                      style={{ color: 'var(--color-text-muted)' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingTitle(chat.id);
-                        setNewTitle(chat.title);
-                      }}
-                      title="重命名"
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      className="p-1 hover:bg-[var(--color-error-light)] transition-colors"
-                      style={{ color: 'var(--color-error)' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(chat.id);
-                      }}
-                      title="删除"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
+            <>
+              {filteredChats.length === 0 && (
+                <div className="flex items-center gap-2 px-3 py-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                  <MessageSquare size={14} />
+                  <span>当前筛选下没有进行中的会话</span>
                 </div>
-              </div>
-            ))
+              )}
+              {filteredChats.map((chat) => (
+                <ChatRow
+                  key={chat.id}
+                  chat={chat}
+                  active={activeChatId === chat.id}
+                  editing={editingTitle === chat.id}
+                  newTitle={newTitle}
+                  openMenu={openMenuId === chat.id}
+                  onOpenMenu={() => setOpenMenuId(openMenuId === chat.id ? null : chat.id)}
+                  onCloseMenu={() => setOpenMenuId(null)}
+                  onNewTitleChange={setNewTitle}
+                  onSelect={() => {
+                    setActiveChatId(chat.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  onStartEdit={() => {
+                    setEditingTitle(chat.id);
+                    setNewTitle(chat.title);
+                    setOpenMenuId(null);
+                  }}
+                  onCancelEdit={() => setEditingTitle(null)}
+                  onRename={(t) => {
+                    handleRename(chat.id, t);
+                    setOpenMenuId(null);
+                  }}
+                  onPin={() => handleTogglePin(chat)}
+                  onArchive={() => handleToggleArchive(chat)}
+                  onDuplicate={() => handleDuplicate(chat)}
+                  onClear={() => handleClear(chat)}
+                  onDelete={() => {
+                    handleDelete(chat.id);
+                    setOpenMenuId(null);
+                  }}
+                />
+              ))}
+              {/* 已归档折叠开关（include_archived=1 拉全量，前端按 status 分组） */}
+              {archivedChats.length > 0 && (
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-xs transition-colors hover:bg-[var(--color-hover-bg)]"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  onClick={() => setShowArchived((v) => !v)}
+                >
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${showArchived ? 'rotate-180' : ''}`} />
+                  <Archive size={12} />
+                  <span>显示已归档（{archivedChats.length}）</span>
+                </button>
+              )}
+              {showArchived && filteredArchived.length > 0 && (
+                <div
+                  className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-xs"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  <Archive size={11} />
+                  <span>已归档</span>
+                </div>
+              )}
+              {showArchived && filteredArchived.map((chat) => (
+                <ChatRow
+                  key={chat.id}
+                  chat={chat}
+                  active={activeChatId === chat.id}
+                  editing={editingTitle === chat.id}
+                  newTitle={newTitle}
+                  openMenu={openMenuId === chat.id}
+                  onOpenMenu={() => setOpenMenuId(openMenuId === chat.id ? null : chat.id)}
+                  onCloseMenu={() => setOpenMenuId(null)}
+                  onNewTitleChange={setNewTitle}
+                  onSelect={() => {
+                    setActiveChatId(chat.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  onStartEdit={() => {
+                    setEditingTitle(chat.id);
+                    setNewTitle(chat.title);
+                    setOpenMenuId(null);
+                  }}
+                  onCancelEdit={() => setEditingTitle(null)}
+                  onRename={(t) => {
+                    handleRename(chat.id, t);
+                    setOpenMenuId(null);
+                  }}
+                  onPin={() => handleTogglePin(chat)}
+                  onArchive={() => handleToggleArchive(chat)}
+                  onDuplicate={() => handleDuplicate(chat)}
+                  onClear={() => handleClear(chat)}
+                  onDelete={() => {
+                    handleDelete(chat.id);
+                    setOpenMenuId(null);
+                  }}
+                />
+              ))}
+            </>
           )}
         </div>
 
@@ -404,19 +489,218 @@ export function AiPanelPage({ }: AiPanelPageProps) {
         </header>
 
         {/* 内容区域 */}
-        <div className="flex-1 overflow-hidden">
-          {activeChatId ? (
-            <AiChatView
-              key={activeChatId}
-              chatId={activeChatId}
-              onRefresh={() => loadChats()}
-              onLogout={() => navigate('/login')}
-            />
-          ) : (
-            <EmptyState onCreateChat={handleCreateChat} />
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {/* 配额 / 用量一行小字 */}
+          {dashboard && (
+            <div
+              className="px-4 py-1.5 flex-shrink-0 border-b"
+              style={{ background: 'var(--color-card-alt)', borderColor: 'var(--color-divider)', color: 'var(--color-text-muted)' }}
+            >
+              <span className="text-xs">
+                今日 {dashboard.today_calls}
+                {dashboard.daily_limit ? `/${dashboard.daily_limit}` : ''} 次 · 累计 {dashboard.total_calls} · 估算 {dashboard.tokens_est} tokens
+              </span>
+              {dashboard.remaining === 0 && (
+                <span className="ml-2 text-xs font-medium" style={{ color: 'var(--color-error)' }}>今日额度已用完</span>
+              )}
+            </div>
           )}
+          <div className="flex-1 overflow-hidden">
+            {activeChatId ? (
+              <AiChatView
+                key={`chat-${activeChatId}`}
+                chatId={activeChatId}
+                dashboard={dashboard}
+                clearNonce={clearNonce}
+                onRefresh={() => loadChats()}
+                onRefreshDashboard={loadDashboard}
+                onUpdateTitle={updateChatTitle}
+                onLogout={() => navigate('/login')}
+              />
+            ) : draftMode ? (
+              <AiChatView
+                key="draft"
+                chatId={0}
+                draftMode={draftMode}
+                dashboard={dashboard}
+                clearNonce={clearNonce}
+                onRefresh={() => loadChats()}
+                onRefreshDashboard={loadDashboard}
+                onUpdateTitle={updateChatTitle}
+                onChatCreated={(id) => {
+                  setDraftMode(null);
+                  setActiveChatId(id);
+                  loadChats();
+                }}
+                onLogout={() => navigate('/login')}
+              />
+            ) : (
+              <EmptyState onCreateChat={handleCreateChat} />
+            )}
+          </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+// 会话列表行（置顶徽标 + 更多菜单：置顶/归档/复制/清空/重命名/删除）
+function ChatRow({
+  chat, active, editing, newTitle, openMenu,
+  onOpenMenu, onCloseMenu, onNewTitleChange, onSelect,
+  onStartEdit, onCancelEdit, onRename, onPin, onArchive, onDuplicate, onClear, onDelete,
+}: {
+  chat: AiChat;
+  active: boolean;
+  editing: boolean;
+  newTitle: string;
+  openMenu: boolean;
+  onOpenMenu: () => void;
+  onCloseMenu: () => void;
+  onNewTitleChange: (v: string) => void;
+  onSelect: () => void;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onRename: (title: string) => void;
+  onPin: () => void;
+  onArchive: () => void;
+  onDuplicate: () => void;
+  onClear: () => void;
+  onDelete: () => void;
+}) {
+  const isArchived = chat.status === 1 || chat.status === 'archived';
+  const menuItems: { key: string; icon: typeof Pin; label: string; action: () => void; danger?: boolean }[] = [
+    { key: 'pin', icon: chat.pinned ? PinOff : Pin, label: chat.pinned ? '取消置顶' : '置顶', action: onPin },
+    { key: 'archive', icon: isArchived ? ArchiveRestore : Archive, label: isArchived ? '恢复' : '归档', action: onArchive },
+    { key: 'copy', icon: Copy, label: '复制会话', action: onDuplicate },
+    { key: 'clear', icon: Eraser, label: '清空消息', action: onClear },
+    { key: 'rename', icon: Pencil, label: '重命名', action: onStartEdit },
+    { key: 'delete', icon: Trash2, label: '删除', action: onDelete, danger: true },
+  ];
+  return (
+    <div
+      className="px-3 py-2.5 cursor-pointer transition-all duration-150 group relative"
+      style={active ? {
+        background: 'var(--color-primary-light)',
+        borderLeft: '3px solid var(--color-primary)',
+      } : undefined}
+      onClick={onSelect}
+    >
+      <div className="flex items-start gap-2">
+        <Sparkles
+          size={14}
+          style={{
+            color: 'var(--color-primary)',
+            marginTop: 2,
+            flexShrink: 0,
+            opacity: active ? 1 : 0.7
+          }}
+        />
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => { onNewTitleChange(e.target.value); }}
+              onBlur={() => onRename(newTitle)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onRename(newTitle);
+                if (e.key === 'Escape') onCancelEdit();
+              }}
+              className="text-sm w-full p-0.5 px-1"
+              style={{
+                background: 'var(--color-card)',
+                border: '1px solid var(--color-primary)',
+                color: 'var(--color-text)',
+                fontSize: '13px',
+                borderRadius: 'var(--radius-sm, 3px)'
+              }}
+              autoFocus
+            />
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="text-sm truncate font-medium"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {chat.title || '未命名对话'}
+              </span>
+              {chat.pinned ? (
+                !isArchived && <Pin size={11} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+              ) : null}
+              {isArchived && (
+                <span
+                  className="text-[10px] px-1.5 py-0.5 flex-shrink-0"
+                  style={{
+                    background: 'var(--color-card-alt)',
+                    border: '1px solid var(--color-border-light)',
+                    color: 'var(--color-text-muted)',
+                    borderRadius: 'var(--radius-sm, 3px)'
+                  }}
+                >
+                  已归档
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {chat.message_count} 条消息
+            </span>
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>·</span>
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {chat.mode === 'professional' ? '专业' : '快速'}
+            </span>
+          </div>
+        </div>
+        <button
+          className="p-1.5 -m-1 hover:bg-[var(--color-hover-bg)] transition-colors"
+          style={{ color: 'var(--color-text-muted)' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenMenu();
+          }}
+          title="会话操作"
+        >
+          <MoreVertical size={14} />
+        </button>
+      </div>
+      {openMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={(e) => { e.stopPropagation(); onCloseMenu(); }}
+          />
+          <div
+            className="absolute right-2 top-full z-20 py-1 w-40 shadow-lg"
+            style={{
+              background: 'var(--color-card)',
+              border: '1px solid var(--color-divider)',
+              borderRadius: 'var(--radius-sm, 3px)'
+            }}
+          >
+            {menuItems.map((item) => (
+              <button
+                key={item.key}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${
+                  item.danger ? 'hover:bg-[var(--color-error-light)]' : 'hover:bg-[var(--color-hover-bg)]'
+                }`}
+                style={{
+                  color: item.danger ? 'var(--color-error)' : 'var(--color-text)'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.action();
+                  onCloseMenu();
+                }}
+              >
+                <item.icon size={13} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -472,25 +756,62 @@ function EmptyState({ onCreateChat }: { onCreateChat: (mode: 'fast' | 'professio
 }
 
 // AI 聊天视图组件
-function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh: () => void; onLogout?: () => void }) {
+// chatId=0 表示草稿会话（新建对话尚未发送首条消息）：
+// 首条消息以 conv_id=0 走流式建会话，start 事件的 conv_id 即新会话 id（onChatCreated 回报父级）。
+function AiChatView({
+  chatId, draftMode, dashboard, clearNonce, onRefresh, onRefreshDashboard, onUpdateTitle, onChatCreated, onLogout,
+}: {
+  chatId: number;
+  draftMode?: 'fast' | 'professional';
+  dashboard: AiDashboard | null;
+  clearNonce: number;
+  onRefresh: () => void;
+  onRefreshDashboard: () => void;
+  onUpdateTitle: (chatId: number, title: string) => void;
+  onChatCreated?: (chatId: number) => void;
+  onLogout?: () => void;
+}) {
   const { addToast } = useApp();
+  const isDraft = chatId === 0;
   const [messages, setMessages] = useState<AiMsg[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [chatInfo, setChatInfo] = useState<{ title: string; mode: string; deep_thinking: number } | null>(null);
-  const [mode, setMode] = useState<'fast' | 'professional'>('fast');
+  const [mode, setMode] = useState<'fast' | 'professional'>(draftMode || 'fast');
   const [deepThinking, setDeepThinking] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
-  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
   const [showResponseControls, setShowResponseControls] = useState(true);
+  const [showPromptMenu, setShowPromptMenu] = useState(false);
+  const [quickPrompts, setQuickPrompts] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 进行中的流式读取器（卸载/切换会话时中止）
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const loadChatSeqRef = useRef(0);
+  const sendCountRef = useRef(0);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // 快捷提问 chips：从 config.quick_prompts 读取（≤6 条，超出横向滚动）
+  useEffect(() => {
+    aiApi.config().then((cfg) => {
+      setQuickPrompts((cfg.quick_prompts || []).filter((s) => s.trim()).slice(0, 6));
+    }).catch(() => {});
+  }, []);
+
+  // 侧边栏「清空消息」后重载本会话
+  const clearNonceRef = useRef(clearNonce);
+  useEffect(() => {
+    if (clearNonce !== clearNonceRef.current) {
+      clearNonceRef.current = clearNonce;
+      setMessages([]);
+      setSendError(null);
+      loadChat();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearNonce]);
+
   const loadChat = useCallback(async () => {
+    if (isDraft) return; // 草稿会话无落库数据
     const seq = ++loadChatSeqRef.current;
     try {
       const data = await aiApi.getChat(chatId);
@@ -527,8 +848,96 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
     }
   }, [input]);
 
+  // 自动标题：第一轮助手回复 end 后，若标题仍是默认「新对话」则静默生成
+  const tryAutoTitle = useCallback(async () => {
+    try {
+      const detail = await aiApi.getChat(chatId);
+      if ((detail.title || '').trim() !== '新对话') return;
+      const result = await aiApi.generateTitle(chatId);
+      if (result && result.title) {
+        onUpdateTitle(chatId, result.title);
+        setChatInfo((prev) => (prev ? { ...prev, title: result.title as string } : prev));
+      }
+    } catch {
+      // 静默失败（已锁定 / 消息不足 / 上游不可用）
+    }
+  }, [chatId, onUpdateTitle]);
+
+  /** 通用流式读取：逐字渲染 + 区分 quota_exceeded 与普通错误 + start 事件取新会话 id */
+  const runStream = async (opts: {
+    messages: AiMsg[];
+    regenerate?: boolean;
+    retry?: boolean;
+    msgId?: number;
+    onContent: (content: string) => void;
+    onEnd: (content: string) => void;
+    onQuota: () => void;
+    onError: (msg: string) => void;
+    /** conv_id=0 流式建会话时，start 事件携带新 conv_id */
+    onStartConv?: (convId: number) => void;
+  }) => {
+    const events = await aiApi.streamChat(
+      opts.messages, mode, deepThinking, chatId,
+      opts.regenerate
+        ? { regenerate: true, msgId: opts.msgId }
+        : opts.retry ? { retry: true } : undefined,
+    );
+    if (!events) throw new Error('流式响应为空');
+    const reader = events.getReader();
+    streamReaderRef.current = reader;
+    const decoder = new TextDecoder();
+    let content = '';
+    let buffer = '';
+    let errorMsg: string | null = null;
+    let quotaExceeded = false;
+    // 解析单行 SSE：event: 行忽略（error 判定只看 data 载荷里的 error/code 字段）；JSON 坏行静默跳过
+    const processLine = (rawLine: string) => {
+      const line = rawLine.trim();
+      if (!line.startsWith('data: ')) return;
+      let parsed: { content?: string; done?: boolean; error?: string; code?: string; conv_id?: number };
+      try {
+        parsed = JSON.parse(line.slice(6));
+      } catch {
+        return;
+      }
+      if (parsed.error !== undefined) {
+        quotaExceeded = parsed.code === 'quota_exceeded';
+        errorMsg = parsed.error;
+        return;
+      }
+      if (typeof parsed.conv_id === 'number' && parsed.conv_id > 0) {
+        opts.onStartConv?.(parsed.conv_id);
+      }
+      if (parsed.content) {
+        content += parsed.content;
+        opts.onContent(content);
+      }
+    };
+    try {
+      while (!errorMsg) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) processLine(line);
+      }
+      if (!errorMsg && buffer.trim()) processLine(buffer);
+      void decoder.decode();
+    } finally {
+      streamReaderRef.current = null;
+    }
+    if (errorMsg) {
+      try { await reader.cancel(); } catch { /* 流已结束则忽略 */ }
+      if (quotaExceeded) opts.onQuota();
+      else opts.onError(errorMsg);
+      return; // SSE 错误已分发；仅网络/超时异常会抛给调用方 catch
+    }
+    opts.onEnd(content);
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || sending) return;
+    if (!input.trim() || sending || quotaExhausted) return;
     const userMsg: AiMsg = {
       id: Date.now(),
       role: 'user',
@@ -537,92 +946,191 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
       deep_thinking: deepThinking ? 1 : 0,
       create_time: Math.floor(Date.now() / 1000)
     };
-    setMessages((prev) => [...prev, userMsg]);
-    const currentInput = input.trim();
+    const allMessages = [...messages, userMsg];
+    setMessages(allMessages);
     setInput('');
     setSending(true);
     setStreamingContent('');
     setSendError(null);
+    let newConvId: number | null = null; // 草稿会话：start 事件回报的新会话 id
     try {
-      const events = await aiApi.streamChat(
-        [...messages, userMsg].map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          mode: m.mode,
-          deep_thinking: m.deep_thinking,
-          create_time: m.create_time
-        })),
-        mode,
-        deepThinking,
-        chatId
-      );
-      if (!events) throw new Error('流式响应为空');
-      const reader = events.getReader();
-      streamReaderRef.current = reader;
-      const decoder = new TextDecoder();
-      let assistantContent = '';
-      let buffer = '';
-      let streamErrorMsg: string | null = null;
-      // 解析单行 SSE 数据；JSON 坏行静默跳过；服务端错误行记录后终止
-      const processLine = (rawLine: string) => {
-        const line = rawLine.trim();
-        if (!line.startsWith('data: ')) return;
-        let parsed: { content?: string; done?: boolean; error?: string };
-        try {
-          parsed = JSON.parse(line.slice(6));
-        } catch {
-          return;
-        }
-        if (parsed.error) {
-          streamErrorMsg = parsed.error;
-          return;
-        }
-        if (parsed.content) {
-          assistantContent += parsed.content;
-          setStreamingContent(assistantContent);
-        }
-      };
-      try {
-        while (!streamErrorMsg) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          // chunk 追加进缓冲区，按 \n 切分，最后一段留作残行
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() ?? '';
-          for (const line of lines) processLine(line);
-        }
-        // 流结束后处理缓冲区中剩余的无换行尾行
-        if (!streamErrorMsg && buffer.trim()) processLine(buffer);
-        void decoder.decode();
-      } finally {
-        streamReaderRef.current = null;
-      }
-      if (streamErrorMsg) {
-        try { await reader.cancel(); } catch { /* 流已结束则忽略 */ }
-        setSendError(streamErrorMsg);
-        throw new Error(streamErrorMsg);
-      }
-      if (assistantContent) {
-        const assistantMsg: AiMsg = {
-          id: Date.now() + 1,
-          role: 'assistant',
-          content: assistantContent,
-          mode,
-          deep_thinking: deepThinking ? 1 : 0,
-          create_time: Math.floor(Date.now() / 1000)
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-        setStreamingContent('');
-        onRefresh();
-      }
+      await runStream({
+        messages: allMessages,
+        // 草稿（chatId=0）以 conv_id=0 发送，后端流式建会话并落库 user 消息
+        onContent: (c) => setStreamingContent(c),
+        onStartConv: (id) => { newConvId = id; },
+        onEnd: (content) => {
+          if (content) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content,
+                mode,
+                deep_thinking: deepThinking ? 1 : 0,
+                create_time: Math.floor(Date.now() / 1000)
+              },
+            ]);
+          }
+          setStreamingContent('');
+          sendCountRef.current += 1;
+          if (isDraft) {
+            // 新建会话（conv_id=0 创建后）：回报新 id 并静默生成自动标题
+            if (newConvId && onChatCreated) {
+              void (async () => {
+                try {
+                  const result = await aiApi.generateTitle(newConvId);
+                  if (result && result.title) {
+                    onUpdateTitle(newConvId, result.title);
+                  }
+                } catch {
+                  // 静默失败（已锁定 / 消息不足 / 上游不可用）
+                }
+              })();
+              onChatCreated(newConvId);
+              onRefresh();
+            } else {
+              onRefresh();
+            }
+            onRefreshDashboard();
+            return;
+          }
+          onRefresh();
+          onRefreshDashboard();
+          // 用 DB 数据归一化本地消息 id（feedback/regenerate 依赖真实 id）
+          void loadChat();
+          // 第一轮回复完成后尝试自动标题（静默）
+          if (sendCountRef.current === 1) void tryAutoTitle();
+        },
+        onQuota: () => {
+          addToast('今日额度已用完', 'error');
+          onRefreshDashboard();
+        },
+        onError: (msg) => {
+          setSendError(msg);
+          addToast('回复失败，可点消息上重试', 'error');
+          if (!isDraft) {
+            // 失败时后端已落 failed=1 留痕行：刷新让「重试」气泡可见
+            void loadChat();
+          }
+        },
+      });
     } catch (err) {
-      addToast(err instanceof Error ? err.message : '发送失败', 'error');
+      // 网络/超时等未走 SSE 的异常在此兜底（含 SSE 开启前的 JSON 校验错误：400/404）
       setSendError(err instanceof Error ? err.message : '发送失败');
-      // 保留用户消息便于重试，不主动 pop
+      addToast(err instanceof Error ? err.message : '发送失败', 'error');
     } finally {
       setSending(false);
+    }
+  };
+
+  // 配额耗尽（remaining===0）时禁用输入
+  const quotaExhausted = dashboard?.remaining === 0;
+
+  /** 重新生成：挂在最后一条已落库助手回复（非 variant、有 user 前驱）上 */
+  const handleRegenerate = async () => {
+    const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+    if (!lastAssistant || sending) return;
+    if ((lastAssistant.variant_of ?? 0) > 0 || !Number.isFinite(lastAssistant.id)) return;
+    // 简单校验：存在 user 前驱（后端对无 user 前驱会 400）
+    const hasUserPredecessor = messages.some((m) => m.role === 'user');
+    if (!hasUserPredecessor) return;
+    setSending(true);
+    setStreamingContent('');
+    setSendError(null);
+    try {
+      await runStream({
+        messages,
+        regenerate: true,
+        msgId: lastAssistant.id,
+        onContent: (c) => setStreamingContent(c),
+        onEnd: (content) => {
+          setStreamingContent('');
+          if (content) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content,
+                mode,
+                deep_thinking: deepThinking ? 1 : 0,
+                create_time: Math.floor(Date.now() / 1000),
+                variant_of: lastAssistant.id,
+              },
+            ]);
+          }
+          onRefresh();
+          onRefreshDashboard();
+          // 归一化：新变体行的真实 id / variant_of 来自 DB
+          void loadChat();
+        },
+        onQuota: () => {
+          addToast('今日额度已用完', 'error');
+          onRefreshDashboard();
+        },
+        onError: (msg) => {
+          setSendError(msg);
+          addToast('回复失败，可点消息上重试', 'error');
+        },
+      });
+    } catch {
+      // 已分发
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /** 重试：failed=1 的助手气泡原地修复 */
+  const handleRetry = async () => {
+    if (sending) return;
+    setSending(true);
+    setStreamingContent('');
+    setSendError(null);
+    try {
+      await runStream({
+        messages,
+        retry: true,
+        onContent: (c) => setStreamingContent(c),
+        onEnd: (content) => {
+          setStreamingContent('');
+          if (content) {
+            // 原地修复：刷新该会话消息（后端已修复 failed=1 行）
+            loadChat();
+            onRefresh();
+          }
+          onRefreshDashboard();
+        },
+        onQuota: () => {
+          addToast('今日额度已用完', 'error');
+          onRefreshDashboard();
+        },
+        onError: (msg) => {
+          setSendError(msg);
+          addToast('回复失败，可点消息上重试', 'error');
+          // 重试本身失败时刷新，让 failed=1 留痕行可见
+          loadChat();
+        },
+      });
+    } catch {
+      // 已分发
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /** 点赞 / 点踩（点当前值=撤销发 0） */
+  const handleFeedback = async (msg: AiMsg, value: 0 | 1 | 2) => {
+    setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, feedback: value } : m)));
+    try {
+      await aiApi.setMsgFeedback(chatId, msg.id, value);
+      addToast(value === 0 ? '已取消反馈' : value === 1 ? '已点赞' : '已点踩', 'success');
+    } catch (err) {
+      // 回滚
+      setMessages((prev) => prev.map((m) =>
+        m.id === msg.id ? { ...m, feedback: (msg.feedback ?? 0) } : m));
+      addToast(err instanceof Error ? err.message : '反馈失败', 'error');
     }
   };
 
@@ -633,9 +1141,26 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
     }
   };
 
+  // 「重新生成」入口：最后一条已落库助手回复（非 variant、非 failed，且存在 user 消息）
+  let lastAssistantId: number | null = null;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') { lastAssistantId = messages[i].id; break; }
+  }
+  const lastAssistant = lastAssistantId !== null
+    ? messages.find((m) => m.id === lastAssistantId) ?? null
+    : null;
+  const canRegenerate = !!(
+    lastAssistant &&
+    !sending &&
+    (lastAssistant.variant_of ?? 0) === 0 &&
+    lastAssistant.failed !== 1 &&
+    messages.some((m) => m.role === 'user')
+  );
+
   const handleQuickPrompt = (prompt: string) => {
+    if (quotaExhausted) return;
     setInput(prompt);
-    setShowQuickPrompts(false);
+    setShowPromptMenu(false);
     textareaRef.current?.focus();
   };
 
@@ -755,13 +1280,13 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-all duration-150 hover:bg-[var(--color-hover-bg)]"
             style={{ background: 'var(--color-card)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
-            onClick={() => setShowQuickPrompts(!showQuickPrompts)}
+            onClick={() => setShowPromptMenu(!showPromptMenu)}
           >
             <Sparkles size={12} />
             优化
-            <ChevronDown size={10} className={`transition-transform duration-200 ${showQuickPrompts ? 'rotate-180' : ''}`} />
+            <ChevronDown size={10} className={`transition-transform duration-200 ${showPromptMenu ? 'rotate-180' : ''}`} />
           </button>
-          {showQuickPrompts && (
+          {showPromptMenu && (
             <div 
               className="absolute top-full left-0 mt-1 py-1 w-48 z-10 shadow-lg"
               style={{ 
@@ -827,38 +1352,104 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
-              <div 
-                key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+            {messages.map((msg) => {
+              const isAssistant = msg.role === 'assistant';
+              const failed = isAssistant && msg.failed === 1;
+              const isLastMsg = msg.id === lastAssistantId;
+              return (
                 <div
-                  className={`max-w-[85%] p-3 text-sm leading-relaxed rounded-sm ${
-                    msg.role === 'user'
-                      ? 'rounded-tr-sm'
-                      : 'rounded-tl-sm'
-                  }`}
-                  style={{
-                    background: msg.role === 'user'
-                      ? 'var(--color-primary)'
-                      : 'var(--color-card-alt)',
-                    color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
-                    border: msg.role !== 'user' ? '1px solid var(--color-divider)' : 'none'
-                  }}
+                  key={msg.id}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.role === 'assistant' ? (
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      className="markdown-body prose prose-sm max-w-none"
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  )}
+                  <div
+                    className={`max-w-[85%] p-3 text-sm leading-relaxed rounded-sm ${
+                      msg.role === 'user'
+                        ? 'rounded-tr-sm'
+                        : 'rounded-tl-sm'
+                    }`}
+                    style={{
+                      background: msg.role === 'user'
+                        ? 'var(--color-primary)'
+                        : failed ? 'var(--color-error-bg)' : 'var(--color-card-alt)',
+                      color: msg.role === 'user' ? '#fff' : 'var(--color-text)',
+                      border: msg.role !== 'user'
+                        ? (failed ? '1px solid var(--color-error)' : '1px solid var(--color-divider)')
+                        : 'none'
+                    }}
+                  >
+                    {failed && (
+                      <div className="flex items-center gap-1.5 mb-2 text-xs" style={{ color: 'var(--color-error)' }}>
+                        <AlertCircle size={12} />
+                        <span>回复失败</span>
+                      </div>
+                    )}
+                    {isAssistant ? (
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        className="markdown-body prose prose-sm max-w-none"
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
+                    {isAssistant && (
+                      <div className="mt-2 flex items-center gap-1 pt-2" style={{ borderTop: '1px solid var(--color-divider)' }}>
+                        <button
+                          className="p-1 transition-colors"
+                          style={{
+                            color: msg.feedback === 1 ? 'var(--color-success)' : 'var(--color-text-muted)',
+                            background: msg.feedback === 1 ? 'var(--color-success-bg)' : 'transparent'
+                          }}
+                          title={msg.feedback === 1 ? '取消点赞' : '点赞'}
+                          onClick={() => handleFeedback(msg, msg.feedback === 1 ? 0 : 1)}
+                        >
+                          <ThumbsUp size={13} />
+                        </button>
+                        <button
+                          className="p-1 transition-colors"
+                          style={{
+                            color: msg.feedback === 2 ? 'var(--color-error)' : 'var(--color-text-muted)',
+                            background: msg.feedback === 2 ? 'var(--color-error-bg)' : 'transparent'
+                          }}
+                          title={msg.feedback === 2 ? '取消点踩' : '点踩'}
+                          onClick={() => handleFeedback(msg, msg.feedback === 2 ? 0 : 2)}
+                        >
+                          <ThumbsDown size={13} />
+                        </button>
+                        {isLastMsg && canRegenerate && !failed && (
+                          <button
+                            className="flex items-center gap-1 px-1.5 py-1 text-xs transition-colors"
+                            style={{ color: 'var(--color-text-muted)', background: 'transparent' }}
+                            title="重新生成"
+                            onClick={handleRegenerate}
+                          >
+                            <RefreshCw size={12} />
+                            <span>重新生成</span>
+                          </button>
+                        )}
+                        {failed && (
+                          <button
+                            className="flex items-center gap-1 px-1.5 py-1 text-xs transition-colors"
+                            style={{ color: 'var(--color-error)', background: 'var(--color-error-bg)' }}
+                            title="重试"
+                            onClick={handleRetry}
+                          >
+                            <RefreshCw size={12} />
+                            <span>重试</span>
+                          </button>
+                        )}
+                        {(msg.variant_of ?? 0) > 0 && (
+                          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                            变体
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {streamingContent && (
               <div className="flex justify-start">
                 <div
@@ -891,6 +1482,34 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
         className="px-4 py-3 border-t flex-shrink-0"
         style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}
       >
+        {quotaExhausted && (
+          <div
+            className="flex items-center gap-2 mb-2 text-xs"
+            style={{ color: 'var(--color-error)', background: 'var(--color-error-bg)' }}
+          >
+            <AlertCircle size={13} />
+            <span>今日额度已用完，输入已禁用</span>
+          </div>
+        )}
+        {quickPrompts.length > 0 && !quotaExhausted && (
+          <div className="max-w-4xl mx-auto mb-2 flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'thin' }}>
+            {quickPrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                className="flex-shrink-0 px-2.5 py-1.5 text-xs transition-all duration-150 hover:opacity-80 active:scale-95"
+                style={{
+                  background: 'var(--color-card-alt)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                  borderRadius: 'var(--radius-sm, 3px)'
+                }}
+                onClick={() => handleQuickPrompt(prompt)}
+              >
+                {prompt.length > 18 ? `${prompt.slice(0, 18)}…` : prompt}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex gap-2 max-w-4xl mx-auto">
           <div className="flex-1 relative">
             <textarea
@@ -900,8 +1519,8 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入消息，Shift+Enter 换行..."
-              disabled={sending}
+              placeholder={quotaExhausted ? '今日额度已用完' : '输入消息，Shift+Enter 换行...'}
+              disabled={sending || quotaExhausted}
               style={{ 
                 background: 'var(--color-card-alt)', 
                 border: '1px solid var(--color-border)', 
@@ -914,7 +1533,7 @@ function AiChatView({ chatId, onRefresh, onLogout }: { chatId: number; onRefresh
           <button
             className="btn btn-primary self-end px-4 py-2.5 flex items-center gap-2"
             onClick={handleSend}
-            disabled={sending || !input.trim()}
+            disabled={sending || !input.trim() || quotaExhausted}
             style={{ borderRadius: 'var(--radius-sm, 3px)' }}
           >
             {sending ? (

@@ -28,6 +28,7 @@ import type {
   AiChat,
   AiMsg,
   AiConfig,
+  AiDashboard,
   AdminNotice,
   AdminAiStats,
   AdminAiChat,
@@ -480,39 +481,82 @@ export const aiApi = {
   createChat: (mode: 'fast' | 'professional') =>
     post<{ id: number }>('/chat/ai/chats', { mode }),
 
-  // 获取会话列表
-  listChats: () => get<AiChat[]>('/chat/ai/chats'),
+  // 获取会话列表（includeArchived=true 时附带已归档，行含 pinned/status/title_locked，排序 pinned DESC + update_time DESC）
+  listChats: (includeArchived = false) =>
+    get<AiChat[]>(`/chat/ai/chats${includeArchived ? '?include_archived=1' : ''}`),
 
-  // 获取会话详情（含消息）
+  // 获取会话详情（含消息，每条消息含 feedback/failed/variant_of；status 为数字 0/1）
   getChat: (id: number) =>
-    get<{ title: string; mode: string; deep_thinking: number; messages: AiMsg[] }>(`/chat/ai/chats/${id}`),
+    get<{ title: string; mode: string; deep_thinking: number; status?: number | string; title_locked?: number; messages: AiMsg[] }>(`/chat/ai/chats/${id}`),
 
   // 删除会话
   deleteChat: (id: number) => del<null>(`/chat/ai/chats/${id}`),
 
-  // 重命名会话
+  // 重命名会话（后端自动 title_locked=1，之后自动标题不再覆盖）
   renameChat: (id: number, title: string) =>
     put<null>(`/chat/ai/chats/${id}`, { title }),
 
+  // ===== P0+P1 新增：会话管理 =====
+
+  // 置顶 / 取消置顶
+  pinChat: (id: number, pinned: boolean) =>
+    post<null>(`/chat/ai/chats/${id}/pin`, { pinned }),
+
+  // 归档 / 恢复（status: 'active' | 'archived'）
+  setChatStatus: (id: number, status: 'active' | 'archived') =>
+    post<null>(`/chat/ai/chats/${id}/status`, { status }),
+
+  // 复制会话（返回新会话 id）
+  duplicateChat: (id: number) =>
+    post<{ id: number }>(`/chat/ai/chats/${id}/duplicate`),
+
+  // 清空会话消息（不可恢复）
+  clearChat: (id: number) => post<null>(`/chat/ai/chats/${id}/clear`),
+
+  // 生成自动标题（null=已锁定或消息不足/上游不可用）
+  generateTitle: (id: number) =>
+    post<{ title: string | null }>(`/chat/ai/chats/${id}/generate-title`),
+
+  // 消息反馈（feedback: 0 无 / 1 赞 / 2 踩）
+  setMsgFeedback: (chatId: number, msgId: number, feedback: 0 | 1 | 2) =>
+    post<null>(`/chat/ai/chats/${chatId}/messages/${msgId}/feedback`, { feedback }),
+
+  // 配额仪表盘
+  dashboard: () => get<AiDashboard>('/chat/ai/dashboard'),
+
   // 流式聊天（convId>0 时写入指定会话，否则后端新建会话）
   // 内置 60s 超时（AI 上游 AI_REQUEST_TIMEOUT=90s 留 30s 缓冲），防后端挂起拖垮前端
-  streamChat: async (messages: AiMsg[], mode: string, deepThinking: boolean, convId?: number): Promise<ReadableStream<Uint8Array> | null> => {
+  // 可选 streamOptions：regenerate（再生成，原消息保留新回复 variant_of>0）/ retry（重发最近 failed=1 行，原地修复）
+  streamChat: async (
+    messages: AiMsg[],
+    mode: string,
+    deepThinking: boolean,
+    convId?: number,
+    streamOptions?: { regenerate?: boolean; retry?: boolean; msgId?: number },
+  ): Promise<ReadableStream<Uint8Array> | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 60000);
     let res: Response;
     try {
+      const body: Record<string, unknown> = {
+        messages,
+        mode,
+        deep_thinking: deepThinking ? 1 : 0,
+        conv_id: convId && convId > 0 ? convId : 0,
+      };
+      if (streamOptions?.regenerate) {
+        body.regenerate = 1;
+        body.msg_id = streamOptions.msgId;
+      } else if (streamOptions?.retry) {
+        body.retry = 1;
+      }
       res = await fetch(`${getApiBaseUrl()}/chat/ai/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
         },
-        body: JSON.stringify({
-          messages,
-          mode,
-          deep_thinking: deepThinking ? 1 : 0,
-          conv_id: convId && convId > 0 ? convId : 0,
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
     } catch (e) {
@@ -521,7 +565,16 @@ export const aiApi = {
       throw new Error('网络错误：无法连接到 AI 服务（Failed to fetch）');
     }
     clearTimeout(timer);
-    if (!res.ok) throw new Error(`AI 服务返回 HTTP ${res.status}`);
+    // SSE 开启前的校验错误：HTTP 200 + body JSON（code 400/404）或 !res.ok + JSON。
+    // 成功时 content-type 为 text/event-stream；其余情况解析 JSON 错误体并抛出 msg。
+    const contentType = res.headers.get('Content-Type') || '';
+    if (contentType.includes('application/json') || !res.ok) {
+      let json: { code?: number; msg?: string } | null = null;
+      try { json = await res.json(); } catch { json = null; }
+      if (json && json.code !== 200) throw new Error(json.msg || `AI 服务错误 (code ${json.code})`);
+      if (!res.ok) throw new Error(`AI 服务返回 HTTP ${res.status}`);
+      return null; // 200 + 空 JSON：无可读流
+    }
     return res.body || null;
   },
 
