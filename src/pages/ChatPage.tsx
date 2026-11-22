@@ -585,7 +585,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
                     onOpenConversation={handleOpenConversation}
                     onNavigate={navigate}
-                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : category === 'rooms' ? (
                   <ChatSidebarContent
@@ -601,7 +600,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => setShowRoomSettings(true)}
                     onOpenConversation={() => {}}
                     onNavigate={navigate}
-                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : category === 'contacts' ? (
                   <ChatSidebarContent
@@ -617,7 +615,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     onOpenRoomSettings={() => {}}
                     onOpenConversation={handleOpenConversation}
                     onNavigate={navigate}
-                    onClose={() => setMobileSidebar(null)}
                   />
                 ) : (
                   <ChatSidebarContent
@@ -636,7 +633,6 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
                     activeGroupId={null}
                     onSelectGroup={(g: GroupInfo) => { setActiveRoom(null); setActiveConv(null); setShowPrivate(false); setPrivateTarget(null); setActiveGroup(g); if (isMobile) setMobileSidebar(null); }}
                     onGroupsChanged={() => setGroupListKey((k) => k + 1)}
-                    onClose={() => setMobileSidebar(null)}
                   />
                 )}
               </div>
