@@ -598,12 +598,6 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
             {/* 会话头部 */}
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-divider)', background: 'var(--color-card)' }}>
               <div className="flex items-center gap-2 min-w-0">
-                {/* 仅桌面端显示返回按钮；移动端由 ChatPage header 统一处理 */}
-                {onBack && (
-                  <button className="hidden md:flex btn btn-sm p-2" onClick={onBack} title="返回聊天室列表" style={{ minHeight: 36, minWidth: 36 }}>
-                    <span className="text-lg">×</span>
-                  </button>
-                )}
                 <Avatar username={activeConv.other_username} avatar={activeConv.other_avatar} size={32} online={activeConv.other_online} />
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate text-sm" style={{ color: 'var(--color-text)' }}>{activeConv.other_username}</h2>
