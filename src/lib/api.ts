@@ -31,6 +31,9 @@ import type {
   AdminNotice,
   AdminAiStats,
   AdminAiChat,
+  AdminAiConfig,
+  AdminAiConfigSave,
+  AdminAiConfigTest,
   Moment,
   MomentComment,
   MomentSaveResult,
@@ -609,6 +612,17 @@ export const adminApi = {
   aiChats: (p: { page?: number; per_page?: number; keyword?: string; user_id?: number }) =>
     adminGet<AdminPaginated<AdminAiChat>>('/ai/chats', p),
   deleteAiChat: (id: number) => adminDelete<null>(`/ai/chats/${id}`),
+
+  // AI 模型配置（管理端微调：读取/保存/连通性测试）
+  aiConfig: {
+    // 获取当前生效配置（脱敏）
+    get: () => adminGet<AdminAiConfig>('/ai/config'),
+    // 保存配置（白名单字段；api_key 空串=回落 .env）
+    save: (d: AdminAiConfigSave) => adminPost<AdminAiConfig>('/ai/config', d),
+    // 测试连通性：use_form=true 时传表单当前值（不落库），api_key 留空=用当前生效 key
+    test: (d?: { use_form?: boolean } & AdminAiConfigSave) =>
+      adminPost<AdminAiConfigTest>('/ai/config/test', d ?? {}),
+  },
 
   // 公告（公开读取 / 管理员保存）
   getNotice: () => get<AdminNotice>('/chat/notice'),

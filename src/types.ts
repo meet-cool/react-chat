@@ -407,6 +407,44 @@ export interface AdminAiChat {
   username: string;
 }
 
+// 管理端 AI 模型配置（脱敏视图）：
+// - api_key 后端脱敏（len>8 → 前4****后4，否则 ***；未配置为 ***）
+// - api_url 后端脱敏（保留 scheme+host+路径首段，中段 ***）
+// - source 标记配置来源：'db'=ai_config 表已落库覆盖，'env'=走 .env/默认
+export interface AdminAiConfig {
+  api_key: string;
+  api_url: string;
+  model_name: string;
+  temperature: number;
+  max_tokens: number;
+  timeout: number;
+  system_prompt: string;
+  source: 'db' | 'env';
+  has_api_key: boolean;
+}
+
+// 保存 AI 模型配置的请求体（白名单字段，均可缺省）：
+// - api_key 留空串 = 不落库覆盖，运行时回落到 .env
+// - system_prompt 留空串 = 使用内置提示词
+export interface AdminAiConfigSave {
+  api_key?: string;
+  api_url?: string;
+  model_name?: string;
+  temperature?: number;
+  max_tokens?: number;
+  timeout?: number;
+  system_prompt?: string;
+}
+
+// AI 配置连通性测试结果（测试「当前生效配置」或「表单当前值」）
+export interface AdminAiConfigTest {
+  ok: boolean;
+  latency_ms: number;
+  model: string;
+  error?: string;
+  reply_excerpt?: string;
+}
+
 // ============ 朋友圈 ============
 export interface MomentComment {
   id: number;
