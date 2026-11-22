@@ -46,6 +46,7 @@ import { DebugPage } from './pages/DebugPage';
 import EnglishRoutes from './english/EnglishRoutes';
 import { MbtiPage } from './pages/MbtiPage';
 import { FeedbackPage } from './pages/FeedbackPage';
+import { InstallPage } from './pages/InstallPage';
 import { authApi, getToken } from './lib/api';
 import type { UserInfo } from './types';
 
@@ -130,6 +131,9 @@ function AppContent({ user, setUser }: { user: UserInfo | null; setUser: (u: Use
             path="/login"
             element={!user ? <LoginPage onLogin={setUser} /> : <Navigate to="/chat" replace />}
           />
+
+          {/* 安装向导（公开，无需登录，登录守卫之外） */}
+          <Route path="/install" element={<InstallPage />} />
 
           {/* 聊天页 */}
           <Route

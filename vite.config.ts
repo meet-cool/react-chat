@@ -53,6 +53,13 @@ export default defineConfig({
         changeOrigin: true,
         bypass: htmlBypass,
       },
+      // 安装中心（公开：GET /install、POST /install/test-db、POST /install/run；
+      // dev 走同源代理到本地后端，前端 getApiBaseUrl() 为空串时请求即打到这里）
+      '/install': {
+        target: backendTarget,
+        changeOrigin: true,
+        bypass: htmlBypass,
+      },
     },
   },
 })

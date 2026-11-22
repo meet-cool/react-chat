@@ -1026,3 +1026,133 @@ export const feedbackApi = {
   list: () =>
     get<FeedbackRecord[]>('/chat/feedback'),
 };
+
+// ============================================================
+// 安装中心 API（公开接口，无需 token；直接 fetch，不走统一 request()）
+// 后端：thinkPHP app/system/controller/Installer.php
+//   GET  /install          环境检测（已安装 → HTTP 423）
+//   POST /install/test-db  数据库连接测试（连接失败仍 HTTP 200 + ok:false）
+//   POST /install/run      执行安装（同步长请求 30-90s，刻意不设短超时）
+// 错误语义统一：HTTP 状态码与 body.code 保持一致（400/423/500 均为真 HTTP 码），
+// 前端两种都判（res.status 与 parsed.code 双保险）。
+// ============================================================
+
+/** 安装接口网络/CORS 失败（fetch 抛 TypeError）：后端不可达或 CORS_ALLOW_ORIGIN 未放行当前 origin */
+export class InstallNetworkError extends Error {
+  constructor() {
+    super('无法连接后端（网络错误或 CORS 未放行）');
+    this.name = 'InstallNetworkError';
+  }
+}
+
+/** 系统已安装（HTTP 423）：hint 为后端只读提示文案 */
+export class InstallLockedError extends Error {
+  hint: string;
+  constructor(hint: string) {
+    super('系统已安装');
+    this.name = 'InstallLockedError';
+    this.hint = hint;
+  }
+}
+
+export interface InstallCheckItem {
+  label: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface InstallCheckData {
+  installed: boolean;
+  can_reinstall: boolean;
+  hint?: string;
+  /** 后端实际返回对象 {key: {label,ok,detail}}；数组为兼容形态，页面层统一 normalize */
+  checks?: InstallCheckItem[] | Record<string, InstallCheckItem>;
+  /** 当前 .env 数据库配置（刻意不含密码） */
+  db?: { host: string; port: number; name: string; user: string; charset: string; writable_env: boolean };
+}
+
+export interface InstallDbPayload {
+  host: string;
+  port: number;
+  name: string;
+  user: string;
+  pass: string;
+  charset?: string;
+}
+
+export interface InstallTestDbData {
+  ok: boolean;
+  version?: string;
+  database_exists?: boolean;
+  can_create_db?: boolean;
+  message?: string;
+  error?: string;
+  hint?: string;
+}
+
+export interface InstallRunPayload extends InstallDbPayload {
+  admin_username: string;
+  admin_password: string;
+}
+
+export interface InstallRunData {
+  ok: boolean;
+  message?: string;
+  /** 明文管理员密码（后端在 data.admin.password 回显一次，admin_password 为兼容字段） */
+  admin_password?: string;
+  admin?: { username?: string; password?: string; note?: string };
+  completed_steps?: string[];
+  error?: string;
+  hint?: string;
+}
+
+/** 安装接口专用 fetch：区分 423（已安装）与网络/CORS 失败；run 为同步长请求，不设超时 */
+async function installRequest<T>(path: string, method: 'GET' | 'POST', body?: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
+      headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+    });
+  } catch {
+    // 「后端不可达」与「CORS 未放行」在浏览器里都表现为 fetch TypeError("Failed to fetch")
+    throw new InstallNetworkError();
+  }
+
+  let parsed: { code?: number; msg?: string; data?: T } | null = null;
+  try {
+    parsed = await res.json();
+  } catch {
+    parsed = null;
+  }
+  const code = parsed?.code ?? res.status;
+
+  if (res.status === 423 || code === 423) {
+    const d = (parsed?.data ?? {}) as { hint?: string; error?: string };
+    throw new InstallLockedError(d.hint || d.error || '系统已安装');
+  }
+
+  if (!res.ok || code !== 200) {
+    const d = (parsed?.data ?? {}) as { error?: string; hint?: string; completed_steps?: string[] };
+    const err = new Error(d.error || parsed?.msg || `服务器错误（HTTP ${res.status}）`);
+    (err as Error & { hint?: string; completed_steps?: string[] }).hint = d.hint;
+    (err as Error & { hint?: string; completed_steps?: string[] }).completed_steps = d.completed_steps;
+    throw err;
+  }
+
+  return parsed?.data as T;
+}
+
+export const installApi = {
+  /** 环境检测（公开）；已安装时抛 InstallLockedError（携带 hint） */
+  check: () => installRequest<InstallCheckData>('/install', 'GET'),
+
+  /** 数据库连接测试（公开）；连接失败返回 {ok:false, error, hint}（HTTP 仍 200，由调用方读 ok） */
+  testDb: (payload: InstallDbPayload) =>
+    installRequest<InstallTestDbData>('/install/test-db', 'POST', payload),
+
+  /** 执行安装（公开同步长请求，30-90s）；校验/连接/迁移失败抛带 hint 的 Error */
+  run: (payload: InstallRunPayload) =>
+    installRequest<InstallRunData>('/install/run', 'POST', payload),
+};
