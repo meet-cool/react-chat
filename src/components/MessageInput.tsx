@@ -29,6 +29,8 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
   // 骰子连点锁：sending 是 React state（异步更新），同帧/快速双击挡不住，
   // 用 ref 立即锁 800ms（本地一次往返 ~200ms 足够释放）；后端 2 秒同内容去重兜底。
   const diceLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 发送本地锁（防 Enter/按钮快速双触发跨 in-flight 窗口双发，见 handleSend）
+  const sendLockRef = useRef(false);
 
   useEffect(() => () => {
     if (diceLockRef.current) clearTimeout(diceLockRef.current);
@@ -65,6 +67,12 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || disabled) return;
+    // 本地 in-flight 锁（600ms）：父组件 sendingRef 只挡「进行中」的重复调用；
+    // 两次快速触发（Enter 后紧跟点发送/再按 Enter）若跨在 in-flight 窗口之间，
+    // 会各发一条真请求 → 后端 2 秒去重窗口之外就双双进库。本地锁兜底。
+    if (sendLockRef.current) return;
+    sendLockRef.current = true;
+    setTimeout(() => { sendLockRef.current = false; }, 600);
     // 消息类型判定：BBCode 模式，或内容里含成对 BBCode 标签（如表情包插入的 [img]url[/img]、
     // 用户在纯文本模式下随手写的 [b]粗[/b]）时，都以 type='bbcode' 发送，
     // 否则前端会按纯文本把标签原样显示出来（表现为「BBCode 无法被解析」）。
@@ -84,7 +92,10 @@ export function MessageInput({ onSend, disabled, sending, insertTextRef, replyTo
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    // e.repeat：按住 Enter 不放会持续触发 keydown（系统按键重复 ~30 次/秒）→
+    // 不加此守卫，一条消息会在 in-flight 间隙被反复发出（「发两次」的典型来源）
+    if (e.repeat) return;
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
   };
 
   const insertEmoji = (emoji: string) => {
