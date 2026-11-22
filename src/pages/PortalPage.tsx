@@ -17,6 +17,7 @@ import {
   X,
   AlertTriangle,
   RefreshCw,
+  Rocket,
 } from 'lucide-react';
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
@@ -173,6 +174,13 @@ export function PortalPage() {
     void checkEnv();
   }, [checkEnv]);
 
+  // 未初始化（后端可达但数据库/表未配置）→ 自动跳转到部署页 /install
+  useEffect(() => {
+    if (envStatus && !envStatus.env_ready) {
+      navigate('/install');
+    }
+  }, [envStatus, navigate]);
+
   useEffect(() => {
     // 加载公开统计数据
     fetch(`${getApiBaseUrl()}/chat/public/stats`)
@@ -199,7 +207,7 @@ export function PortalPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg-page)', color: 'var(--color-text)' }}>
-      {/* 环境告示：后端可达但环境未配置（数据库/数据表）→ 提示联系管理员初始化 */}
+      {/* 环境告示：后端可达但未初始化（数据库/数据表）→ 一键部署（跳转 /install） */}
       {envStatus && !envStatus.env_ready && (
         <div
           className="flex items-start gap-3 px-4 py-3 border-b"
@@ -208,20 +216,30 @@ export function PortalPage() {
           <AlertTriangle size={18} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-              后端服务已连接，环境未配置
+              未初始化
             </p>
             <p className="text-xs mt-1 leading-5" style={{ color: 'var(--color-text-secondary)' }}>
-              请联系管理员进行初始化（数据库连接 / 数据表等）。
+              后端服务已连接，但环境尚未初始化（数据库连接 / 数据表等）。
               {envStatus.missing.includes('ai_key') && ' AI 密钥未配置（不影响聊天，仅 AI 广场功能受限）。'}
             </p>
-            <button
-              onClick={() => void checkEnv()}
-              className="btn btn-sm mt-2 inline-flex items-center gap-1.5"
-              style={{ minHeight: 44 }}
-            >
-              <RefreshCw size={14} />
-              重新检测
-            </button>
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={() => navigate('/install')}
+                className="btn btn-primary btn-sm inline-flex items-center gap-1.5"
+                style={{ minHeight: 44 }}
+              >
+                <Rocket size={14} />
+                一键部署
+              </button>
+              <button
+                onClick={() => void checkEnv()}
+                className="btn btn-sm inline-flex items-center gap-1.5"
+                style={{ minHeight: 44 }}
+              >
+                <RefreshCw size={14} />
+                重新检测
+              </button>
+            </div>
           </div>
         </div>
       )}

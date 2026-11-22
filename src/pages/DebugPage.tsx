@@ -4,6 +4,7 @@ import {
   ArrowLeft, Settings, Key, Globe, RefreshCw, Trash2, Copy, Check,
   Eye, EyeOff, CheckCircle, XCircle, Play,
   Hash, ToggleRight, ToggleLeft,
+  Rocket,
 } from 'lucide-react';
 import {
   getApiBaseUrl, setApiBaseUrl, getToken, clearToken,
@@ -12,7 +13,7 @@ import { useDebug } from '../lib/DebugContext';
 
 const PRESET_URLS = [
   { label: '本地开发（localhost:8000）', url: 'http://localhost:8000' },
-  { label: '生产环境（api.met.cc.cd）', url: 'https://api.met.cc.cd' },
+  { label: '生产环境（hug.met.cc.cd）', url: 'https://hug.met.cc.cd' },
 ];
 
 // S17 修复：调试密码改为环境变量注入（VITE_DEBUG_PASSWORD），默认值仅本地开发可用。
@@ -89,15 +90,19 @@ function PasswordScreen({
 
 /* ─── API Tab ─── */
 function ApiTab() {
+  const navigate = useNavigate();
   const [customUrl, setCustomUrl] = useState('');
   const [apiStatus, setApiStatus] = useState<'idle' | 'checking' | 'ok' | 'error'>('idle');
   const [apiMsg, setApiMsg] = useState('');
   const [lastResult, setLastResult] = useState<string>('');
+  // 网络/CORS 失败（后端不可达或未放行/未初始化）→ 显示「未初始化 + 一键部署」
+  const [netError, setNetError] = useState(false);
 
   const applyUrl = async (url: string) => {
     setApiStatus('checking');
     setApiMsg('');
     setLastResult('');
+    setNetError(false);
     try {
       // 先测试连接，成功才持久化，避免把不可用地址写入 localStorage
       await testConnection(url);
@@ -107,7 +112,8 @@ function ApiTab() {
       setLastResult('✅');
     } catch (e: unknown) {
       setApiStatus('error');
-      setApiMsg((e as Error).message || '连接失败');
+      setNetError(e instanceof TypeError);
+      setApiMsg(e instanceof TypeError ? '无法连接后端 / 未初始化（CORS 未放行或后端环境未配置）' : (e as Error).message || '连接失败');
       setLastResult('❌');
     }
   };
@@ -116,13 +122,15 @@ function ApiTab() {
     const url = getApiBaseUrl();
     setApiStatus('checking');
     setApiMsg('');
+    setNetError(false);
     try {
       await testConnection(url);
       setApiStatus('ok');
       setApiMsg(`✅ ${url} 正常响应`);
     } catch (e: unknown) {
       setApiStatus('error');
-      setApiMsg(`❌ ${(e as Error).message}`);
+      setNetError(e instanceof TypeError);
+      setApiMsg(e instanceof TypeError ? `❌ ${url} 无法连接 / 未初始化（CORS 未放行或后端环境未配置）` : `❌ ${(e as Error).message}`);
     }
   };
 
@@ -200,6 +208,16 @@ function ApiTab() {
             {apiStatus === 'ok' ? <CheckCircle size={12} /> : <XCircle size={12} />}
             {apiMsg}
           </div>
+        )}
+        {apiStatus === 'error' && netError && (
+          <button
+            onClick={() => navigate('/install')}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-sm text-sm font-medium transition-all"
+            style={{ background: 'var(--color-primary)', color: '#fff', border: '1px solid var(--color-primary)', minHeight: 44 }}
+          >
+            <Rocket size={14} />
+            未初始化 · 一键部署
+          </button>
         )}
       </div>
     </>

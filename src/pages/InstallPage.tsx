@@ -23,6 +23,7 @@ import {
   Loader2,
   Lock,
   RefreshCw,
+  Rocket,
   Server,
   ShieldCheck,
   UserCircle,
@@ -243,11 +244,11 @@ export function InstallPage() {
   const userValid = /^[A-Za-z0-9_]{3,20}$/.test(adminUser.trim());
   const passValid = adminPass.length >= 6;
 
-  /** Step 1：测试数据库连接 */
-  const handleTestDb = async () => {
+  /** Step 1：测试数据库连接（返回是否成功，供「一键部署」复用） */
+  const handleTestDb = async (): Promise<boolean> => {
     if (!dbForm.host.trim()) {
       setDbError({ message: '数据库主机不能为空' });
-      return;
+      return false;
     }
     setDbTesting(true);
     setDbError(null);
@@ -262,17 +263,28 @@ export function InstallPage() {
         charset: dbForm.charset || 'utf8mb4',
       });
       // 连接类失败 HTTP 仍 200，读 data.ok 判定
-      if (data.ok) setDbResult(data);
-      else setDbError({ message: data.error || '连接失败', hint: data.hint });
+      if (data.ok) { setDbResult(data); return true; }
+      setDbError({ message: data.error || '连接失败', hint: data.hint });
+      return false;
     } catch (e) {
       const err = e as Error & { hint?: string };
       setDbError({
         message: describeError(e),
         hint: e instanceof InstallNetworkError ? undefined : err.hint,
       });
+      return false;
     } finally {
       setDbTesting(false);
     }
+  };
+
+  /** 一键部署：.env 已配置 DB 时自动测库 → 直达管理员步（失败回落手动 db 步） */
+  const [oneClickBusy, setOneClickBusy] = useState(false);
+  const handleOneClick = async () => {
+    setOneClickBusy(true);
+    const ok = await handleTestDb();
+    setOneClickBusy(false);
+    setStep(ok ? 'admin' : 'db');
   };
 
   /** Step 2 → 3：执行安装（同步长请求 30-90s，不设短超时） */
@@ -361,6 +373,14 @@ export function InstallPage() {
                 <div className="flex items-center gap-2">
                   <Server size={16} style={{ color: 'var(--color-primary)' }} />
                   <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>环境检测</h2>
+                  {!locked && !detectLoading && (
+                    <span
+                      className="px-1.5 py-0.5 text-xs rounded-sm font-medium"
+                      style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning)', border: '1px solid var(--color-warning)' }}
+                    >
+                      未初始化
+                    </span>
+                  )}
                 </div>
 
                 {detectLoading && (
@@ -431,7 +451,17 @@ export function InstallPage() {
                         : '未知'}
                     </AlertBox>
 
-                    <button className="btn btn-primary w-full" onClick={() => setStep('db')}>
+                    {checkData.db?.name ? (
+                      <button
+                        className="btn btn-primary w-full"
+                        onClick={() => void handleOneClick()}
+                        disabled={oneClickBusy}
+                      >
+                        <Rocket size={15} className={oneClickBusy ? 'animate-pulse' : ''} />
+                        {oneClickBusy ? '正在测试连接…' : '一键部署'}
+                      </button>
+                    ) : null}
+                    <button className="btn w-full" onClick={() => setStep('db')}>
                       {allOk ? '下一步：数据库' : '下一步：数据库（有未通过项，可现场填写连接信息）'}
                       <ArrowRight size={15} />
                     </button>
