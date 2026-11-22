@@ -510,8 +510,8 @@ export function ChatPage({ user, onLogout }: ChatPageProps) {
           </div>
         </aside>
 
-        {/* 中间内容区（移动端给底部 TabBar 留 padding） */}
-        <main className="flex-1 flex flex-col min-w-0 pb-12 md:pb-0" style={{ background: 'var(--color-bg)' }}>
+        {/* 中间内容区（底部 TabBar 已改为文档流内占位，无需再预留 padding） */}
+        <main className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--color-bg)' }}>
           {isMobile ? (
             activeGroup ? (
               <GroupChatView

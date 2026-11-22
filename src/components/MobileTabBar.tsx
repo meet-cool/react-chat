@@ -262,9 +262,9 @@ export function MobileTabBar({
         </>
       )}
 
-      {/* ===== 底部 TabBar（z-50，始终最上层）===== */}
+      {/* ===== 底部 TabBar（z-50，始终最上层；在文档流内占位，避免遮挡内容区输入框）===== */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-sm"
+        className="md:hidden relative z-50 flex-shrink-0 border-t backdrop-blur-sm"
         style={{ background: 'var(--nav-bg)', borderColor: 'var(--color-divider)' }}
       >
         <div className="flex py-1 px-2" style={{ paddingBottom: 'max(4px, env(safe-area-inset-bottom))' }}>
