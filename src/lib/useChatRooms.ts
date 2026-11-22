@@ -49,6 +49,37 @@ export interface UseChatRoomsReturn {
   activeRoomRef: React.MutableRefObject<Room | null>;
 }
 
+// 消息去重签名：同一发送者 + 同类型 + 同内容 + 同秒 = 同一条
+// （与后端「2 秒内同用户同房间同内容防重发」窗口的语义保持一致）
+function messageSignature(m: {
+  id?: number; user_id?: number; sender_id?: number; type: string; content: string; create_time?: number;
+}): string {
+  return `${m.user_id ?? m.sender_id ?? ''}|${m.type}|${m.content}|${m.create_time ?? ''}`;
+}
+
+/**
+ * 合并增量消息（追加去重）：
+ * 1. 按 id 精确去重（本地乐观插入 vs 增量回显同一条）；
+ * 2. 按「发送者+类型+内容+秒级时间」签名兜底去重 —— 覆盖 id 不同但实为同一条的
+ *    任何重复来源（历史问题：骰子/拍一拍出现两次、刷新后只剩一条）。
+ * 无新增时返回原数组引用（便于调用方短路）。
+ */
+export function mergeNewMessages<
+  T extends { id: number; type: string; content: string; create_time?: number; user_id?: number; sender_id?: number },
+>(prev: T[], incoming: T[]): T[] {
+  if (incoming.length === 0) return prev;
+  const ids = new Set(prev.map((m) => m.id));
+  const sigs = new Set(prev.map((m) => messageSignature(m)));
+  const fresh = incoming.filter((m) => {
+    if (ids.has(m.id)) return false;
+    const sig = messageSignature(m);
+    if (sigs.has(sig)) return false;
+    sigs.add(sig); // 本批内互相去重
+    return true;
+  });
+  return fresh.length > 0 ? [...prev, ...fresh] : prev;
+}
+
 /**
  * 聊天房间核心逻辑 Hook
  *
@@ -170,14 +201,9 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
   };
   onMsgRef.current = (list: ChatMessage[]) => {
     if (list.length === 0) return;
-    setMessages((prev) => {
-      const existingIds = new Set(prev.map((m) => m.id));
-      const fresh = list.filter((m) => !existingIds.has(m.id));
-      if (fresh.length > 0) {
-        lastMessageIdRef.current = Math.max(lastMessageIdRef.current, fresh[fresh.length - 1].id);
-      }
-      return fresh.length > 0 ? [...prev, ...fresh] : prev;
-    });
+    // 游标推进到本轮最大 id（被签名去重过滤的行同样是库里真实存在的 id，也要推进）
+    lastMessageIdRef.current = Math.max(lastMessageIdRef.current, ...list.map((m) => m.id));
+    setMessages((prev) => mergeNewMessages(prev, list));
     // 提示音：仅对「真正新于基线 且 他人发送」的消息响（进入时加载的历史不响；
     // 自己发的乐观插入也不响）。基线在 loadMessages 完成时设定，自己发消息会推进 lastMessageId。
     const hasGenuineNew = list.some((m) => !m.is_self && m.id > baselineIdRef.current);
@@ -343,7 +369,7 @@ export function useChatRooms(opts: UseChatRoomsOptions): UseChatRoomsReturn {
     setSending(true);
     try {
       const msg = await messageApi.send(room.id, { content, type, reply_to: replyTo?.id || 0 });
-      setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
+      setMessages((prev) => mergeNewMessages(prev, [msg]));
       lastMessageIdRef.current = Math.max(lastMessageIdRef.current, msg.id);
       if (replyTo) setReplyTo(null);
       onSent?.(msg.id);

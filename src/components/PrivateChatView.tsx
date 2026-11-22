@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { Conversation, PrivateMessage, MessageReaction } from '../types';
 import { conversationApi } from '../lib/api';
+import { mergeNewMessages } from '../lib/useChatRooms';
 import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
 import { playMessageSound } from '../lib/sound';
 import { Avatar } from './Avatar';
@@ -148,14 +149,12 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
   };
   onMsgRef.current = (list) => {
     if (list.length === 0) return;
+    // 游标推进到本轮最大 id（被签名去重过滤的行同样是库里真实存在的 id，也要推进）
+    lastMsgIdRef.current = Math.max(lastMsgIdRef.current, ...list.map((m) => m.id));
     setMessages((prev) => {
-      const existingIds = new Set(prev.map((m) => m.id));
-      const fresh = list.filter((m) => !existingIds.has(m.id));
-      if (fresh.length === 0) return prev;
-      lastMsgIdRef.current = Math.max(lastMsgIdRef.current, fresh[fresh.length - 1].id);
-      const merged = [...prev, ...fresh];
-      merged.sort((a, b) => a.id - b.id); // 按 id 升序，防止乱序追加
-      return merged;
+      const merged = mergeNewMessages(prev, list);
+      if (merged === prev) return prev;
+      return [...merged].sort((a, b) => a.id - b.id); // 按 id 升序，防止乱序追加
     });
     // 提示音：仅「真正新于基线 且 对方发送」的消息才响（进入时拉取的历史不响；
     // 自己发的不响）。响铃后把基线推进到最新，后续只响更新的消息。
@@ -303,7 +302,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
       if (r.message) {
         // 后端返回真实 DB id 的消息对象：插入后增量拉取按 id 去重，不会重复渲染
         const msg = r.message;
-        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+        setMessages((prev) => mergeNewMessages(prev, [msg]));
         lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       } else {
         // 兜底（旧后端无 message 字段）：乐观插入，等增量拉取按内容重合后由刷新收敛
@@ -354,7 +353,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     (async () => {
       try {
         const m = await conversationApi.send(activeConv.id, { content: String(n), type: 'dice' });
-        setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+        setMessages((prev) => mergeNewMessages(prev, [m]));
         lastMsgIdRef.current = Math.max(lastMsgIdRef.current, m.id);
       } catch (e) {
         addToast(e instanceof Error ? e.message : '发送失败', 'error');
@@ -371,7 +370,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     try {
       const sendType = resolveMessageType(trimmed, mode);
       const msg = await conversationApi.send(activeConv.id, { content: trimmed, type: sendType, reply_to: replyTo?.id || 0 });
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      setMessages((prev) => mergeNewMessages(prev, [msg]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       setContent('');
       // 发送后强制贴底：恢复近底标记并瞬时滚到底部（避免 smooth 动画被后加载图片打断而停在中途）
@@ -402,7 +401,7 @@ export function PrivateChatView({ targetUserId, activeConv: propActiveConv, onBa
     setSending(true);
     try {
       const msg = await conversationApi.send(activeConv.id, { content: c, type: 'bbcode', reply_to: replyTo?.id || 0 });
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      setMessages((prev) => mergeNewMessages(prev, [msg]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, msg.id);
       // 贴底
       nearBottomRef.current = true;

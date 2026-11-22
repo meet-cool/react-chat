@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { UsersRound, LogOut, Megaphone, MicOff, Settings2, ChevronLeft, Loader2 } from 'lucide-react';
 import type { GroupInfo, ChatMessage, GroupMember } from '../types';
 import { groupApi } from '../lib/api';
+import { mergeNewMessages } from '../lib/useChatRooms';
 import { useLongPolling, type LongPollContext } from '../lib/useLongPolling';
 import { playMessageSound } from '../lib/sound';
 import { MessageList } from './MessageList';
@@ -107,7 +108,7 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
   };
   onMsgRef.current = ({ messages: incoming }) => {
     if (incoming.length === 0) return;
-    lastIdRef.current = incoming[incoming.length - 1].id;
+    lastIdRef.current = Math.max(lastIdRef.current, ...incoming.map((m) => m.id));
     // 提示音：仅「真正新于基线 且 他人发送」的消息响（进入群时拉取的历史不响；
     // 自己刚发的不响）。响铃后推进基线。
     const hasGenuineNew = incoming.some((m) => m.user_id !== currentUserId && m.id > baselineIdRef.current);
@@ -115,11 +116,7 @@ export function GroupChatView({ group, currentUserId, onBack, onGroupUpdated, on
       baselineIdRef.current = incoming.reduce((mx, m) => Math.max(mx, m.id), baselineIdRef.current);
       playMessageSound();
     }
-    setMessages((prev) => {
-      const known = new Set(prev.map((m) => m.id));
-      const merged = [...prev, ...incoming.filter((m) => !known.has(m.id))];
-      return merged;
-    });
+    setMessages((prev) => mergeNewMessages(prev, incoming));
     // 系统消息（成员变动等）→ 刷新成员/详情
     if (incoming.some((m) => m.type === 'system')) {
       loadMembersRef.current(group.id);
