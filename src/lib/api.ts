@@ -799,6 +799,8 @@ export const giftApi = {
 
 // ============================================================
 // 表情包搜索 API（外部 xiaoapi 代理 + 后端 60s 缓存，免鉴权）
+// 两级策略：后端代理失败（宿主禁 cURL / 网络）→ 前端直连 xiaoapi 降级
+// （该 API 免 Key 且 CORS 开放，契约与后端代理一致）
 // ============================================================
 export interface MemeItem {
   url: string;
@@ -814,13 +816,54 @@ export interface MemeSearchResult {
   num: number;
 }
 
+// 直连降级 60s 内存缓存（同关键词+页码+条数）
+const memeDirectCache = new Map<string, { at: number; result: MemeSearchResult }>();
+const MEME_DIRECT_TTL = 60_000;
+
+async function memeDirectSearch(msg: string, page: number, num: number): Promise<MemeSearchResult> {
+  const key = `${msg}|${page}|${num}`;
+  const hit = memeDirectCache.get(key);
+  if (hit && Date.now() - hit.at < MEME_DIRECT_TTL) return hit.result;
+
+  const qs = `msg=${encodeURIComponent(msg)}&page=${page}&num=${num}`;
+  const res = await fetch(`https://xiaoapi.cn/v1/meme.php?${qs}`, {
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`表情包直连失败（HTTP ${res.status}）`);
+  const j = await res.json();
+  if (j?.code !== 200 || !Array.isArray(j?.data)) throw new Error('表情包直连返回异常');
+  const rows: unknown[] = Array.isArray(j.data) ? (j.data as unknown[]) : [];
+  const list: MemeItem[] = rows
+    .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+    .map((row) => ({
+      url: typeof row.img_url === 'string' ? row.img_url : '',
+      width: typeof row.img_width === 'number' ? row.img_width : null,
+      height: typeof row.img_height === 'number' ? row.img_height : null,
+      size: typeof row.img_size === 'number' ? row.img_size : null,
+    }))
+    .filter((m) => m.url !== '');
+  const result: MemeSearchResult = { list, total: page * num, page, num };
+  memeDirectCache.set(key, { at: Date.now(), result });
+  return result;
+}
+
 export const memeApi = {
-  /** 搜索表情包（msg 1-50 字符；后端校验并降级，前端按 Promise 异常走空态） */
-  search: (msg: string, page = 1, num = 20) =>
-    get<MemeSearchResult>(
-      `/meme/search?msg=${encodeURIComponent(msg)}&page=${page}&num=${num}`,
-      { timeoutMs: 15000 },
-    ),
+  /**
+   * 搜索表情包（msg 1-50 字符）。
+   * 首选后端代理（60s 文件缓存 + 参数白名单）；失败（宿主禁 cURL / 网络异常 /
+   * code!==200）自动降级前端直连 xiaoapi（免 Key、CORS 开放，60s 内存缓存）。
+   */
+  search: async (msg: string, page = 1, num = 20): Promise<MemeSearchResult> => {
+    try {
+      return await get<MemeSearchResult>(
+        `/meme/search?msg=${encodeURIComponent(msg)}&page=${page}&num=${num}`,
+        { timeoutMs: 15000 },
+      );
+    } catch {
+      // 后端不可用（500/网络/CORS）→ 直连降级
+      return memeDirectSearch(msg, page, num);
+    }
+  },
 };
 
 
