@@ -3,6 +3,7 @@ import { ChevronDown, Loader2, Reply as ReplyIcon } from 'lucide-react';
 import type { ChatMessage, MessageReaction } from '../types';
 import { renderBBCode, hasBbcodeMarkup } from '../lib/bbcode';
 import { Avatar } from './Avatar';
+import { DiceIcon } from './DiceIcon';
 import { UserActionMenu } from './UserActionMenu';
 import { MessageActionMenu, useMessageActionTrigger } from './MessageActionMenu';
 
@@ -265,8 +266,8 @@ function MessageBubble({ msg, showAvatar, isSelf, currentUserId, onAvatarClick, 
           </div>
         ) : msg.type === 'dice' ? (
           <div className="px-3 py-1.5 flex items-center justify-center rounded" style={{ background: 'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-card-alt) 100%)', border: '1px solid var(--color-border)', margin: '4px 0' }}>
-            <span className="text-2xl mr-2">🎲</span>
-            <span className="text-xl font-bold" style={{ color: 'var(--color-primary)' }}>{msg.content || '?'}</span>
+            <DiceIcon value={parseInt(msg.content, 10) || 1} size={28} strokeColor="var(--color-text-muted)" />
+            <span className="text-xl font-bold ml-2" style={{ color: 'var(--color-primary)' }}>{msg.content || '?'}</span>
             <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>点</span>
           </div>
         ) : (
