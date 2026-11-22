@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -15,6 +15,8 @@ import {
   Settings,
   Megaphone,
   X,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { getToken, getApiBaseUrl } from '../lib/api';
 import type { UserInfo } from '../types';
@@ -154,6 +156,23 @@ export function PortalPage() {
   const [notice, setNotice] = useState('');
   const [noticeDismissed, setNoticeDismissed] = useState(false);
 
+  // 环境状态探测（后端可达但 DB/表/AI Key 未配置时，显示「请联系管理员初始化」告示卡）
+  const [envStatus, setEnvStatus] = useState<{ env_ready: boolean; ai_key_ok: boolean; missing: string[] } | null>(null);
+  const checkEnv = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/install/status`);
+      const j = await res.json();
+      if (j.code === 200 && j.data) {
+        setEnvStatus({ env_ready: !!j.data.env_ready, ai_key_ok: !!j.data.ai_key_ok, missing: j.data.missing ?? [] });
+      }
+    } catch {
+      // 后端完全不可达：不显示环境告示（连接失败由 stats 加载失败兜底提示）
+    }
+  }, []);
+  useEffect(() => {
+    void checkEnv();
+  }, [checkEnv]);
+
   useEffect(() => {
     // 加载公开统计数据
     fetch(`${getApiBaseUrl()}/chat/public/stats`)
@@ -180,6 +199,32 @@ export function PortalPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg-page)', color: 'var(--color-text)' }}>
+      {/* 环境告示：后端可达但环境未配置（数据库/数据表）→ 提示联系管理员初始化 */}
+      {envStatus && !envStatus.env_ready && (
+        <div
+          className="flex items-start gap-3 px-4 py-3 border-b"
+          style={{ background: 'var(--color-warning-bg)', borderColor: 'var(--color-warning)' }}
+        >
+          <AlertTriangle size={18} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+              后端服务已连接，环境未配置
+            </p>
+            <p className="text-xs mt-1 leading-5" style={{ color: 'var(--color-text-secondary)' }}>
+              请联系管理员进行初始化（数据库连接 / 数据表等）。
+              {envStatus.missing.includes('ai_key') && ' AI 密钥未配置（不影响聊天，仅 AI 广场功能受限）。'}
+            </p>
+            <button
+              onClick={() => void checkEnv()}
+              className="btn btn-sm mt-2 inline-flex items-center gap-1.5"
+              style={{ minHeight: 44 }}
+            >
+              <RefreshCw size={14} />
+              重新检测
+            </button>
+          </div>
+        </div>
+      )}
       {/* 公告栏 */}
       {notice && !noticeDismissed && (
         <div
