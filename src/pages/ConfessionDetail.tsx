@@ -13,7 +13,7 @@ import {
   MapPin,
   X,
 } from 'lucide-react';
-import { confessionApi, authApi } from '../lib/api';
+import { confessionApi, authApi, getApiBaseUrl } from '../lib/api';
 import { useApp } from '../lib/AppContext';
 import type { Confession, ConfessionComment } from '../types';
 import { Avatar } from '../components/Avatar';
@@ -533,7 +533,7 @@ export function ConfessionDetail() {
               <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>分享二维码</span>
               <button onClick={() => setShowQrUrl('')} style={{ color: 'var(--color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
-            <img src={`/chat/qrcode/url?url=${encodeURIComponent(showQrUrl)}`} alt="QR" className="w-full"
+            <img src={`${getApiBaseUrl()}/chat/qrcode/url?url=${encodeURIComponent(showQrUrl)}`} alt="QR" className="w-full"
                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
             <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>扫码查看表白</p>
           </div>
